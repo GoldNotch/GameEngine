@@ -13,16 +13,17 @@
 // limitations under the License.
 
 #include "Renderer.hpp"
+#include <atomic>
 extern "C"
 {
     #include <GL/glew.h>
 }
 
-struct RenderContextPrivateData
-{
-    std::array<GLuint, ERenderableObjectType::TOTAL> VAOs; 
-};
+static std::atomic<ContextID> last_context_id = 0;
 
-void RenderContext::BeginRenderGroup()
+ContextID InitNewContext()
 {
+    ContextID new_context_id = last_context_id++;
+    MeshObject::InitForContext(new_context_id);
+    return new_context_id;
 }

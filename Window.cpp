@@ -53,6 +53,14 @@ static void window_resize_callback(GLFWwindow *window, int width, int height)
 
 std::unique_ptr<OSWindow> OSWindow::main_window = nullptr;
 
+struct OSWindow::Implementator
+{
+    
+private:
+    GLFWwindow *glfw_wnd = nullptr;
+    ContextID ctx_id;
+};
+
 /// ========================= public API ========================
 
 /// @brief move constructor
@@ -77,9 +85,8 @@ OSWindow &OSWindow::operator=(OSWindow &&other) noexcept
 OSWindow::~OSWindow()
 {
     child_windows.clear();
-    GLFWwindow* glfw_wnd = reinterpret_cast<GLFWwindow*>(impl_data);
-    glfwSetWindowShouldClose(glfw_wnd, GLFW_TRUE);
-    glfwDestroyWindow(glfw_wnd);
+    glfwSetWindowShouldClose(impl_data->glfw_wnd, GLFW_TRUE);
+    glfwDestroyWindow(impl_data->glfw_wnd);
     if (rendering_thread)
         rendering_thread->join();
     if (this == OSWindow::main_window.get())
@@ -97,26 +104,18 @@ OSWindow &OSWindow::CreateChildWindow(int width, int height, const char *title)
     return wnd;
 }
 
-/*void OSWindow::SetRenderer(IRenderer &renderer) noexcept
-{
-    std::scoped_lock lk{rendering_mutex};
-    this->renderer = &renderer;
-}*/
-
 /// @brief check is window should close
 /// @return true if window is should close, false otherwise
 bool OSWindow::IsClosing() const noexcept
 {
-    GLFWwindow* glfw_wnd = reinterpret_cast<GLFWwindow*>(impl_data);
-    return glfwWindowShouldClose(glfw_wnd);
+    return glfwWindowShouldClose(impl_data->glfw_wnd);
 }
 
 void OSWindow::Close() noexcept
 {
-    GLFWwindow* glfw_wnd = reinterpret_cast<GLFWwindow*>(impl_data);
-    for(auto && child_wnd: child_windows)
+    for (auto &&child_wnd : child_windows)
         child_wnd.Close();
-    glfwSetWindowShouldClose(glfw_wnd, true);
+    glfwSetWindowShouldClose(impl_data->glfw_wnd, true);
 }
 
 /// ======================== Static Public API ========================
@@ -134,6 +133,7 @@ OSWindow &OSWindow::CreateMainWindow(int width, int height, const char *title)
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+        // TODO: make hints setting
         glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
         OSWindow *wnd_ptr = new OSWindow(width, height, title);
@@ -143,7 +143,7 @@ OSWindow &OSWindow::CreateMainWindow(int width, int height, const char *title)
             const GLubyte *msg = glewGetErrorString(glew_init_error);
             std::printf("Failed to init glew - %s\n", msg);
         }
-
+        BuildShaders();
         OSWindow::main_window.reset(wnd_ptr);
     }
 
@@ -158,8 +158,8 @@ void OSWindow::RunWindows() noexcept
     while (!main_wnd.IsClosing())
     {
         glfwPollEvents();
-        //if (main_wnd.renderer)
-            main_wnd.RenderPass(true);
+        // if (main_wnd.renderer)
+        main_wnd.RenderPass(true);
     }
 }
 
@@ -168,14 +168,13 @@ void OSWindow::RunWindows() noexcept
 /// @brief Create OpenGL context for calling thread (maybe other contexts)
 void OSWindow::CreateContext() noexcept
 {
-    GLFWwindow* glfw_wnd = reinterpret_cast<GLFWwindow*>(impl_data);
-    glfwMakeContextCurrent(glfw_wnd);
+    glfwMakeContextCurrent(impl_data->glfw_wnd);
+    impl_data->ctx_id = InitNewContext();
 }
 
 /// @brief rendering pass
 void OSWindow::RenderPass(bool is_main_window) noexcept
 {
-    GLFWwindow* glfw_wnd = reinterpret_cast<GLFWwindow*>(impl_data);
     double prerender_timestamp = glfwGetTime();
     // if it's main window then it's main thread and we can't use sleep function
     if (is_main_window && prerender_timestamp - last_rendering_timestamp < rendering_interval)
@@ -184,10 +183,10 @@ void OSWindow::RenderPass(bool is_main_window) noexcept
     {
         std::scoped_lock lk{rendering_mutex};
         // call renderer
-        //renderer->Render();
+        // renderer->Render();
     }
 
-    glfwSwapBuffers(glfw_wnd);
+    glfwSwapBuffers(impl_data->glfw_wnd);
     last_rendering_timestamp = glfwGetTime();
     double elapsed_time_in_sec = last_rendering_timestamp - prerender_timestamp;
     fps = 1.0 / elapsed_time_in_sec;
@@ -209,14 +208,12 @@ void OSWindow::RunChildWindowsLoops(bool is_main_window) noexcept
         child_wnd.RunChildWindowsLoops(false);
     if (!is_main_window)
     {
-        //if (renderer != nullptr)
-        {
-            rendering_thread = std::make_unique<std::thread>([this]
-                                                             {
+        rendering_thread =
+            std::make_unique<std::thread>([this]
+                                          {
                 CreateContext();
                 while (!IsClosing())
                     RenderPass(false); });
-        }
     }
 }
 
@@ -241,12 +238,12 @@ OSWindow::OSWindow(int width, int height, const char *title)
     glfwSetScrollCallback(wnd, scroll_callback);
     glfwSetWindowSizeCallback(wnd, window_resize_callback);
     glfwSetKeyCallback(wnd, key_callback);
-    impl_data = wnd;
+    impl_data = std::make_unique<ImplData>();
+    impl_data->glfw_wnd = wnd;
 }
 
 /// @brief Initialize openGL viewport
 void OSWindow::InitViewport() noexcept
 {
-    GLFWwindow* glfw_wnd = reinterpret_cast<GLFWwindow*>(impl_data);
-    UpdateViewport(glfw_wnd);
+    UpdateViewport(impl_data->glfw_wnd);
 }

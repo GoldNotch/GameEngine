@@ -44,7 +44,6 @@ int main()
     // Renderer renderer;
     OSWindow &main_wnd = OSWindow::CreateMainWindow(500, 600, "main_window");
     OSWindow &sub_wnd = main_wnd.CreateChildWindow(400, 400, "child window");
-    BuildShaders();
 
     TriangleApp app;
     app.SetOnFinishCallback([&](int result_code)

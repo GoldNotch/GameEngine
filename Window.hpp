@@ -19,8 +19,6 @@
 #include <mutex>
 #include <functional>
 
-struct RenderContext;
-
 class OSWindow final
 {
 public:
@@ -69,14 +67,15 @@ private:
         };
     };
     friend class WindowAllocator;
+
+    struct Implementator;
 /// =================== Data =============================
 
     static std::unique_ptr<OSWindow> main_window;           ///< global pointer on main window of app
 
     std::vector<OSWindow, WindowAllocator> child_windows;   ///< window contains its own sub windows
-    void* impl_data = nullptr;    ///< pointer on private data. Right now it's pointer on GLFWwindow structure
+    std::unique_ptr<Implementator> implementator;    ///< pointer on private data. Right now it's pointer on GLFWwindow structure
     std::unique_ptr<std::thread> rendering_thread = nullptr;///< child windows renders in separate thread. It's null in MainWindow
-    std::unique_ptr<RenderContext> render_context;
     double rendering_interval = 0.0;        ///< time interval between rendering in seconds (= Hz of monitor)
     double last_rendering_timestamp = 0.0;  ///< main window uses to skip rendering_interval time (main window used only)
     //IRenderer* renderer = nullptr;    

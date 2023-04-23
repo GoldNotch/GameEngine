@@ -14,32 +14,14 @@
 #include <vector>
 #include <memory>
 
-enum ERenderableObjectType : size_t
-{
-    MESH_OBJECT = 0,
-    TOTAL
-};
-
-/// @brief Thread-local object to keep some settings
-struct RenderContext
-{
-    explicit RenderContext();
-    ~RenderContext() = default;
-    void BeginRenderGroup();
-    void EndRenderGroup();
-
-private:
-    struct RenderContextPrivateData;
-    std::unique_ptr<RenderContextPrivateData> impl = nullptr;
-    RenderContext(const RenderContext&) = delete;
-    RenderContext& operator=(const RenderContext&) = delete;
-};
-
+using ContextID = unsigned int;
+static ContextID InitNewContext();
 
 struct IRenderableObject
 {
-    virtual void Render() const = 0;
+    virtual void Render(ContextID ctx_id) const = 0;
 };
+
 
 struct RenderSceneData
 {
@@ -49,19 +31,27 @@ struct RenderSceneData
 
 struct MeshObject : public IRenderableObject
 {
+    /// @brief Build shaders
+    static void BuildShaders(/*pass settings*/);
+    static void InitForContext(ContextID ctx_id);
+    static void BeginRendering(ContextID ctx_id);
+    static void EndRendering(ContextID ctx_id);
+
     MeshObject(const float vertices_data[], size_t vertices_count);
-    static void BuildContext();
-    static void BuildShaders(/*pass settings*/); // build shaders
-    virtual void Render() const override;
+    virtual void Render(ContextID ctx_id) const override;
+
 protected:
     struct ImplData;
     std::unique_ptr<ImplData> impl_data;
     size_t vertices_count = 0;
 };
 
+
+
 static inline void BuildShaders()
 {
     MeshObject::BuildShaders();
+    //...
 }
 
 
