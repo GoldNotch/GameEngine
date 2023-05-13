@@ -15,7 +15,8 @@
 #include <thread>
 #include <memory>
 #include <functional>
-struct RenderSceneData;
+#include <atomic>
+struct RenderableScene;
 
 struct IApp
 {
@@ -48,7 +49,7 @@ struct IApp
     /// @return true if app-thread is running
     bool IsRunning() const noexcept { return is_running; }
 
-    virtual void BuildScene(RenderSceneData &scene) const = 0;
+    virtual void BuildScene(RenderableScene &scene) const = 0;
 
 protected:
     /// @brief execution for app

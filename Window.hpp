@@ -18,12 +18,12 @@
 #include <thread>
 #include <mutex>
 #include <functional>
+#include "Renderer.hpp"
 
 class OSWindow final
 {
 public:
 /// ===================== Types =====================
-    using RenderingFunc = std::function<void(double timestamp)>;
 
 /// =================== API ========================
     /// @brief move constructor
@@ -41,7 +41,10 @@ public:
     inline bool IsMainWindow() const noexcept { return this == OSWindow::main_window.get(); }
     /// @brief creates and open new window
     OSWindow &CreateChildWindow(int width, int height, const char *title);
-
+    template<typename T>
+    T& InitRenderer() noexcept
+    {  renderer = std::make_unique<T>();
+        return dynamic_cast<T&>(*renderer);}
     /// create main window
     static OSWindow &CreateMainWindow(int width, int height, const char *title);
     /// Get main window
@@ -68,14 +71,15 @@ private:
     };
     friend class WindowAllocator;
 
-    struct Implementator;
+    struct ImplData;
 /// =================== Data =============================
 
     static std::unique_ptr<OSWindow> main_window;           ///< global pointer on main window of app
 
     std::vector<OSWindow, WindowAllocator> child_windows;   ///< window contains its own sub windows
-    std::unique_ptr<Implementator> implementator;    ///< pointer on private data. Right now it's pointer on GLFWwindow structure
+    std::unique_ptr<ImplData> impl_data;    ///< pointer on private data. Right now it's pointer on GLFWwindow structure
     std::unique_ptr<std::thread> rendering_thread = nullptr;///< child windows renders in separate thread. It's null in MainWindow
+    std::unique_ptr<IRenderer> renderer = nullptr;
     double rendering_interval = 0.0;        ///< time interval between rendering in seconds (= Hz of monitor)
     double last_rendering_timestamp = 0.0;  ///< main window uses to skip rendering_interval time (main window used only)
     //IRenderer* renderer = nullptr;    

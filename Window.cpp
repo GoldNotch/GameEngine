@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include <chrono>
-
 #include "Window.hpp"
-#include "Renderer.hpp"
 
 extern "C"
 {
@@ -24,9 +22,9 @@ extern "C"
 
 static void UpdateViewport(GLFWwindow *window)
 {
-    int fm_width, fm_height;
+    /*int fm_width, fm_height;
     glfwGetFramebufferSize(window, &fm_width, &fm_height);
-    glViewport(0, 0, fm_width, fm_height);
+    glViewport(0, 0, fm_width, fm_height);*/
 }
 
 static void key_callback(GLFWwindow *handler, int key, int scancode, int action, int mods)
@@ -53,12 +51,9 @@ static void window_resize_callback(GLFWwindow *window, int width, int height)
 
 std::unique_ptr<OSWindow> OSWindow::main_window = nullptr;
 
-struct OSWindow::Implementator
+struct OSWindow::ImplData
 {
-    
-private:
     GLFWwindow *glfw_wnd = nullptr;
-    ContextID ctx_id;
 };
 
 /// ========================= public API ========================
@@ -131,19 +126,14 @@ OSWindow &OSWindow::CreateMainWindow(int width, int height, const char *title)
     {
         glfwInit();
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
         // TODO: make hints setting
         glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
         OSWindow *wnd_ptr = new OSWindow(width, height, title);
         wnd_ptr->CreateContext();
-        if (GLenum glew_init_error = glewInit() != GLEW_OK)
-        {
-            const GLubyte *msg = glewGetErrorString(glew_init_error);
-            std::printf("Failed to init glew - %s\n", msg);
-        }
-        BuildShaders();
+        IRenderer::InitRenderingSystem();
         OSWindow::main_window.reset(wnd_ptr);
     }
 
@@ -169,13 +159,14 @@ void OSWindow::RunWindows() noexcept
 void OSWindow::CreateContext() noexcept
 {
     glfwMakeContextCurrent(impl_data->glfw_wnd);
-    impl_data->ctx_id = InitNewContext();
 }
 
 /// @brief rendering pass
 void OSWindow::RenderPass(bool is_main_window) noexcept
 {
     double prerender_timestamp = glfwGetTime();
+    if (renderer == nullptr)
+        return;
     // if it's main window then it's main thread and we can't use sleep function
     if (is_main_window && prerender_timestamp - last_rendering_timestamp < rendering_interval)
         return;
@@ -183,7 +174,7 @@ void OSWindow::RenderPass(bool is_main_window) noexcept
     {
         std::scoped_lock lk{rendering_mutex};
         // call renderer
-        // renderer->Render();
+        renderer->RenderPass(prerender_timestamp);
     }
 
     glfwSwapBuffers(impl_data->glfw_wnd);

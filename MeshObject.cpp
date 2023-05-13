@@ -14,94 +14,73 @@
 
 
 #include <map>
+#include <cassert>
 #include "Renderer.hpp"
 #include "App.hpp"
 #include "GLShader.hpp"
 
 // ---------------------- Implementation data --------------------
 
-/// @brief  Thread-local data for rendering
-struct ContextData
-{
-    GLuint VAO;
-    
-    ContextData() noexcept
+ struct StaticMeshObject::ContextData : public IShaderData
+ {
+    friend class StaticMeshObject::Impl;
+     GLuint program = build_shaders(L"Shaders/triangle.vert", L"Shaders/triangle.frag");
+     GLuint VAO;
+     //uniform locations
+     //...
+
+    ContextData()
     {
-        glCreateVertexArrays(1, &VAO);
-        glBindVertexArray(VAO);
-        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), NULL);
-        glEnableVertexAttribArray(0);
-        glBindVertexArray(0);
+        glGenVertexArrays(1, &VAO);
+        //here it finds locations of all uniform variables 
     }
 
-    void Bind() const noexcept
+    virtual ~ContextData() override
     {
-        glBindVertexArray(VAO);
+        glDeleteVertexArrays(1, &VAO);
     }
 
-    void Unbind() const noexcept
+    virtual void Bind() const override
     {
-        glBindVertexArray(0);
+        glUseProgram(program);
+        glBindVertexArray(VAO);
     }
 };
 
 /// @brief OpenGL data
-struct MeshObject::ImplData
+struct StaticMeshObject::Impl
 {
-    static GLint program;
-    static std::map<ContextID, ContextData> ctx_data;
-
+    // all settings for rendering
     GLuint VBO = 0;
+    //IBO
+    //some textures
 
-    static void BeginRendering(ContextID ctx_id)
+    Impl(const Geometry& geometry)
     {
-        glUseProgram(program);
-        ctx_data[ctx_id].Bind();
-    }
-
-    static void EndRendering(ContextID ctx_id)
-    {
-        glUseProgram(0);
-        ctx_data[ctx_id].Unbind();
+        VBO = IRenderer::GetBufferCache().Get(geometry.vertices);
+        if (VBO == 0)
+        {
+            glGenBuffers(1, &VBO);
+            glBindBuffer(GL_ARRAY_BUFFER, VBO);
+            glBufferData(GL_ARRAY_BUFFER, geometry.vertices.GetTotalSize(), geometry.vertices.GetBuffer(), GL_STATIC_DRAW);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+            IRenderer::GetBufferCache().Put(geometry.vertices, VBO);
+        }
     }
 };
 
-GLint MeshObject::ImplData::program = 0;
-std::map<ContextID, ContextData> MeshObject::ImplData::ctx_data;
-
 // ------------------ Static API ----------------------
- 
-void MeshObject::BuildShaders()
-{
-    MeshObject::ImplData::program = build_shaders(L"Shaders/triangle.vert", L"Shaders/triangle.frag");
-    //here it finds locations of all uniform variables 
-}
 
-void MeshObject::InitForContext(ContextID ctx_id)
+void StaticMeshObject::InitForContext(IRenderer& renderer)
 {
-    MeshObject::ImplData::ctx_data.emplace(ctx_id, ContextData{});
-}
-
-void MeshObject::BeginRendering(ContextID ctx_id)
-{
-    MeshObject::ImplData::BeginRendering(ctx_id);
-}
-
-void MeshObject::EndRendering(ContextID ctx_id)
-{
-    MeshObject::ImplData::EndRendering(ctx_id);
+    auto& data = renderer.NewContextData<ContextData>(GroupID());
 }
 
 // ------------------- API --------------------------
 
-MeshObject::MeshObject(const float vertices[], size_t vertices_count)
-{
-    
-}
+StaticMeshObject::StaticMeshObject(const Geometry& geometry)
+{}
 
-void MeshObject::Render(ContextID ctx_id) const
+void StaticMeshObject::Render(const IRenderer& renderer, double timestamp) const
 {
-    glBindBuffer(GL_ARRAY_BUFFER, impl_data->VBO);
-    glDrawArrays(GL_TRIANGLES, 0, 3);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
