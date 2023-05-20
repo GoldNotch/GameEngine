@@ -19,7 +19,7 @@
 #include "Cache.hpp"
 
 /// @brief stores data for context (thread-local global data for objects group)
-struct IShaderData
+struct IShaderData// rename to IShader?
 {
     IShaderData() = default;
     virtual ~IShaderData() = default;
@@ -30,47 +30,34 @@ private:
     IShaderData &operator=(const IShaderData &) = delete;
 };
 
-/// @brief pointer o ram buffer. Uses tor caching vbo, ibo, textures
-struct CPUBufferPtr
+struct IGPUStaticBuffer
 {
-    CPUBufferPtr(const void* buffer = nullptr, size_t elem_size = 0, size_t elem_count = 0)
-    : buffer(buffer), elem_count(elem_count), elem_size(elem_size) {} 
-    ~CPUBufferPtr() = default;
-
-    constexpr size_t GetTotalSize() const noexcept
-    {  return elem_count * elem_size;  }
-    constexpr const void* GetBuffer() const noexcept
-    { return buffer; }
-    constexpr size_t GetCount() const noexcept
-    { return elem_count; }
-
-    bool operator==(const CPUBufferPtr& other) const noexcept
-    { return elem_count == other.elem_count && 
-            elem_size == other.elem_size && buffer == other.buffer; }
-    
+    explicit IGPUStaticBuffer(size_t elem_size, size_t count, const void* data = nullptr) 
+    : size(elem_size * count){};
+    virtual ~IGPUStaticBuffer() = default;
+    IGPUStaticBuffer(IGPUStaticBuffer&& other) 
+    {  size = std::move(other.size); }
+    IGPUStaticBuffer& operator=(IGPUStaticBuffer&& other)
+    { size = std::move(other.size); }
+    virtual void Realloc(size_t elem_size, size_t count, const void* data = nullptr) 
+    {size = elem_size * count;};
+    virtual void Upload(const void* data, size_t elem_size, size_t count, size_t offset = 0) = 0;
+protected:
+    size_t size; ///< allocated size in bytes
 private:
-    const void* buffer = nullptr;
-    size_t elem_size = 0;
-    size_t elem_count = 0;
+    IGPUStaticBuffer(const IGPUStaticBuffer&) = delete;
+    IGPUStaticBuffer& operator=(const IGPUStaticBuffer&) = delete;
 };
 
-struct IGPUBuffer
-{
-    IGPUBuffer(const CPUBufferPtr& buffer) = default;
-    virtual ~IGPUBuffer() = default;
-    virtual void Bind() const = 0;
-};
 
 /// identifier of objects group. To find context data in renderer
 enum EObjectsGroupID : unsigned char;
 struct RenderableScene;
 
-/// own context data. thread-local rendering interface
+/// own context data and begin rendering. thread-local rendering interface
 struct IRenderer
 {
-    using TCache = LRUCache<IGPUBuffer, CPUBufferPtr>;
     static void InitRenderingSystem();
-    static TCache& GetBufferCache();
     
     //-------------- API ---------------------
     IRenderer() = default;
@@ -98,7 +85,6 @@ private:
     static ContextID RequestNewContextID();
     ContextID ctx_id = RequestNewContextID();
     std::array<std::unique_ptr<IShaderData>, EObjectsGroupID::TOTAL> ctx_data;
-    static TCache BufferCache;
 };
 
 
@@ -131,6 +117,7 @@ struct RenderableScene
     void SetCamera();
     template<class T, typename... Args>
     T& PlaceObject(Args&& ... args);
+    
 private:
     std::array<std::vector<IRenderable>, EObjectsGroupID::TOTAL> scene_objects;
 };
@@ -147,8 +134,8 @@ struct StaticMeshObject : public IRenderable
 
     struct Geometry
     {
-        CPUBufferPtr vertices;
-        //CPUBufferPtr<unsigned int> indices;
+        const Vertex* vertives;
+        size_t vertices_count;
     };
     //----------- Static API ------------
     static void InitForContext(IRenderer& renderer);

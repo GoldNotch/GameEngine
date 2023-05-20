@@ -62,9 +62,8 @@ struct MainRenderer : public IRenderer
             app->BuildScene(frame_data);// long operation
             PrepareRenderData(frame_data);
             BindGroup(STATIC_MESH_OBJECT);
-            /*for(auto& renderable: frame_data.objects)
-                renderable->Render(*this);*/
-            // render mesh objects
+            
+            // render static mesh objects
         }
     }
     

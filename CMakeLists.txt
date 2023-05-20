@@ -32,6 +32,7 @@ set(${this_target}_SOURCE_FILES
   "Window.cpp"  
   "MeshObject.cpp"
   "Renderer.cpp"
+  "GLimpl.cpp"
 )
 
 # build app

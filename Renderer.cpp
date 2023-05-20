@@ -15,31 +15,11 @@
 #include "Renderer.hpp"
 #include "Cache.hpp"
 #include <atomic>
-extern "C"
-{
-#include <GL/glew.h>
-}
+
 
 // -------------------- Static data ----------------
 
 IRenderer::TCache IRenderer::BufferCache(10);
-
-// ------------------- Buffers -------------------
-
-GPUBuffer::GPUBuffer(const CPUBufferPtr& buffer)
-{
-    
-}
-
-GPUBuffer::~GPUBuffer()
-{
-
-}
-
-void GPUBuffer::Bind() const
-{
-
-}
 
 IRenderer::ContextID IRenderer::RequestNewContextID()
 {
@@ -47,14 +27,6 @@ IRenderer::ContextID IRenderer::RequestNewContextID()
     return last_context_id++;
 }
 
-void IRenderer::InitRenderingSystem()
-{
-    if (GLenum glew_init_error = glewInit() != GLEW_OK)
-    {
-        const GLubyte *msg = glewGetErrorString(glew_init_error);
-        std::printf("Failed to init glew - %s\n", msg);
-    }
-}
 
 IRenderer::TCache& IRenderer::GetBufferCache()
 {
