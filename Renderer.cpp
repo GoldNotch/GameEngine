@@ -13,13 +13,10 @@
 // limitations under the License.
 
 #include "Renderer.hpp"
-#include "Cache.hpp"
 #include <atomic>
 
 
 // -------------------- Static data ----------------
-
-IRenderer::TCache IRenderer::BufferCache(10);
 
 IRenderer::ContextID IRenderer::RequestNewContextID()
 {
@@ -28,9 +25,5 @@ IRenderer::ContextID IRenderer::RequestNewContextID()
 }
 
 
-IRenderer::TCache& IRenderer::GetBufferCache()
-{
-    return IRenderer::BufferCache;
-}
 
 //here must be uploaders

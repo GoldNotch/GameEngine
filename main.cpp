@@ -30,7 +30,9 @@ class TriangleApp : public IApp
     /// called 60 times per second before rendering - collect data about visualizable scene
     virtual void BuildScene(RenderableScene &scene) const override
     {
-        auto& triangle = scene.PlaceObject<StaticMeshObject>(StaticMeshObject::Geometry{vertices, 3});
+        auto& triangle = scene.PlaceObject<StaticMeshObject>(
+        StaticMeshObject::Geometry{reinterpret_cast<const StaticMeshObject::Vertex*>(vertices), 3}
+        );
     }
 
 protected:

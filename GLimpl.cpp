@@ -16,6 +16,7 @@
 #include <string>
 #include <fstream>
 #include <streambuf>
+#include "Cache.hpp"
 extern "C"
 {
 #include <GL/glew.h>
@@ -131,9 +132,11 @@ struct StaticBufferObject final : public IGPUStaticBuffer
 
 protected:
     GLuint id;
+    // TODO: make vbo cached
+    //static LRUCache<GLuint, const void*> cache;
 };
 
-struct StaticTexture final : public IGPUStaticBuffer
+/*struct StaticTexture final : public IGPUStaticBuffer
 {
     explicit StaticTexture(size_t elem_size, size_t count, const void *data)
         : IGPUStaticBuffer(elem_size, count, data)
@@ -144,7 +147,8 @@ struct StaticTexture final : public IGPUStaticBuffer
     {
     }
 
-    inline GLuint GetID() const{ return id; }
+    void SetUniform(GLint location)
+    {}
 
     virtual void Realloc(size_t elem_size, size_t count, const void *data = nullptr) override
     {
@@ -158,7 +162,7 @@ struct StaticTexture final : public IGPUStaticBuffer
 
 protected:
     GLuint id;
-};
+};*/
 
 // ========================== MeshObject.cpp =======================
 
@@ -192,21 +196,17 @@ struct StaticMeshObject::ContextData : public IShaderData
 struct StaticMeshObject::Impl
 {
     // all settings for rendering
-    GLuint VBO = 0;
+    StaticBufferObject<GL_ARRAY_BUFFER> vbo;
     // IBO
-    // some textures
+    // some materials/textures
 
     Impl(const Geometry &geometry)
+        : vbo(sizeof(Vertex), geometry.vertices_count, geometry.vertices)
+    {}
+
+    void Bind()
     {
-        VBO = IRenderer::GetBufferCache().get(geometry.vertices);
-        if (VBO == 0)
-        {
-            glGenBuffers(1, &VBO);
-            glBindBuffer(GL_ARRAY_BUFFER, VBO);
-            glBufferData(GL_ARRAY_BUFFER, geometry.vertices.GetTotalSize(), geometry.vertices.GetBuffer(), GL_STATIC_DRAW);
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
-            IRenderer::GetBufferCache().put(geometry.vertices, VBO);
-        }
+        vbo.Bind();
     }
 };
 
@@ -218,9 +218,12 @@ void StaticMeshObject::InitForContext(IRenderer &renderer)
 // ------------------- API --------------------------
 
 StaticMeshObject::StaticMeshObject(const Geometry &geometry)
+    : impl(new Impl(geometry))
 {
 }
 
 void StaticMeshObject::Render(const IRenderer &renderer, double timestamp) const
 {
+    impl->Bind();
+    glDrawArrays(GL_TRIANGLES, 0,  3);
 }

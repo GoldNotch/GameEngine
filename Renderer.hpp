@@ -16,8 +16,6 @@
 #include <memory>
 #include <cassert>
 
-#include "Cache.hpp"
-
 /// @brief stores data for context (thread-local global data for objects group)
 struct IShaderData// rename to IShader?
 {
@@ -35,10 +33,6 @@ struct IGPUStaticBuffer
     explicit IGPUStaticBuffer(size_t elem_size, size_t count, const void* data = nullptr) 
     : size(elem_size * count){};
     virtual ~IGPUStaticBuffer() = default;
-    IGPUStaticBuffer(IGPUStaticBuffer&& other) 
-    {  size = std::move(other.size); }
-    IGPUStaticBuffer& operator=(IGPUStaticBuffer&& other)
-    { size = std::move(other.size); }
     virtual void Realloc(size_t elem_size, size_t count, const void* data = nullptr) 
     {size = elem_size * count;};
     virtual void Upload(const void* data, size_t elem_size, size_t count, size_t offset = 0) = 0;
@@ -51,7 +45,13 @@ private:
 
 
 /// identifier of objects group. To find context data in renderer
-enum EObjectsGroupID : unsigned char;
+enum EObjectsGroupID : unsigned char
+{
+    STATIC_MESH_OBJECT = 0,
+    TERRAIN,
+    SKYBOX,
+    TOTAL
+};
 struct RenderableScene;
 
 /// own context data and begin rendering. thread-local rendering interface
@@ -91,13 +91,6 @@ private:
 
 
 // ------------------------- Scene object types -----------------------
-enum EObjectsGroupID : unsigned char
-{
-    STATIC_MESH_OBJECT = 0,
-    TERRAIN,
-    SKYBOX,
-    TOTAL
-};
 
 
 /// @brief object class which can be rendered.
@@ -134,8 +127,10 @@ struct StaticMeshObject : public IRenderable
 
     struct Geometry
     {
-        const Vertex* vertives;
+        const Vertex* vertices;
         size_t vertices_count;
+        Geometry(const Vertex* vertices, size_t vertices_count) :
+            vertices(vertices), vertices_count(vertices_count) {}
     };
     //----------- Static API ------------
     static void InitForContext(IRenderer& renderer);

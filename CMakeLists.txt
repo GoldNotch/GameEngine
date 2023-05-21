@@ -30,7 +30,6 @@ ENDFOREACH()
 set(${this_target}_SOURCE_FILES
   "main.cpp"
   "Window.cpp"  
-  "MeshObject.cpp"
   "Renderer.cpp"
   "GLimpl.cpp"
 )

@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
+#pragma once
 #include <string>
 #include <list>
 #include <unordered_map>
@@ -89,6 +89,6 @@ private:
     ResourcesQueue resources{&pool};    /// list of resources. Last resource prepend to delete first
     Keys keys{&pool};   /// map with keys and iterators on resource in the list
 
-    ResourceLRUCache(const ResourceLRUCache&) = delete;
-    ResourceLRUCache& operator=(const ResourceLRUCache&) = delete;
+    LRUCache(const LRUCache&) = delete;
+    LRUCache& operator=(const LRUCache&) = delete;
 };
