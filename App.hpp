@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#pragma once
 #include <vector>
 #include <thread>
 #include <memory>
@@ -36,6 +37,16 @@ struct IApp
             if (on_finish) on_finish(result);
             is_running = false;
         }));
+    }
+    /// @brief stops app-thread
+    void Stop() noexcept
+    {
+
+    }
+    /// @brief resume app-thread
+    void Resume() noexcept
+    {
+
     }
     /// @brief close app. Join app-thread
     void Close() noexcept

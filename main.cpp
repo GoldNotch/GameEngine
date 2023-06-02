@@ -17,10 +17,8 @@
 #include <thread>
 #include <cmath>
 
-extern "C"
-{
-    #include <GL/glew.h>
-}
+
+// ---------------------------- client app ----------------------------
 
 class TriangleApp : public IApp
 {
@@ -30,29 +28,40 @@ class TriangleApp : public IApp
     /// called 60 times per second before rendering - collect data about visualizable scene
     virtual void BuildScene(RenderableScene &scene) const override
     {
-        auto& triangle = scene.PlaceObject<StaticMeshObject>(
-        StaticMeshObject::Geometry{reinterpret_cast<const StaticMeshObject::Vertex*>(vertices), 3}
-        );
+        scene3d::StaticMeshObject::Geometry geom
+                (reinterpret_cast<const scene3d::StaticMeshObject::Vertex *>(vertices), 3);
+        auto &triangle = scene.PlaceObject<scene3d::StaticMeshObject>(geom);
     }
 
 protected:
     virtual int AppMain() noexcept override
     {
-        
-        while (IsRunning()) {}
+        // here is app logic
+        while (IsRunning())
+        {
+        }
         return 0;
     }
 };
 
+// ------------------------ GL 3D renderer ------------------------
+
+extern "C"
+{
+#include <GL/glew.h>
+}
+
 struct MainRenderer : public IRenderer
 {
     MainRenderer()
+        : static_mesh_shader_id(scene3d::StaticMeshObject::BuildShaderForContext(*this))
     {
-        StaticMeshObject::InitForContext(*this);
     }
 
-    void BindApp(const IApp* app)
-    {this->app = app;}
+    void BindApp(const IApp *app)
+    {
+        this->app = app;
+    }
 
     virtual void RenderPass(double timestamp) override
     {
@@ -60,30 +69,30 @@ struct MainRenderer : public IRenderer
         glClear(GL_COLOR_BUFFER_BIT);
         if (app)
         {
-            RenderableScene frame_data;
-            app->BuildScene(frame_data);// long operation
-            PrepareRenderData(frame_data);
-            BindGroup(STATIC_MESH_OBJECT);
-            
-            // render static mesh objects
+            app->BuildScene(cached_scene); // long operation
+            // PrepareRenderData(cached_scene);
+            RenderWithShaderProgram(static_mesh_shader_id, timestamp);
         }
     }
-    
+
 protected:
-    virtual void PrepareRenderData(const RenderableScene& scene) override
+    /*virtual void PrepareRenderData(const RenderableScene& scene) override
     {
         //traverse objects in scene and check vbos
-    }
+    }*/
 private:
-    const IApp* app = nullptr;
+    const IApp *app = nullptr;
+    ShaderProgramID static_mesh_shader_id;
 };
+
+ // ---------------------------- main -------------------------------
 
 int main()
 {
     // Renderer renderer;
     OSWindow &main_wnd = OSWindow::CreateMainWindow(500, 600, "main_window");
     OSWindow &sub_wnd = main_wnd.CreateChildWindow(400, 400, "child window");
-    auto& renderer = main_wnd.InitRenderer<MainRenderer>();
+    auto &renderer = main_wnd.InitRenderer<MainRenderer>();
     TriangleApp app;
     app.SetOnFinishCallback([&](int result_code)
                             {

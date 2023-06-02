@@ -15,15 +15,30 @@
 #include "Renderer.hpp"
 #include <atomic>
 
-
 // -------------------- Static data ----------------
 
-IRenderer::ContextID IRenderer::RequestNewContextID()
+IRenderer::ContextID IRenderer::RequestNewContextID() const
 {
     static std::atomic<ContextID> last_context_id = 0;
     return last_context_id++;
 }
 
+void IRenderer::RenderWithShaderProgram(ShaderProgramID id, double timestamp) const
+{
+    programs[id]->Bind();
+    const auto &objs = cached_scene.GetObjectsByShaderProgram(id);
+    for (auto &&obj : objs)
+        obj->Render(*this, timestamp);
+}
 
+// here must be uploaders
 
-//here must be uploaders
+const RenderableScene::RenderableGroup &RenderableScene::GetObjectsByShaderProgram(ShaderProgramID id) const
+{
+    return scene_objects[id];
+}
+
+void RenderableScene::OnShaderProgramCreated(ShaderProgramID id) noexcept
+{
+    scene_objects.emplace_back();
+}

@@ -11,140 +11,168 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#pragma once
 #include <vector>
 #include <array>
 #include <memory>
+//#include <memory_resource>
 #include <cassert>
 
+using ShaderProgramID = unsigned char;
+using RenderableObjectTypeID = unsigned int;
 /// @brief stores data for context (thread-local global data for objects group)
-struct IShaderData// rename to IShader?
+struct IShaderProgram
 {
-    IShaderData() = default;
-    virtual ~IShaderData() = default;
+    IShaderProgram(ShaderProgramID id) : id(id){};
+    virtual ~IShaderProgram() = default;
     virtual void Bind() const = 0;
+    inline ShaderProgramID GetID() const noexcept { return id; }
 
 private:
-    IShaderData(const IShaderData &) = delete;
-    IShaderData &operator=(const IShaderData &) = delete;
+    ShaderProgramID id;
+    IShaderProgram(const IShaderProgram &) = delete;
+    IShaderProgram &operator=(const IShaderProgram &) = delete;
 };
 
 struct IGPUStaticBuffer
 {
-    explicit IGPUStaticBuffer(size_t elem_size, size_t count, const void* data = nullptr) 
-    : size(elem_size * count){};
+    explicit IGPUStaticBuffer(size_t elem_size, size_t count, const void *data = nullptr)
+        : size(elem_size * count){};
     virtual ~IGPUStaticBuffer() = default;
-    virtual void Realloc(size_t elem_size, size_t count, const void* data = nullptr) 
-    {size = elem_size * count;};
-    virtual void Upload(const void* data, size_t elem_size, size_t count, size_t offset = 0) = 0;
+    virtual void Realloc(size_t elem_size, size_t count, const void *data = nullptr)
+    {
+        size = elem_size * count;
+    };
+    virtual void Upload(const void *data, size_t elem_size, size_t count, size_t offset = 0) = 0;
+
 protected:
     size_t size; ///< allocated size in bytes
 private:
-    IGPUStaticBuffer(const IGPUStaticBuffer&) = delete;
-    IGPUStaticBuffer& operator=(const IGPUStaticBuffer&) = delete;
+    IGPUStaticBuffer(const IGPUStaticBuffer &) = delete;
+    IGPUStaticBuffer &operator=(const IGPUStaticBuffer &) = delete;
 };
 
-
-/// identifier of objects group. To find context data in renderer
-enum EObjectsGroupID : unsigned char
-{
-    STATIC_MESH_OBJECT = 0,
-    TERRAIN,
-    SKYBOX,
-    TOTAL
-};
-struct RenderableScene;
-
-/// own context data and begin rendering. thread-local rendering interface
-struct IRenderer
-{
-    static void InitRenderingSystem();
-    
-    //-------------- API ---------------------
-    IRenderer() = default;
-    virtual ~IRenderer() = default;
-    /// render frame function
-    virtual void RenderPass(double timestamp) = 0;
-    /// create new context data for specific objects group
-    template <typename T>
-    T &NewContextData(EObjectsGroupID id)
-    {
-        ctx_data[id] = std::make_unique<T>();
-        return dynamic_cast<T &>(*ctx_data[id]);
-    }
-protected:
-    /// traverse scene, form vbos and send it to GPU
-    virtual void PrepareRenderData(const RenderableScene& scene) = 0;
-    void BindGroup(EObjectsGroupID id) const
-    {
-        assert(ctx_data[id] != nullptr);
-        ctx_data[id]->Bind();
-    }
-    
-private:
-    using ContextID = unsigned int;
-    static ContextID RequestNewContextID();
-    ContextID ctx_id = RequestNewContextID();
-    std::array<std::unique_ptr<IShaderData>, EObjectsGroupID::TOTAL> ctx_data;
-};
-
-
-
-
-// ------------------------- Scene object types -----------------------
-
+struct IRenderer;
 
 /// @brief object class which can be rendered.
 /// UPD: renderable object doesn't have any GL objects. It's just object which will be rendered.
 ///     It's like decoration object on theatre scene
-struct IRenderable 
+struct IRenderable
 {
-    virtual EObjectsGroupID GetGroupID() const noexcept = 0;
-    virtual void Render(const IRenderer& renderer, double timestamp) const = 0;
+    virtual void Render(const IRenderer &renderer, double timestamp) const = 0;
+    virtual constexpr RenderableObjectTypeID GetTypeID() const = 0;
 };
 
-
-/// @brief data to render one frame. It's like scene description: camera transform, objects, etc
-/// renderer wil take it and prepare specific data(VBO, IBO, etc) and render it
+/// container for objects on scene
 struct RenderableScene
 {
-    void SetCamera();
-    template<class T, typename... Args>
-    T& PlaceObject(Args&& ... args);
-    
+    using RenderableGroup = std::vector<std::unique_ptr<IRenderable>>;
+    friend class IRenderer;
+    /// constructor
+    explicit RenderableScene(const IRenderer &renderer) : context(renderer) {}
+    /// destructor
+    ~RenderableScene() = default;
+    // void SetCamera();
+    /// Place object on scene. Uses to add object to render
+    template <class T, typename... Args>
+    T &PlaceObject(Args &&...args);
+
 private:
-    std::array<std::vector<IRenderable>, EObjectsGroupID::TOTAL> scene_objects;
+    const IRenderer &context;     ///< rendering context
+    std::vector<RenderableGroup> scene_objects; ///< objects grouped by ShaderProgramID
+    
+    /// actions executed when new shader program created
+    void OnShaderProgramCreated(ShaderProgramID id) noexcept;
+    /// Get Objects with the same shader program
+    const RenderableGroup &GetObjectsByShaderProgram(ShaderProgramID id) const;
+
+    RenderableScene(const RenderableScene &) = delete;
+    RenderableScene &operator=(const RenderableScene &) = delete;
 };
 
-
-/// group - MeshObject
-struct StaticMeshObject : public IRenderable
+template <class T, typename... Args>
+T & RenderableScene::PlaceObject(Args &&...args)
 {
-    //------------ Types ---------------
-    struct Vertex
-    {
-        float pos[3];
-    };
+    std::unique_ptr<T> obj = std::make_unique<T>(args);
+    
+}
 
-    struct Geometry
-    {
-        const Vertex* vertices;
-        size_t vertices_count;
-        Geometry(const Vertex* vertices, size_t vertices_count) :
-            vertices(vertices), vertices_count(vertices_count) {}
-    };
-    //----------- Static API ------------
-    static void InitForContext(IRenderer& renderer);
-    static constexpr EObjectsGroupID GroupID() noexcept
-    { return EObjectsGroupID::STATIC_MESH_OBJECT; }
+/// own context data and begin rendering. thread-local rendering interface
+struct IRenderer
+{
+    friend struct RenderableScene;
 
-    // ----------- API ------------------
-    StaticMeshObject(const Geometry &geometry);
-    virtual EObjectsGroupID GetGroupID() const noexcept override 
-    { return GroupID(); }
-    virtual void Render(const IRenderer& renderer, double timestamp) const override;
+    static void InitRenderingSystem();
+    //-------------- API ---------------------
+    explicit IRenderer() = default;
+    virtual ~IRenderer() = default;
+    /// render frame function
+    virtual void RenderPass(double timestamp) = 0;
+    /// create new shader program (build must be in constructor)
+    template <typename T>
+    T &NewShaderProgram()
+    {
+        ShaderProgramID new_id = programs.size();
+        T* program = new T(new_id);
+        cached_scene.OnShaderProgramCreated(new_id);
+        return dynamic_cast<T&>(*programs.emplace_back(std::unique_ptr<IRenderable>(program)));
+    }
+
 protected:
-    //transform
-    struct Impl;
-    std::unique_ptr<Impl> impl;
-    struct ContextData;
+    /// traverse scene, form vbos and send it to GPU
+    // virtual void PrepareRenderData(const RenderableScene& scene) = 0;
+    void RenderWithShaderProgram(ShaderProgramID id, double timestamp) const;
+
+protected:
+    RenderableScene cached_scene{*this}; ///< cache of objects in scene
+private:
+    using ContextID = unsigned int;
+    ContextID RequestNewContextID() const;
+    ContextID ctx_id = RequestNewContextID();
+    std::vector<std::unique_ptr<IShaderProgram>> programs;
+    std::map<RenderableObjectTypeID, ShaderProgramID> types;
 };
+
+// ------------------------- Scene object types -----------------------
+
+namespace scene3d
+{
+
+    enum class ETypeID : RenderableObjectTypeID
+    {
+        STATIC_MESH = 0,
+        TOTAL
+    };
+
+    /// group - MeshObject
+    struct StaticMeshObject : public IRenderable
+    {
+        //------------ Types ---------------
+        struct Vertex
+        {
+            float pos[3];
+        };
+
+        struct Geometry
+        {
+            const Vertex *vertices;
+            size_t vertices_count;
+            Geometry(const Vertex *vertices, size_t vertices_count) : vertices(vertices), vertices_count(vertices_count) {}
+        };
+
+        //----------- Static API ------------
+        static ShaderProgramID BuildShaderForContext(IRenderer &renderer);
+
+        // ----------- API ------------------
+        StaticMeshObject(const Geometry &geometry);
+        virtual void Render(const IRenderer &renderer, double timestamp) const override;
+        virtual constexpr RenderableObjectTypeID GetTypeID() const override 
+        { return static_cast<RenderableObjectTypeID>(ETypeID::STATIC_MESH); }
+    protected:
+        // transform
+        struct Impl;
+        std::unique_ptr<Impl> impl;
+        struct ShaderProgram;
+    };
+
+}

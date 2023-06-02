@@ -166,7 +166,9 @@ protected:
 
 // ========================== MeshObject.cpp =======================
 
-struct StaticMeshObject::ContextData : public IShaderData
+using namespace scene3d;
+
+struct StaticMeshObject::ShaderProgram : public IShaderProgram
 {
     friend class StaticMeshObject::Impl;
     GLuint program = build_shaders(L"Shaders/triangle.vert", L"Shaders/triangle.frag");
@@ -174,13 +176,14 @@ struct StaticMeshObject::ContextData : public IShaderData
     // uniform locations
     //...
 
-    ContextData()
+    ShaderProgram(ShaderProgramID id) 
+        : IShaderProgram(id)
     {
         glGenVertexArrays(1, &VAO);
         // here it finds locations of all uniform variables
     }
 
-    virtual ~ContextData() override
+    virtual ~ShaderProgram() override
     {
         glDeleteVertexArrays(1, &VAO);
     }
@@ -210,9 +213,10 @@ struct StaticMeshObject::Impl
     }
 };
 
-void StaticMeshObject::InitForContext(IRenderer &renderer)
+ShaderProgramID StaticMeshObject::BuildShaderForContext(IRenderer &renderer)
 {
-    auto &data = renderer.NewContextData<ContextData>(GroupID());
+    auto& data = renderer.NewShaderProgram<ShaderProgram>();
+    return data.GetID();
 }
 
 // ------------------- API --------------------------
