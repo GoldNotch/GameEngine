@@ -60,8 +60,6 @@ struct IApp
     /// @return true if app-thread is running
     bool IsRunning() const noexcept { return is_running; }
 
-    virtual void BuildScene(RenderableScene &scene) const = 0;
-
 protected:
     /// @brief execution for app
     /// @return error code for app

@@ -17,6 +17,7 @@
 #include <memory>
 //#include <memory_resource>
 #include <cassert>
+#include <map>
 
 using ShaderProgramID = unsigned char;
 using RenderableObjectTypeID = unsigned int;
@@ -60,10 +61,10 @@ struct IRenderer;
 struct IRenderable
 {
     virtual void Render(const IRenderer &renderer, double timestamp) const = 0;
-    virtual constexpr RenderableObjectTypeID GetTypeID() const = 0;
+    virtual RenderableObjectTypeID GetTypeID() const = 0;
 };
 
-/// container for objects on scene
+/// container for objects on scene sorted and grouped by ShaderProgramID
 struct RenderableScene
 {
     using RenderableGroup = std::vector<std::unique_ptr<IRenderable>>;
@@ -94,8 +95,13 @@ template <class T, typename... Args>
 T & RenderableScene::PlaceObject(Args &&...args)
 {
     std::unique_ptr<T> obj = std::make_unique<T>(args);
-    
 }
+
+struct IRenderableSceneBuilder
+{
+    virtual void InitObjectTypes(IRenderer& renderer) const = 0;
+    virtual void BuildScene(RenderableScene & scene) const = 0;
+};
 
 /// own context data and begin rendering. thread-local rendering interface
 struct IRenderer
@@ -110,12 +116,18 @@ struct IRenderer
     virtual void RenderPass(double timestamp) = 0;
     /// create new shader program (build must be in constructor)
     template <typename T>
-    T &NewShaderProgram()
+    T &NewShaderProgram(RenderableObjectTypeID id)
     {
         ShaderProgramID new_id = programs.size();
         T* program = new T(new_id);
         cached_scene.OnShaderProgramCreated(new_id);
-        return dynamic_cast<T&>(*programs.emplace_back(std::unique_ptr<IRenderable>(program)));
+        return *program;
+    }
+
+    void BindSceneBuilder(const IRenderableSceneBuilder* scene_builder)
+    { 
+        this->scene_builder = scene_builder; 
+        scene_builder->InitObjectTypes(*this);
     }
 
 protected:
@@ -125,20 +137,23 @@ protected:
 
 protected:
     RenderableScene cached_scene{*this}; ///< cache of objects in scene
+    const IRenderableSceneBuilder* scene_builder = nullptr;   ///< client model to build scene
 private:
     using ContextID = unsigned int;
     ContextID RequestNewContextID() const;
     ContextID ctx_id = RequestNewContextID();
-    std::vector<std::unique_ptr<IShaderProgram>> programs;
-    std::map<RenderableObjectTypeID, ShaderProgramID> types;
+
+    std::vector<std::unique_ptr<IShaderProgram>> programs;  ///< shader programs
+    std::map<ShaderProgramID, RenderableObjectTypeID> object_types_by_shader;
 };
+
 
 // ------------------------- Scene object types -----------------------
 
 namespace scene3d
 {
 
-    enum class ETypeID : RenderableObjectTypeID
+    enum ETypeID : RenderableObjectTypeID
     {
         STATIC_MESH = 0,
         TOTAL
@@ -160,13 +175,10 @@ namespace scene3d
             Geometry(const Vertex *vertices, size_t vertices_count) : vertices(vertices), vertices_count(vertices_count) {}
         };
 
-        //----------- Static API ------------
-        static ShaderProgramID BuildShaderForContext(IRenderer &renderer);
-
         // ----------- API ------------------
         StaticMeshObject(const Geometry &geometry);
         virtual void Render(const IRenderer &renderer, double timestamp) const override;
-        virtual constexpr RenderableObjectTypeID GetTypeID() const override 
+        virtual RenderableObjectTypeID GetTypeID() const override 
         { return static_cast<RenderableObjectTypeID>(ETypeID::STATIC_MESH); }
     protected:
         // transform

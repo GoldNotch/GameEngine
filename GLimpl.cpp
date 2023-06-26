@@ -213,12 +213,6 @@ struct StaticMeshObject::Impl
     }
 };
 
-ShaderProgramID StaticMeshObject::BuildShaderForContext(IRenderer &renderer)
-{
-    auto& data = renderer.NewShaderProgram<ShaderProgram>();
-    return data.GetID();
-}
-
 // ------------------- API --------------------------
 
 StaticMeshObject::StaticMeshObject(const Geometry &geometry)

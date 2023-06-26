@@ -20,7 +20,8 @@
 
 // ---------------------------- client app ----------------------------
 
-class TriangleApp : public IApp
+class TriangleApp : public IApp, 
+                    public IRenderableSceneBuilder
 {
     constexpr static float vertices[] = {-0.5f, -0.5f,
                                          0.5f, -0.5f,
@@ -31,6 +32,11 @@ class TriangleApp : public IApp
         scene3d::StaticMeshObject::Geometry geom
                 (reinterpret_cast<const scene3d::StaticMeshObject::Vertex *>(vertices), 3);
         auto &triangle = scene.PlaceObject<scene3d::StaticMeshObject>(geom);
+    }
+
+    virtual void InitObjectTypes(IRenderer& renderer) const override
+    {
+        
     }
 
 protected:
@@ -53,23 +59,13 @@ extern "C"
 
 struct MainRenderer : public IRenderer
 {
-    MainRenderer()
-        : static_mesh_shader_id(scene3d::StaticMeshObject::BuildShaderForContext(*this))
-    {
-    }
-
-    void BindApp(const IApp *app)
-    {
-        this->app = app;
-    }
-
     virtual void RenderPass(double timestamp) override
     {
         glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
-        if (app)
+        if (scene_builder)
         {
-            app->BuildScene(cached_scene); // long operation
+            scene_builder->BuildScene(cached_scene); // long operation
             // PrepareRenderData(cached_scene);
             RenderWithShaderProgram(static_mesh_shader_id, timestamp);
         }
@@ -80,9 +76,6 @@ protected:
     {
         //traverse objects in scene and check vbos
     }*/
-private:
-    const IApp *app = nullptr;
-    ShaderProgramID static_mesh_shader_id;
 };
 
  // ---------------------------- main -------------------------------
@@ -98,7 +91,7 @@ int main()
                             {
         main_wnd.Close();
         std::printf("application finished with %i\n", result_code); });
-    renderer.BindApp(&app);
+    renderer.BindSceneBuilder(&app);
 
     app.Run();
     OSWindow::RunWindows();
