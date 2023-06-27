@@ -35,15 +35,19 @@ private:
     IShaderProgram &operator=(const IShaderProgram &) = delete;
 };
 
+
+/// @brief long-life buffer on GPU 
 struct IGPUStaticBuffer
 {
     explicit IGPUStaticBuffer(size_t elem_size, size_t count, const void *data = nullptr)
         : size(elem_size * count){};
     virtual ~IGPUStaticBuffer() = default;
+    /// change size of buffer
     virtual void Realloc(size_t elem_size, size_t count, const void *data = nullptr)
     {
         size = elem_size * count;
     };
+    /// upload data to allocated buffer (without reallocation)
     virtual void Upload(const void *data, size_t elem_size, size_t count, size_t offset = 0) = 0;
 
 protected:
@@ -52,6 +56,8 @@ private:
     IGPUStaticBuffer(const IGPUStaticBuffer &) = delete;
     IGPUStaticBuffer &operator=(const IGPUStaticBuffer &) = delete;
 };
+
+
 
 struct IRenderer;
 
@@ -80,12 +86,23 @@ struct RenderableScene
 
 private:
     const IRenderer &context;     ///< rendering context
-    std::vector<RenderableGroup> scene_objects; ///< objects grouped by ShaderProgramID
-    
+    std::map<RenderableObjectTypeID, RenderableGroup> scene_objects; ///< objects grouped by ShaderProgramID
+    std::map<RenderableObjectTypeID, ShaderProgramID> shaders_by_objects_group;
+
     /// actions executed when new shader program created
-    void OnShaderProgramCreated(ShaderProgramID id) noexcept;
+    void AddNewObjectsType(RenderableObjectTypeID type_id, ShaderProgramID program_id) noexcept
+    { 
+        scene_objects.insert(std::make_pair(type_id, RenderableGroup()));
+        shaders_by_objects_group.insert(std::make_pair(type_id, program_id));
+    }
+
+    // Find shader program by id
+    ShaderProgramID GetGroupShaderProgram(RenderableObjectTypeID type_id)
+    { return shaders_by_objects_group[type_id]; }
+
     /// Get Objects with the same shader program
-    const RenderableGroup &GetObjectsByShaderProgram(ShaderProgramID id) const;
+    const RenderableGroup &GetGroup(RenderableObjectTypeID type_id) const
+    { return scene_objects[type_id]; }
 
     RenderableScene(const RenderableScene &) = delete;
     RenderableScene &operator=(const RenderableScene &) = delete;
@@ -97,9 +114,12 @@ T & RenderableScene::PlaceObject(Args &&...args)
     std::unique_ptr<T> obj = std::make_unique<T>(args);
 }
 
+/// @brief interface for object will add renderable objects in renderer
 struct IRenderableSceneBuilder
 {
-    virtual void InitObjectTypes(IRenderer& renderer) const = 0;
+    /// scene and renderer initialization
+    virtual void InitScene(IRenderer& renderer) const = 0;
+    /// build scene for rendering
     virtual void BuildScene(RenderableScene & scene) const = 0;
 };
 
@@ -120,38 +140,48 @@ struct IRenderer
     {
         ShaderProgramID new_id = programs.size();
         T* program = new T(new_id);
-        cached_scene.OnShaderProgramCreated(new_id);
+        programs.emplace_back(program);
         return *program;
     }
 
+    /// Get shader program by id
+    const IShaderProgram& GetBuiltProgram(ShaderProgramID id) const
+    { 
+        assert(id < programs.size() && programs[id]);
+        return *programs[id]; 
+    }
+    /// bind scene builder. Call before render pass
     void BindSceneBuilder(const IRenderableSceneBuilder* scene_builder)
     { 
         this->scene_builder = scene_builder; 
-        scene_builder->InitObjectTypes(*this);
+        scene_builder->InitScene(*this);
     }
-
-protected:
-    /// traverse scene, form vbos and send it to GPU
-    // virtual void PrepareRenderData(const RenderableScene& scene) = 0;
-    void RenderWithShaderProgram(ShaderProgramID id, double timestamp) const;
 
 protected:
     RenderableScene cached_scene{*this}; ///< cache of objects in scene
     const IRenderableSceneBuilder* scene_builder = nullptr;   ///< client model to build scene
+    void RenderObjectsGroup(RenderableObjectTypeID type_id, double timestamp) const;
 private:
     using ContextID = unsigned int;
     ContextID RequestNewContextID() const;
     ContextID ctx_id = RequestNewContextID();
 
     std::vector<std::unique_ptr<IShaderProgram>> programs;  ///< shader programs
-    std::map<ShaderProgramID, RenderableObjectTypeID> object_types_by_shader;
 };
 
+
+/// @brief Function to init shaders. Use specialization for each object type to define how to initialize shader
+/// @tparam T - object type
+/// @param renderer 
+template<typename T>
+void InitShaders(IRenderer& renderer)
+{assert(false && "not implemented");}
 
 // ------------------------- Scene object types -----------------------
 
 namespace scene3d
 {
+    // object is geometry + placement
 
     enum ETypeID : RenderableObjectTypeID
     {
@@ -162,6 +192,7 @@ namespace scene3d
     /// group - MeshObject
     struct StaticMeshObject : public IRenderable
     {
+        friend void InitShaders<StaticMeshObject>(IRenderer&);
         //------------ Types ---------------
         struct Vertex
         {
@@ -179,7 +210,7 @@ namespace scene3d
         StaticMeshObject(const Geometry &geometry);
         virtual void Render(const IRenderer &renderer, double timestamp) const override;
         virtual RenderableObjectTypeID GetTypeID() const override 
-        { return static_cast<RenderableObjectTypeID>(ETypeID::STATIC_MESH); }
+        { return ETypeID::STATIC_MESH; }
     protected:
         // transform
         struct Impl;

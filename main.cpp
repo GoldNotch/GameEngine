@@ -34,9 +34,9 @@ class TriangleApp : public IApp,
         auto &triangle = scene.PlaceObject<scene3d::StaticMeshObject>(geom);
     }
 
-    virtual void InitObjectTypes(IRenderer& renderer) const override
+    virtual void InitScene(IRenderer& renderer) const override
     {
-        
+        InitShaders<scene3d::StaticMeshObject>(renderer);
     }
 
 protected:
@@ -67,15 +67,9 @@ struct MainRenderer : public IRenderer
         {
             scene_builder->BuildScene(cached_scene); // long operation
             // PrepareRenderData(cached_scene);
-            RenderWithShaderProgram(static_mesh_shader_id, timestamp);
+            RenderObjectsGroup(scene3d::STATIC_MESH, timestamp);
         }
     }
-
-protected:
-    /*virtual void PrepareRenderData(const RenderableScene& scene) override
-    {
-        //traverse objects in scene and check vbos
-    }*/
 };
 
  // ---------------------------- main -------------------------------

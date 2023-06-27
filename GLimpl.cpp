@@ -225,3 +225,9 @@ void StaticMeshObject::Render(const IRenderer &renderer, double timestamp) const
     impl->Bind();
     glDrawArrays(GL_TRIANGLES, 0,  3);
 }
+
+template<>
+void InitShaders<StaticMeshObject>(IRenderer& renderer)
+{
+    renderer.NewShaderProgram<StaticMeshObject::ShaderProgram>(STATIC_MESH);
+}

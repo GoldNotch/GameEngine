@@ -23,22 +23,11 @@ IRenderer::ContextID IRenderer::RequestNewContextID() const
     return last_context_id++;
 }
 
-void IRenderer::RenderWithShaderProgram(ShaderProgramID id, double timestamp) const
+void IRenderer::RenderObjectsGroup(RenderableObjectTypeID type_id, double timestamp) const
 {
-    programs[id]->Bind();
-    const auto &objs = cached_scene.GetObjectsByShaderProgram(id);
+    ShaderProgramID program_id = cached_scene.GetGroupShaderProgram(type_id);
+    GetBuiltProgram(program_id).Bind();
+    const auto &objs = cached_scene.GetGroup(type_id);
     for (auto &&obj : objs)
         obj->Render(*this, timestamp);
-}
-
-// here must be uploaders
-
-const RenderableScene::RenderableGroup &RenderableScene::GetObjectsByShaderProgram(ShaderProgramID id) const
-{
-    return scene_objects[id];
-}
-
-void RenderableScene::OnShaderProgramCreated(ShaderProgramID id) noexcept
-{
-    scene_objects.emplace_back();
 }
