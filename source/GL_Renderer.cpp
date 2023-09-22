@@ -242,3 +242,9 @@ void Renderer::RenderPass(double timestamp)
 }
 
 }
+
+template<>
+void InitShaders<StaticMeshObject>(IRenderer& renderer)
+{
+    renderer.NewShaderProgram<StaticMeshObject::ShaderProgram>(STATIC_MESH);
+}
