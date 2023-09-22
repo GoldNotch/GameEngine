@@ -46,4 +46,6 @@ build/*
 # Built Visual Studio Code Extensions
 *.vsix
 
+.vs/*
 .vscode/*
+out/*

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "Renderer.hpp"
+#include "Scene2D.hpp"
 #include <string>
 #include <fstream>
 #include <streambuf>
@@ -21,6 +21,8 @@ extern "C"
 {
 #include <GL/glew.h>
 }
+
+using namespace Framework;
 
 void IRenderer::InitRenderingSystem()
 {
@@ -164,64 +166,79 @@ protected:
     GLuint id;
 };*/
 
-// ========================== MeshObject.cpp =======================
 
-using namespace scene3d;
 
-struct StaticMeshObject::ShaderProgram : public IShaderProgram
+
+// =========================== Shader programs ======================
+
+
+
+namespace scene2d
 {
-    friend class StaticMeshObject::Impl;
-    GLuint program = build_shaders(L"Shaders/triangle.vert", L"Shaders/triangle.frag");
-    GLuint VAO;
-    // uniform locations
-    //...
+// ========================= StaticMesh =============================
 
-    ShaderProgram(ShaderProgramID id) 
-        : IShaderProgram(id)
+struct StaticMeshBuilder::GPUData
+{
+    StaticBufferObject<GL_ARRAY_BUFFER> vbo;
+};
+
+struct StaticMeshBuilder::Program : public IShaderProgram
+{
+    Program()
     {
-        glGenVertexArrays(1, &VAO);
-        // here it finds locations of all uniform variables
+        glGenVertexArrays(1, &vao);
+        /*glBindVertexArray(vao);
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(0);
+        glBindVertexArray(0);  */   
     }
 
-    virtual ~ShaderProgram() override
+    virtual ~Program() override
     {
-        glDeleteVertexArrays(1, &VAO);
-    }
+        glDeleteProgram(gl_program);
+        glDeleteVertexArrays(1, &vao);
+    };
+
+    virtual ObjectsTypeID GetObjectsTypeID() const override
+    { return static_cast<ObjectsTypeID>(ObjectTypes::STATIC_MESH); }
 
     virtual void Bind() const override
     {
-        glUseProgram(program);
-        glBindVertexArray(VAO);
+        glUseProgram(gl_program);
+        glBindVertexArray(vao);
     }
-};
 
-/// @brief OpenGL data
-struct StaticMeshObject::Impl
-{
-    // all settings for rendering
-    StaticBufferObject<GL_ARRAY_BUFFER> vbo;
-    // IBO
-    // some materials/textures
-
-    Impl(const Geometry &geometry)
-        : vbo(sizeof(Vertex), geometry.vertices_count, geometry.vertices)
-    {}
-
-    void Bind()
+    void RenderObject(double timestamp, ObjectsTypeID type_id, const IRenderableScene& scene)
     {
-        vbo.Bind();
+        
     }
+
+private:
+    GLint gl_program = build_shaders(L"Shaders/triangle.vert", L"Shaders/triangle.frag");
+    GLuint vao;
+    //std::unordered_map<StaticMesh, StaticMesh::GPUData> gpu_buffers; // TODO: use cache
 };
 
-// ------------------- API --------------------------
 
-StaticMeshObject::StaticMeshObject(const Geometry &geometry)
-    : impl(new Impl(geometry))
+
+
+// ============================= Renderer ===============================
+
+Renderer::Renderer(const IRenderableSceneBuilder& scene_builder)
+    : IRenderer(scene_builder)
+    , static_mesh_program(new StaticMeshBuilder::Program())
 {
 }
 
-void StaticMeshObject::Render(const IRenderer &renderer, double timestamp) const
+void Renderer::RenderPass(double timestamp) 
 {
-    impl->Bind();
-    glDrawArrays(GL_TRIANGLES, 0,  3);
+    glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+    auto scene = scene_builder.BuildScene();
+
+    //set camera in 3d
+    //render scene
+    scene->RenderGroup(static_cast<ObjectsTypeID>(ObjectTypes::STATIC_MESH), timestamp);
+}
+
 }
