@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include <cstdio>
-#include "Window.hpp"
-#include "App.hpp"
+#include "../Framework/App.hpp"
 #include <thread>
 #include <cmath>
 
-#include "Scene2D.hpp"
+#include "../Framework/Scene2D.hpp"
 using namespace Framework;
 // ---------------------------- client app ----------------------------
 
@@ -26,18 +25,8 @@ class TriangleApp : public IApp
 	constexpr static float vertices[] = { -0.5f, -0.5f,
 										 0.5f, -0.5f,
 										 0.0f, 0.5f };
-	/// called 60 times per second before rendering - collect data about visualizable scene
-	std::unique_ptr<IRenderableScene> BuildScene() const override
-	{
-		std::unique_ptr<scene2d::Scene> scene = std::make_unique<scene2d::Scene>();
-		const auto& triangle_mesh = scene->NewGeometry<scene2d::StaticMeshBuilder::Vertex>(
-			CPUBufferPtr<float>(vertices, 6).ReinterpretCast<scene2d::StaticMeshBuilder::Vertex>()
-			);
-		scene2d::SceneObject obj(scene2d::ObjectTypes::STATIC_MESH, scene2d::Placement{}, &triangle_mesh);
-		scene->PlaceObject(obj);
-		return scene;
-	}
-
+public:
+	using IApp::IApp;
 protected:
 	int AppMain() noexcept override
 	{
@@ -63,7 +52,7 @@ int main()
 	// ...
 
 	// create and run app
-	TriangleApp app {main_wnd};
+	TriangleApp app(std::move(main_wnd));
 	app.SetOnFinishCallback([&](int result_code)
 		{
 			std::printf("application finished with %i\n", result_code);

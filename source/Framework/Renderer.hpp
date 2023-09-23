@@ -15,7 +15,6 @@
 #include <vector>
 #include <array>
 #include <memory>
-#include <span>
 #include <cassert>
 #include <cstddef>
 

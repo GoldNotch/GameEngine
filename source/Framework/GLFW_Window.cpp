@@ -73,8 +73,10 @@ OSWindow::OSWindow(OSWindow&& other) noexcept
 /// @return
 OSWindow& OSWindow::operator=(OSWindow&& other) noexcept
 {
-	impl_data = std::move(other.impl_data);
-	child_windows = std::move(other.child_windows);
+	if (&other == this)
+		return *this;
+	std::swap(impl_data, other.impl_data);
+	std::swap(child_windows, other.child_windows);
 	return *this;
 }
 

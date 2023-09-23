@@ -47,12 +47,11 @@ namespace Framework
 		/// @brief creates and open new window
 		OSWindow& CreateChildWindow(int width, int height, const char* title) &;
 		template<typename T, typename ...Args>
-		T& InitRenderer(Args ...&& args) &
+		T& InitRenderer(Args &&... args) &
 		{
 			assert(renderer == nullptr); // you can't init new renderer at once
-			auto new_renderer = std::make_unique<T>(std::forward(args)...);
-			renderer = new_renderer;
-			return *new_renderer;
+			renderer = std::make_unique<T>(std::forward(args)...);
+			return static_cast<T&>(*renderer);
 		}
 		/// create main window
 		static OSWindow& CreateMainWindow(int width, int height, const char* title);

@@ -27,7 +27,7 @@ namespace Framework
 		using FinishCallback = std::function<void(int result_code)>;
 		using AppFrameID = unsigned long long; ///< index of iteration
 
-		IApp(OSWindow& window) : window(window) {}
+		IApp(OSWindow&& window) : window(std::move(window)) {}
 		/// @brief destructor
 		virtual ~IApp() 
 		{
@@ -71,7 +71,7 @@ namespace Framework
 
 	protected:
 		//output settings
-		OSWindow& window; ///< window fpr app's output
+		OSWindow window; ///< window fpr app's output
 
 	private:
 		std::unique_ptr<std::thread> app_thread = nullptr; ///< thread for app

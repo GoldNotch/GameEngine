@@ -14,17 +14,8 @@
 #pragma once
 #include "Renderer.hpp"
 
-namespace scene2d
+namespace Framework::scene2d
 {
-
-/// @brief identifiers for objects. Uses for scene objects storage
-enum class ObjectTypes : ObjectsTypeID
-{
-    STATIC_MESH,
-    TOTAL
-};
-
-
 using vec2 = std::array<float, 2>;
 using mat3 = std::array<float, 9>;
 
@@ -34,23 +25,6 @@ struct Placement
     vec2 pos;
     vec2 rotation;
     vec2 scale;
-};
-
-/// @brief object placed on scene
-struct SceneObject : public IRenderable
-{
-    SceneObject(ObjectTypes type, Placement placement, const Geometry* geometry)
-        : type(static_cast<ObjectsTypeID>(type))
-        , placement(placement)
-        , geometry(geometry)
-    {}
-    virtual ~SceneObject() = default;
-    const Geometry * GetGeometry() const { return geometry; }
-    constexpr ObjectsTypeID GetTypeID() const { return type; }
-private:
-    const Geometry* geometry = nullptr;
-    Placement placement;
-    ObjectsTypeID type;
 };
 
 struct StaticMeshBuilder
@@ -93,7 +67,7 @@ private:
 /// @brief renderer for 2d scene.
 struct Renderer : public IRenderer
 {
-    Renderer(const IRenderableSceneBuilder& scene_builder);
+    Renderer();
     virtual ~Renderer() override = default;
 
     /// @brief main function for rendering 

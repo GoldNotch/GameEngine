@@ -28,10 +28,10 @@ FOREACH(lib ${ALL_DEPENDENCIES})
 ENDFOREACH()
   
 set(${this_target}_SOURCE_FILES
-  "source/main.cpp"
-  "source/GLFW_Window.cpp"  
-  "source/Renderer.cpp"
-  "source/GL_Renderer.cpp"
+  "source/triangleApp/main.cpp"
+  "source/Framework/GLFW_Window.cpp"  
+  "source/Framework/Renderer.cpp"
+  "source/Framework/GL_Renderer.cpp"
 )
 
 # build app
