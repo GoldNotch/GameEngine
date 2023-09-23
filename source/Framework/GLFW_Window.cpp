@@ -83,8 +83,7 @@ OSWindow& OSWindow::operator=(OSWindow&& other) noexcept
 /// @brief destructor
 OSWindow::~OSWindow()
 {
-	child_windows.clear();
-	glfwSetWindowShouldClose(impl_data->glfw_wnd, GLFW_TRUE);
+	Close();
 	glfwDestroyWindow(impl_data->glfw_wnd);
 	if (rendering_thread)
 		rendering_thread->join();
@@ -97,7 +96,7 @@ OSWindow::~OSWindow()
 /// @param height
 /// @param title
 /// @return
-OSWindow& OSWindow::CreateChildWindow(int width, int height, const char* title) &
+OSWindow& OSWindow::CreateChildWindow(int width, int height, const char* title)&
 {
 	auto& wnd = child_windows.emplace_back(width, height, title);
 	return wnd;
@@ -176,11 +175,10 @@ void OSWindow::RenderPass(bool is_main_window) noexcept
 	if (is_main_window && prerender_timestamp - last_rendering_timestamp < rendering_interval)
 		return;
 
-	{
-		std::scoped_lock lk{ rendering_mutex };
-		// call renderer
-		renderer->RenderPass(prerender_timestamp);
-	}
+	// Maybe synchronisation should be here
+	renderer->BeginRender();
+	renderer->RenderPass(prerender_timestamp);
+	renderer->EndRender();
 
 	glfwSwapBuffers(impl_data->glfw_wnd);
 	last_rendering_timestamp = glfwGetTime();

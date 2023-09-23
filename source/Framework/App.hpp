@@ -21,15 +21,13 @@
 
 namespace Framework
 {
-
 	struct IApp
 	{
 		using FinishCallback = std::function<void(int result_code)>;
-		using AppFrameID = unsigned long long; ///< index of iteration
 
 		IApp(OSWindow&& window) : window(std::move(window)) {}
 		/// @brief destructor
-		virtual ~IApp() 
+		virtual ~IApp()
 		{
 			is_running = false;
 			if (app_thread)
@@ -62,23 +60,25 @@ namespace Framework
 		virtual int AppMain() = 0;
 
 		/// starts new app frame
-		virtual AppFrameID BeginFrame() { return current_frame_id++; }
+		virtual TickID BeginTick() { return current_tick_id; }
 		/// ends app frame, synchronise with renderer to pass data
-		virtual void EndFrame() 
+		virtual void EndTick()
 		{
-			
+			// sync wuth renderer thread
+			window.GetRenderer().PushNewTickData(current_tick_id /*, pass copiable scene data*/);
+			current_tick_id++;
 		}
 
 	protected:
 		//output settings
-		OSWindow window; ///< window fpr app's output
+		OSWindow window; ///< window for app's output
 
 	private:
 		std::unique_ptr<std::thread> app_thread = nullptr; ///< thread for app
 		FinishCallback on_finish = nullptr;	///< callback function called after app is closed
 		std::atomic_bool is_running = false; ///< atomic flag that app is running
 
-		AppFrameID current_frame_id = 0; ///< counter for frames
+		TickID current_tick_id = 0; ///< counter for ticks
 	private:
 		IApp(const IApp&) = delete;
 		IApp& operator=(IApp&) = delete;

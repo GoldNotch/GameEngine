@@ -33,9 +33,9 @@ protected:
 		// here is app logic
 		while (IsRunning())
 		{
-			BeginFrame();
+			BeginTick();
 			// todo some logic
-			EndFrame();
+			EndTick();
 		}
 		return 0;
 	}
@@ -48,6 +48,7 @@ int main()
 	// Renderer renderer;
 	OSWindow& main_wnd = OSWindow::CreateMainWindow(500, 600, "main_window");
 	auto& renderer = main_wnd.InitRenderer<scene2d::Renderer>();
+	
 	// init window and renderer
 	// ...
 

@@ -17,6 +17,7 @@
 #include <memory>
 #include <cassert>
 #include <cstddef>
+#include <condition_variable>
 
 namespace Framework
 {
@@ -107,20 +108,37 @@ namespace Framework
 		virtual void Render(double timestamp) const = 0;
 	};
 
+	using FrameID = unsigned long long; ///< rendering frame identifier
+	using TickID = unsigned long long; ///< app's tick identifier
+	using ContextID = unsigned int; ///< id of graphic context
+	ContextID RequestNewContextID();
 
 	/// own context data and begin rendering. thread-local rendering interface
 	struct IRenderer
 	{
 		static void InitRenderingSystem();
+		static const size_t max_difference_between_ticks_and_frames = 2;
+		friend class OSWindow; // to OSWindow can access to RenderPass
 		//-------------- API ---------------------
 		/// destructor
 		virtual ~IRenderer() = default;
+		/// push new data to render it. Blocks rendering thread
+		void PushNewTickData(TickID tick_id /*pass copyable scene data*/);
+	protected:
+		/// starts rendering. call it before RenderPass
+		virtual void BeginRender();
 		/// render frame function
 		virtual void RenderPass(double timestamp) = 0;
+		/// ends rendering. Call it after RenderPass
+		virtual void EndRender();
 	private:
-		using ContextID = unsigned int;
-		ContextID RequestNewContextID() const;
 		ContextID ctx_id = RequestNewContextID();
+
+		TickID last_drawn_tick_id = static_cast<TickID>(-1);
+		TickID drawing_tick_id = static_cast<TickID>(-1);
+
+		std::mutex mutex;
+		std::condition_variable cv_can_render;
 	};
 
 }

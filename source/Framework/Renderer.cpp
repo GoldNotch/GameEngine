@@ -18,10 +18,43 @@
 namespace Framework
 {
 
-    IRenderer::ContextID IRenderer::RequestNewContextID() const
-    {
-        static std::atomic<ContextID> last_context_id = 0;
-        return last_context_id++;
-    }
+	ContextID RequestNewContextID()
+	{
+		static std::atomic<ContextID> last_context_id = 0;
+		return last_context_id++;
+	}
 
+
+	void IRenderer::PushNewTickData(TickID tick_id)
+	{
+		{
+			std::unique_lock<std::mutex> lk{ mutex };
+			cv_can_render.wait(lk,
+				[this] {
+					return drawing_tick_id - last_drawn_tick_id <= max_difference_between_ticks_and_frames;
+				});
+		}
+
+		{
+			std::lock_guard<std::mutex> lk{ mutex };
+			drawing_tick_id = tick_id;
+		}
+		cv_can_render.notify_one();
+	}
+
+	void IRenderer::BeginRender()
+	{
+		// renderer shouldn't draw the same frame twice (or more)
+		std::unique_lock<std::mutex> lk(mutex);
+		cv_can_render.wait(lk, [this] {return drawing_tick_id != last_drawn_tick_id; });
+	}
+
+	void IRenderer::EndRender()
+	{
+		{
+			std::scoped_lock<std::mutex> lk{ mutex };
+			last_drawn_tick_id = drawing_tick_id;
+		}
+		cv_can_render.notify_one();
+	}
 }
