@@ -19,11 +19,11 @@
 #include <thread>
 #include <mutex>
 #include <functional>
-#include "Renderer.hpp"
+#include <condition_variable>
+
 
 namespace Framework
 {
-
 	class OSWindow final
 	{
 		//TODO: make event-oriented mode for rendering calls (i.e. call rendering as events on user actions)
@@ -32,39 +32,24 @@ namespace Framework
 		/// ===================== Types =====================
 
 		/// =================== API ========================
-			/// @brief move constructor
-		OSWindow(OSWindow&& other) noexcept;
+		/// @brief move constructor
+		OSWindow(OSWindow&& other) = default;
 		/// @brief move operator
-		OSWindow& operator=(OSWindow&& other) noexcept;
+		OSWindow& operator=(OSWindow&& other) = default;
 		/// destructor
-		~OSWindow() noexcept;
+		~OSWindow();
 
-		/// Close window and stop rendering
-		void Close() noexcept;
-		/// check is window should close
-		bool IsClosing() const noexcept;
 		/// @brief check if this window is main window of app
 		inline bool IsMainWindow() const noexcept { return this == OSWindow::main_window.get(); }
 		/// @brief creates and open new window
 		OSWindow& CreateChildWindow(int width, int height, const char* title)&;
-		/// create renderer for window
-		template<typename T, typename ...Args>
-		T& InitRenderer(Args &&... args)&
-		{
-			assert(renderer == nullptr); // you can't init new renderer at once
-			renderer = std::make_unique<T>(std::forward(args)...);
-			return static_cast<T&>(*renderer);
-		}
-		/// Get renderer
-		const IRenderer& GetRenderer() const& { return *renderer; }
-		/// Get renderer
-		IRenderer& GetRenderer() & { return *renderer; }
+
 		/// create main window
 		static OSWindow& CreateMainWindow(int width, int height, const char* title);
 		/// Get main window
 		static inline OSWindow& GetMainWindow() noexcept { return *OSWindow::main_window; }
-		/// run all window loops. Block current thread
-		static void RunWindows() noexcept;
+		/// run all threads and processes
+		static void RunWindows();
 
 	private:
 		/// ================== Private Types =======================
@@ -74,41 +59,28 @@ namespace Framework
 			template <class U, class... Args>
 			void construct(U* p, Args &&...args)
 			{
-				::new ((void*)p) U(std::forward<Args>(args)...);
+				::new (reinterpret_cast<void*>(p)) U(std::forward<Args>(args)...);
 			}
 
 			template <class U>
-			struct rebind
-			{
-				typedef WindowAllocator other;
-			};
+			struct rebind{ typedef WindowAllocator other; };
 		};
-		friend class WindowAllocator; 
+		friend struct WindowAllocator;
 
-		struct ImplData;
+		class ImplData;
 		/// =================== Data =============================
 	private:
 		static std::unique_ptr<OSWindow> main_window;           ///< global pointer on main window of app
+		static std::unique_ptr<std::thread> input_thread;		///< thread for input handling
 		std::vector<OSWindow, WindowAllocator> child_windows;   ///< window contains its own sub windows
 
 		std::unique_ptr<ImplData> impl_data;    ///< pointer on private data. Right now it's pointer on GLFWwindow structure
 
-		std::unique_ptr<std::thread> rendering_thread = nullptr;///< child windows renders in separate thread. It's null in MainWindow
-		std::unique_ptr<IRenderer> renderer = nullptr;
-		double rendering_interval = 0.0;        ///< time interval between rendering in seconds (= Hz of monitor)
-		double last_rendering_timestamp = 0.0;  ///< main window uses to skip rendering_interval time (main window used only)
-		double fps = 0.0;                       ///< framerate per second
-
 	/// ================== Service functions ================
 	private:
-		/// bind context before rendering
-		void CreateContext();
-		/// One pass opf rendering
-		void RenderPass(bool is_main_window);
-		/// Service function to run rendering threads for child windows
-		void RunChildWindowsLoops(bool is_main_window);
-		/// init viewport
-		void InitViewport();
+		/// check is window should close
+		bool IsClosing() const noexcept;
+		static void EventsHandlingMain();
 
 		/// Private constructor
 		OSWindow(int width, int height, const char* title);

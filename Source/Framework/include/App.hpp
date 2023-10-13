@@ -65,7 +65,7 @@ namespace Framework
 		virtual void EndTick()
 		{
 			// sync wuth renderer thread
-			window.GetRenderer().PushNewTickData(current_tick_id /*, pass copiable scene data*/);
+			window.GetRenderer().PushTickData(current_tick_id /*, pass copiable scene data*/);
 			current_tick_id++;
 		}
 
