@@ -5,7 +5,7 @@ option(BUILD_WITH_VULKAN "build with vulkan" OFF)
 option(BUILD_WITH_GL "build with open_gl" ON)
 
 # returns all subdirectories in directory
-MACRO(SUBDIRLIST result curdir)
+FUNCTION(SUBDIRLIST result curdir)
   FILE(GLOB children RELATIVE ${curdir} ${curdir}/*)
   SET(dirlist "")
   FOREACH(child ${children})
@@ -14,7 +14,23 @@ MACRO(SUBDIRLIST result curdir)
     ENDIF()
   ENDFOREACH()
   SET(${result} ${dirlist})
-ENDMACRO()
+ENDFUNCTION()
+
+FUNCTION(INCLUDE_DEPENDENCIES DEPS_LIST)
+  foreach (dependency ${this_target}_LOCAL_DEPENDENCIES)
+  if( EXISTS ${THIRD_PARTY_DIR}/${dependency})
+    include_directories(${this_target} ${THIRD_PARTY_DIR}/${dependency}/include)
+  elseif ( EXISTS ${SOURCE_DIR}/${dependency} )
+    if (EXISTS ${SOURCE_DIR}/${dependency}/include)
+      include_directories(${SOURCE_DIR}/${dependency}/include)
+    else()
+      include_directories(${SOURCE_DIR}/${dependency})
+    endif()
+  else()
+    message("Dependency not found in ThirdParty dir neither Source Dir")
+  endif()
+  endforeach()
+ENDFUNCTION()
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -24,6 +40,7 @@ set(this_target "Engine")
 project(${this_target})
 
 set(THIRD_PARTY_DIR ${PROJECT_SOURCE_DIR}/ThirdParty)
+set(SOURCE_DIR ${PROJECT_SOURCE_DIR}/Source)
 
 # ------------ process all dependencies ----------------
 SUBDIRLIST(ALL_DEPENDENCIES ${THIRD_PARTY_DIR})
@@ -31,50 +48,15 @@ FOREACH(lib ${ALL_DEPENDENCIES})
   ADD_SUBDIRECTORY(${THIRD_PARTY_DIR}/${lib})
   include_directories(${THIRD_PARTY_DIR}/${lib}/include)
 ENDFOREACH()
-  
-
-# -------------- all source files ----------------
-include_directories(include)
-set (${this_target}_GL_SOURCE_FILES 
-  "source/Window_GLFW.cpp"  
-  "source/Renderer_GL.cpp"
-)
-
-set(${this_target}_SOURCE_FILES
-  "source/Renderer.cpp"
-  "source/Window.cpp"
-)
-
-# --------------- build app ------------------
-add_library(${this_target} ${${this_target}_SOURCE_FILES})
-set_property(TARGET ${this_target} PROPERTY CXX_STANDARD 20)  
-add_dependencies(${this_target} ${ALL_DEPENDENCIES})
-
-# -------------- definitions ---------------------
-set(${this_target}_COMPILE_DEFINITIONS
-  "-DGLEW_STATIC"
-)
-add_definitions(${${this_target}_COMPILE_DEFINITIONS})
-
-if (MSVC)
-	add_compile_definitions(_HAS_ITERATOR_DEBUGGING=0) # disable iterator debugging in MSVC
-endif()
-
-# -------------- link third-party libraries ------------------
-target_link_libraries(${this_target} glew)
-# glfw is special so link it separatelly
-target_link_libraries(${this_target} glfw ${GLFW_LIBRARIES})
-
-# -------------- link system libraries -----------
-
-set(${this_target}_SYSTEM_LIBRARIES 
-  "-lopengl32"
-  "-lgdi32"
-)
-target_link_libraries(${this_target} ${${this_target}_SYSTEM_LIBRARIES})
 
 
+# ------------- build all libraries -------------------
+SUBDIRLIST(ALL_SUBPROJECTS ${SOURCE_DIR})
+FOREACH(subproject ${ALL_SUBPROJECTS})
+  ADD_SUBDIRECTORY(${SOURCE_DIR}/${subproject})
+ENDFOREACH()
 
+# ----------------- build all executables -------------------
 if (BUILD_EXAMPLES)
     message(STATUS "start build examples")
     set(EXAMPLES_DIR ${PROJECT_SOURCE_DIR}/Examples)
