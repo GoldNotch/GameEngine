@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.12)
+if (BUILD_WITH_GL)
 
 set(this_target "RenderingGL")
 project(${this_target})
@@ -39,3 +40,6 @@ set(${this_target}_SYSTEM_LIBRARIES
   "-lgdi32"
 )
 target_link_libraries(${this_target} ${${this_target}_SYSTEM_LIBRARIES})
+else()
+message("Rendering with GL - disabled")
+endif()
