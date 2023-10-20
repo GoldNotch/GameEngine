@@ -18,3 +18,4 @@ struct DLL_EXPORT DllClass
     ~DllClass();
     void print_foo() const;
 };
+
