@@ -4,3 +4,6 @@
 [submodule "ThirdParty/cpp-channel"]
 	path = ThirdParty/msd_channel
 	url = https://github.com/andreiavrammsd/cpp-channel.git
+[submodule "ThirdParty/enkiTS"]
+	path = ThirdParty/enkiTS
+	url = https://github.com/dougbinks/enkiTS.git
