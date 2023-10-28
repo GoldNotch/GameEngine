@@ -4,11 +4,11 @@ set(this_target "Core")
 project(${this_target})
 
 set(THIRD_PARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty)
-BUILD_DEPENDENCIES(${THIRD_PARTY_DIR} ALL_DEPENDENCIES)
+BUILD_THIRD_PARTY(${THIRD_PARTY_DIR} ALL_DEPENDENCIES)
 
 set (${this_target}_SOURCE_FILES 
 "main.cpp"
-)
+ "TypeMapping.hpp")
 
 set (${this_target}_DEPENDENCIES
 )
@@ -20,7 +20,7 @@ set_property(TARGET ${this_target} PROPERTY CXX_STANDARD ${GLOBAL_CXX_STANDARD})
 set_property(TARGET ${this_target} PROPERTY C_STANDARD ${GLOBAL_C_STANDARD})  
 if (NOT ${ALL_DEPENDENCIES} STREQUAL "")
 	add_dependencies(${this_target} ${ALL_DEPENDENCIES})
-	INCLUDE_DEPENDENCIES(${this_target} PRIVATE ${THIRD_PARTY_DIR})
+	INCLUDE_THIRD_PARTY(${this_target} PRIVATE ${THIRD_PARTY_DIR})
 endif()
 
 #---------------- Link third-party libraries ---------------
