@@ -1,32 +1,25 @@
-cmake_minimum_required(VERSION 3.12)
-if (BUILD_WITH_GL)
-
-set(this_target "RenderingGL")
-project(${this_target})
+set(THIRD_PARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty)
+BUILD_DEPENDENCIES(${THIRD_PARTY_DIR} ALL_DEPENDENCIES)
 
 set (${this_target}_SOURCE_FILES 
 )
 
-set (${this_target}_LOCAL_DEPENDENCIES
-  "Rendering"
-  "glfw"
-  "glew"
-)
-
 # ----------------------- build library -------------------------
 add_library(${this_target} SHARED ${this_target}_SOURCE_FILES)
-set_property(TARGET ${this_target} PROPERTY CXX_STANDARD 20)  
-add_dependencies(${this_target} ${this_target}_LOCAL_DEPENDENCIES)
-INCLUDE_DEPENDENCIES(${this_target}_LOCAL_DEPENDENCIES)
+set_property(TARGET ${this_target} PROPERTY CXX_STANDARD ${GLOBAL_CXX_STANDARD})  
+set_property(TARGET ${this_target} PROPERTY C_STANDARD ${GLOBAL_C_STANDARD})  
+target_include_directories(${this_target} PRIVATE "../")
 
-# --------------------- link libraries -------------------
+add_dependencies(${this_target} ${ALL_DEPENDENCIES})
+INCLUDE_DEPENDENCIES(${this_target} PRIVATE ${THIRD_PARTY_DIR})
+
+# --------------------- link third-party libraries -------------------
 
 target_link_libraries(${this_target} glew)
-target_link_libraries(${this_target} glfw ${GLFW_LIBRARIES})
 
 # -------------- definitions ---------------------
 set(${this_target}_COMPILE_DEFINITIONS
-
+	"-DBUILD_DLL"
 )
 add_definitions(${${this_target}_COMPILE_DEFINITIONS})
 
@@ -37,9 +30,5 @@ endif()
 # -------------- link system libraries -----------
 set(${this_target}_SYSTEM_LIBRARIES 
   "-lopengl32"
-  "-lgdi32"
 )
 target_link_libraries(${this_target} ${${this_target}_SYSTEM_LIBRARIES})
-else()
-message("Rendering with GL - disabled")
-endif()

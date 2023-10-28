@@ -14,24 +14,19 @@
 #include <cstdio>
 #include <thread>
 #include <cmath>
-//#include <Framework/Window.hpp>
 
-//using namespace Framework;
-// ---------------------------- client app ----------------------------
+#include <App.hpp>
 
+struct App : public Engine::IApp
+{
+	void tick() override { }
+};
 
 // ---------------------------- main -------------------------------
 
 int main()
 {
-	// Renderer renderer;
-	//OSWindow& main_wnd = OSWindow::CreateMainWindow(500, 600, "main_window");
-	
-	//OSWindow::RunWindows();
-	// init window and renderer
-	// ...
-
-
-	
+	App app;
+	Engine::RunApp(app);
 	return 0;
 }

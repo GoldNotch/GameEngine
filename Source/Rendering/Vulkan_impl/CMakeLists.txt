@@ -1,33 +1,25 @@
-cmake_minimum_required(VERSION 3.12)
-if (BUILD_WITH_VULKAN)
-
-set(this_target "RenderingVK")
-project(${this_target})
+set(THIRD_PARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty)
+BUILD_DEPENDENCIES(${THIRD_PARTY_DIR} ALL_DEPENDENCIES)
 
 set (${this_target}_SOURCE_FILES 
-  "dllmain.cpp"
-)
-
-set (${this_target}_LOCAL_DEPENDENCIES
-  "Rendering"
-  "glfw"
 )
 
 # ----------------------- build library -------------------------
 add_library(${this_target} SHARED ${this_target}_SOURCE_FILES)
-set_property(TARGET ${this_target} PROPERTY CXX_STANDARD 20)  
-add_dependencies(${this_target} ${this_target}_LOCAL_DEPENDENCIES)
-INCLUDE_DEPENDENCIES(${this_target}_LOCAL_DEPENDENCIES)
+set_property(TARGET ${this_target} PROPERTY CXX_STANDARD ${GLOBAL_CXX_STANDARD})  
+set_property(TARGET ${this_target} PROPERTY C_STANDARD ${GLOBAL_C_STANDARD})  
+target_include_directories(${this_target} PRIVATE "../")
 
-# --------------------- link libraries -------------------
-find_package(Vulkan REQUIRED FATAL_ERROR)
-target_link_libraries(${this_target} Vulkan::Vulkan)
+add_dependencies(${this_target} ${ALL_DEPENDENCIES})
+INCLUDE_DEPENDENCIES(${this_target} PRIVATE ${THIRD_PARTY_DIR})
 
-target_link_libraries(${this_target} glfw ${GLFW_LIBRARIES})
+# --------------------- link third-party libraries -------------------
+
+target_link_libraries(${this_target} glew)
 
 # -------------- definitions ---------------------
 set(${this_target}_COMPILE_DEFINITIONS
-
+	"-DBUILD_DLL"
 )
 add_definitions(${${this_target}_COMPILE_DEFINITIONS})
 
@@ -37,9 +29,5 @@ endif()
 
 # -------------- link system libraries -----------
 set(${this_target}_SYSTEM_LIBRARIES 
-  "-lgdi32"
 )
 target_link_libraries(${this_target} ${${this_target}_SYSTEM_LIBRARIES})
-else()
-  message("Rendering with Vulkan - disabled")
-endif()

@@ -1,60 +1,26 @@
 cmake_minimum_required(VERSION 3.12)
 include(CMakePrintHelpers)
+include(Utils.cmake)
+
+set(this_target "Engine")
+project(${this_target})
+
+# ------------------ options and settings --------------
 
 option(BUILD_EXAMPLES "Build example programs" ON)
 option(BUILD_WITH_VULKAN "build with vulkan" OFF)
 option(BUILD_WITH_GL "build with OpenGL" OFF)
 
-# returns all subdirectories in directory
-FUNCTION(SUBDIRLIST result curdir)
-  FILE(GLOB children RELATIVE ${curdir} ${curdir}/*)
-  SET(dirlist "")
-  FOREACH(child ${children})
-    IF(IS_DIRECTORY ${curdir}/${child})
-      LIST(APPEND dirlist ${child})
-    ENDIF()
-  ENDFOREACH()
-  SET(${result} ${dirlist} PARENT_SCOPE)
-ENDFUNCTION()
-
-FUNCTION(INCLUDE_DEPENDENCIES DEPS_LIST)
-  foreach (dependency ${this_target}_LOCAL_DEPENDENCIES)
-  if( EXISTS ${THIRD_PARTY_DIR}/${dependency})
-    include_directories(${this_target} ${THIRD_PARTY_DIR}/${dependency}/include)
-  elseif ( EXISTS ${SOURCE_DIR}/${dependency} )
-    if (EXISTS ${SOURCE_DIR}/${dependency}/include)
-      include_directories(${SOURCE_DIR}/${dependency}/include)
-    else()
-      include_directories(${SOURCE_DIR}/${dependency})
-    endif()
-  else()
-    message(WARNING "Dependency not found in ThirdParty dir neither Source Dir")
-  endif()
-  endforeach()
-ENDFUNCTION()
-
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(GLOBAL_C_STANDARD 17)
+set(GLOBAL_CXX_STANDARD 20)
 cmake_policy(SET CMP0060 NEW)
-set(this_target "Engine")
-project(${this_target})
-
-set(THIRD_PARTY_DIR ${PROJECT_SOURCE_DIR}/ThirdParty)
 set(SOURCE_DIR ${PROJECT_SOURCE_DIR}/Source)
-
-# ------------ process all dependencies ----------------
-SUBDIRLIST(ALL_DEPENDENCIES ${THIRD_PARTY_DIR})
-FOREACH(lib ${ALL_DEPENDENCIES})
-  message(STATUS "generate dependency ${lib}")
-  ADD_SUBDIRECTORY(${THIRD_PARTY_DIR}/${lib})
-  include_directories(${THIRD_PARTY_DIR}/${lib}/include)
-ENDFOREACH()
-
 
 # ------------- build all libraries -------------------
 SUBDIRLIST(ALL_SUBPROJECTS ${SOURCE_DIR})
-cmake_print_variables(ALL_SUBPROJECTS)
 FOREACH(subproject ${ALL_SUBPROJECTS})
   message(STATUS "generate project - ${subproject}")
   ADD_SUBDIRECTORY(${SOURCE_DIR}/${subproject})

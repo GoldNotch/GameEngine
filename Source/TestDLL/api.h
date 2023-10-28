@@ -11,8 +11,18 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#define DLL_EXPORT __declspec(dllexport)
-struct DLL_EXPORT DllClass
+
+#ifdef _WIN32
+#if defined(BUILD_DLL) && defined(SHARED) 
+#define API __declspec(dllexport)
+#else
+#define API __declspec(dllimport)
+#endif
+#else
+#define API
+#endif
+
+struct API DllClass
 {
     DllClass();
     ~DllClass();
