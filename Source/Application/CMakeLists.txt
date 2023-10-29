@@ -8,13 +8,10 @@ BUILD_THIRD_PARTY(${THIRD_PARTY_DIR} ALL_DEPENDENCIES)
 
 set (${this_target}_SOURCE_FILES 
   "App.cpp"
- 
-  "ObjectsContainer.hpp")
+	)
 
 set (INNER_DEPENDENCIES
-	IO
-	#Rendering
-	Core
+	Core IO 
 )
 
 # ----------------------- build library -------------------------

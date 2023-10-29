@@ -7,8 +7,7 @@ set(THIRD_PARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty)
 BUILD_THIRD_PARTY(${THIRD_PARTY_DIR} ALL_DEPENDENCIES)
 
 set (${this_target}_SOURCE_FILES 
-"main.cpp"
- "TypeMapping.hpp")
+"main.cpp")
 
 set (${this_target}_DEPENDENCIES
 )

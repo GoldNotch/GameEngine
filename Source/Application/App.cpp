@@ -1,6 +1,7 @@
 #include "App.hpp"
 
 #include <Window.h>
+#include "ObjectsContainer.hpp"
 
 namespace Engine
 {
