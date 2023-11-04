@@ -20,3 +20,4 @@
     inline static constexpr decltype((_key)) value = (_key);                   \
   };                                                                           \
   template <> struct table_name::key2type<_key> final { using type = _type; }
+  
