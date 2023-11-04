@@ -11,11 +11,21 @@ namespace Engine
 		// create window
 		WindowHandle wnd = inCreateMainWindow(800, 600, "Test Title");
 
-		Scene scene;
-		scene.push_back(Obj1());
-		scene.push_back(Obj2());
-		scene.push_back(Obj2());
-		scene.push_back(Obj2());
+		Core::Storage<int> t;
+		std::vector<int*> ints;
+		for(size_t i = 0; i < 100; ++i)
+			ints.push_back(&t.emplace(rand() % 100));
+
+		for(auto && n : t)
+			std::printf("%i ", n);
+		std::printf("\n");
+		for(auto it = ints.rbegin(); it != ints.rend(); ++it)
+		{
+			auto t_it = Core::Storage<int>::iterator(t, **it);
+			int d = std::distance(t.begin(), t_it);
+			std::printf("%i ", d);
+			t.erase(t_it);
+		}
 
 		while (!inIsShouldClose(wnd))
 		{
