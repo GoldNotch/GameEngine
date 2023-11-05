@@ -16,42 +16,61 @@ namespace Core
 		using iterator = basic_iterator<Storage>;
 		using const_iterator = basic_iterator<const Storage>;
 
-		iterator begin() { return iterator(this, valued_list.head == nullptr ? iterator::end_index : index_of(valued_list.head)); }
-		iterator end() { return iterator(this, iterator::end_index); }
-		const_iterator cbegin() { return const_iterator(this, valued_list.head == nullptr ? const_iterator::end_index : index_of(valued_list.head)); }
-		const_iterator cend() { return const_iterator(this, const_iterator::end_index); }
-
+		iterator begin() { return iterator(this, valued_list.head); }
+		iterator end() { return iterator(this, null_index); }
+		const_iterator cbegin() { return const_iterator(this, valued_list.head); }
+		const_iterator cend() { return const_iterator(this, null_index); }
 
 		template <typename... Args>
-		inline T &emplace(Args &&...args)
+		inline T &emplace(Args &&...args) &
 		{
-			Node* insert_node = nullptr;
-			if (free_list.empty())
-				insert_node = &nodes.emplace_back();
-			else
+			Node *insert_node = nullptr;
+			NodePtr ind = null_index;
+			try
 			{
-				insert_node = free_list.head;
-				free_list.erase(*insert_node);
+				if (free_list.empty())
+				{
+					insert_node = &nodes.emplace_back();
+					ind = index_of(insert_node);
+				}
+				else
+				{
+					ind = free_list.head;
+					insert_node = &get_node(ind);
+					free_list.erase(*this, ind);
+				}
+				assert(insert_node != nullptr);
+				insert_node->construct(ind, std::forward<Args>(args)...);
 			}
-			assert(insert_node != nullptr);
-			T& ret = insert_node->construct(std::forward<Args>(args)...);
-			valued_list.insert_back(*insert_node);
-			return ret;
+			catch (...)
+			{
+				if (insert_node)
+				{
+					insert_node->destroy();
+					nodes.pop_back();
+				}
+				throw;
+			}
+			valued_list.insert_back(*this, ind);
+			return insert_node->get_data();
 		}
 
-		template<typename Iter>
-		inline void erase(Iter it)
+		template <typename Iter>
+		inline void erase(Iter &&it)
 		{
-			Node& del_node = it.GetNode();
-			del_node.destroy();
-			valued_list.erase(del_node);
-			free_list.insert_back(del_node);
+			NodePtr del_node_ptr = it.index;
+			if (del_node_ptr != null_index)
+			{
+				get_node(del_node_ptr).destroy();
+				valued_list.erase(*this, del_node_ptr);
+				free_list.insert_back(*this, del_node_ptr);
+			}
 		}
 
 		inline constexpr size_t size() const noexcept { return valued_list.size; }
 
-		inline void clear() noexcept 
-		{ 
+		inline void clear() noexcept
+		{
 			nodes.clear();
 			free_list = {};
 			valued_list = {};
@@ -62,10 +81,18 @@ namespace Core
 		friend const_iterator;
 		struct Node;
 		struct List;
-		using NodePtr = Node *;
-
-		inline constexpr size_t index_of(const NodePtr node) const noexcept 
-		{ return node - nodes.data(); }
+		friend Node;
+		friend List;
+		using NodePtr = size_t;
+		static constexpr NodePtr null_index = static_cast<NodePtr>(-1); ///< -1 value reserved for end-value
+		inline constexpr size_t index_of(const Node *const node) const noexcept
+		{
+			return node - nodes.data();
+		}
+		inline constexpr Node &get_node(NodePtr index)
+		{
+			return nodes[index];
+		}
 
 		std::vector<Node> nodes;
 		List free_list;
@@ -77,11 +104,15 @@ namespace Core
 	{
 		friend Storage<T>::iterator;
 		friend Storage<T>::const_iterator;
+		friend Storage<T>::List;
 		template <typename... Args>
-		inline T &construct(Args &&...args)
+		inline T &construct(NodePtr index, Args &&...args)
 		{
-			assert(!data.has_value());
-			return data.emplace(std::make_pair(this, std::forward<Args>(args)...));
+			if (data.has_value())
+				throw std::runtime_error("Tried to create value in valued node");
+			T val(std::forward<Args>(args)...);
+			opt_type p = std::make_pair(index, std::move(val));
+			return data.emplace(std::move(p)).second;
 		}
 
 		inline void destroy() noexcept
@@ -94,53 +125,61 @@ namespace Core
 		inline T &get_data() & { return data.value().second; }
 
 	private:
-		NodePtr next = nullptr;
-		NodePtr prev = nullptr;
-		std::optional<std::pair<Node*, T>> data = std::nullopt;
+		NodePtr next = null_index;
+		NodePtr prev = null_index;
+		using opt_type = std::pair<NodePtr, T>;
+		std::optional<opt_type> data = std::nullopt;
 	};
 
-	template<typename T>
+	template <typename T>
 	struct Storage<T>::List final
 	{
-		NodePtr head = nullptr;
-		NodePtr tail = nullptr;
+		NodePtr head = null_index;
+		NodePtr tail = null_index;
 		size_t size = 0;
 
-		inline void insert_front(Node& node) noexcept
+		inline void insert_front(Storage<T> &cont, NodePtr node_ptr) noexcept
 		{
-			node.prev = nullptr;
+			Node &node = cont.get_node(node_ptr);
+			node.prev = null_index;
 			node.next = head;
-			if (head == nullptr)
-				tail = &node;
-			head = &node;
+			if (head == null_index)
+				tail = node_ptr;
+			else
+				cont.get_node(head).prev = node_ptr;
+			head = node_ptr;
 			++size;
 		}
-		inline void insert_back(Node& node) noexcept
+		inline void insert_back(Storage<T> &cont, NodePtr node_ptr) noexcept
 		{
+			Node &node = cont.get_node(node_ptr);
 			node.prev = tail;
-			node.next = nullptr;
-			if (tail == nullptr)
-				head = &node;
-			tail = &node;
+			node.next = null_index;
+			if (tail == null_index)
+				head = node_ptr;
+			else
+				cont.get_node(tail).next = node_ptr;
+			tail = node_ptr;
 			++size;
 		}
-		inline void erase(Node& node) noexcept
+		inline void erase(Storage<T> &cont, NodePtr node_ptr) noexcept
 		{
-			if (node.prev)
-				node.prev->next = node.next;
-			if (node.next)
-				node.next->prev = node.prev;
-			if (head == &node)
+			Node &node = cont.get_node(node_ptr);
+			if (node.prev != null_index)
+				cont.get_node(node.prev).next = node.next;
+			if (node.next != null_index)
+				cont.get_node(node.next).prev = node.prev;
+			if (head == node_ptr)
 				head = node.next;
-			if (tail == &node)
+			if (tail == node_ptr)
 				tail = node.prev;
 			--size;
-			#ifdef DEBUG
-			node.next = nullptr;
-			node.prev = nullptr;
-			#endif
+#ifdef DEBUG
+			node.next = null_index;
+			node.prev = null_index;
+#endif
 		}
-		inline bool empty() const noexcept {return size == 0;}
+		inline bool empty() const noexcept { return size == 0; }
 	};
 
 	template <typename T>
@@ -155,16 +194,16 @@ namespace Core
 		using iterator_category = std::bidirectional_iterator_tag;
 
 		basic_iterator() noexcept = default;
-		basic_iterator(const Cont& cont, const T& obj) noexcept
+		basic_iterator(Cont &cont, const T &obj) noexcept
 			: cont(&cont)
 		{
-			// Before pointer on obj we store pointer on list node which is store obj.
+			// Before obj we store index of list node which is store obj.
 			// Now erase op have O(1) complexity
 			// =========== Begin Unsafe block =========
-			const Node* node = reinterpret_cast<const Node*>(reinterpret_cast<const char*>(&obj) - sizeof(Node*));
-			index = cont.index_of(node);
+			index = reinterpret_cast<const Storage<T>::Node::opt_type *>(reinterpret_cast<const char *>(&obj) - sizeof(NodePtr))->first;
 			//============= End of unsafe block =========
 		}
+
 	private:
 		basic_iterator(Cont *cont, size_t ind) noexcept
 			: cont(cont), index(ind) {}
@@ -176,17 +215,13 @@ namespace Core
 		constexpr const pointer operator->() const { return &GetNode().get_data(); }
 		basic_iterator operator++()
 		{
-			if (index != end_index)
-			{
-			Node *next = GetNode().next;
-			if (next != nullptr)
-				index = cont->index_of(next);
+			if (index == null_index)
+				index = cont->valued_list.head;
 			else
-				index = end_index;
-			}
+				index = GetNode().next;
 			return *this;
 		}
-		basic_iterator operator++(int)
+		basic_iterator operator++(int) const
 		{
 			basic_iterator copy(*this);
 			++*this; // call the prefix increment
@@ -194,19 +229,13 @@ namespace Core
 		}
 		basic_iterator operator--()
 		{
-			if (index == end_index)
-				index = cont->index_of(cont->valued_list_tail);
+			if (index == null_index)
+				index = cont->valued_list.tail;
 			else
-			{
-				Node *prev = GetNode().prev;
-				if (prev != nullptr)
-					index = cont->index_of(prev);
-				else
-					index = cont->index_of(cont->valued_list_head);
-			}
+				index = GetNode().prev;
 			return *this;
 		}
-		basic_iterator operator--(int)
+		basic_iterator operator--(int) const
 		{
 			basic_iterator copy(*this);
 			--*this; // call the prefix increment
@@ -223,19 +252,18 @@ namespace Core
 		}
 
 	private:
-		Cont *cont = nullptr;										 ///< pointer on Storage. It's pointer because we must have default constructor
-		size_t index = 0;											 ///< offset in Storage::nodes vector. if storage built on vector, pointer on Node can be changed, so we must store offset
-		static constexpr size_t end_index = static_cast<size_t>(-1); ///< -1 value reserved for end-value
+		Cont *cont = nullptr;	   ///< pointer on Storage. It's pointer because we must have default constructor
+		size_t index = null_index; ///< offset in Storage::nodes vector. if storage built on vector, pointer on Node can be changed, so we must store offset
 
 		const Storage<T>::Node &GetNode() const &
 		{
-			assert(cont);
-			return cont->nodes[index];
+			if (!cont)
+				throw std::runtime_error("iterator doesn't bound to storage");
+			return cont->get_node(index);
 		}
 		Storage<T>::Node &GetNode() &
 		{
-			assert(cont);
-			return cont->nodes[index];
+			return GetNode();
 		}
 	};
 }

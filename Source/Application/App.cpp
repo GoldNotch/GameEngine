@@ -13,8 +13,11 @@ namespace Engine
 
 		Core::Storage<int> t;
 		std::vector<int*> ints;
-		for(size_t i = 0; i < 100; ++i)
-			ints.push_back(&t.emplace(rand() % 100));
+		for(size_t i = 0; i < 10; ++i)
+		{
+			int* p = &t.emplace(rand() % 100);
+			ints.push_back(p);
+		}
 
 		for(auto && n : t)
 			std::printf("%i ", n);
@@ -27,14 +30,14 @@ namespace Engine
 			t.erase(t_it);
 		}
 
-		while (!inIsShouldClose(wnd))
+		/*while (!inIsShouldClose(wnd))
 		{
 			inPollEvents();
-			// update scene
+			 update scene
 
-			// render
+			 render
 
-		}
+		}*/
 		inCloseWindow(wnd);
 
 		// main loop
