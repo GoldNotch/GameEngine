@@ -1,7 +1,7 @@
 #include "App.hpp"
 
 #include <Window.h>
-#include "ObjectsContainer.hpp"
+#include "Scene3D.hpp"
 
 namespace Engine
 {
@@ -11,24 +11,11 @@ namespace Engine
 		// create window
 		WindowHandle wnd = inCreateMainWindow(800, 600, "Test Title");
 
-		Core::Storage<int> t;
-		std::vector<int*> ints;
-		for(size_t i = 0; i < 10; ++i)
-		{
-			int* p = &t.emplace(rand() % 100);
-			ints.push_back(p);
-		}
-
-		for(auto && n : t)
-			std::printf("%i ", n);
-		std::printf("\n");
-		for(auto it = ints.rbegin(); it != ints.rend(); ++it)
-		{
-			auto t_it = Core::Storage<int>::iterator(t, **it);
-			int d = std::distance(t.begin(), t_it);
-			std::printf("%i ", d);
-			t.erase(t_it);
-		}
+		Core::HeterogeneousStorage<int, double, float> store;
+		store.emplace<int>(5);
+		store.emplace<float>(25.0f);
+		store.emplace<double>(10.0);
+		store.emplace<char>('t'); // compile-time error
 
 		/*while (!inIsShouldClose(wnd))
 		{
