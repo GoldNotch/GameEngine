@@ -33,13 +33,13 @@ namespace Core
 		ObjectPointer emplace(Args&& ...args)
 		{
 			T val(std::forward<Args>(args)...);
-			return container::emplace(end(), std::move(val));
+			return ObjectPointer(this, container::emplace(end(), std::move(val)));
 		}
 
 		void erase(ObjectPointer&& ptr)
 		{
 			container::erase(ref.it);
-			ref = end();
+			ref = ObjectPointer(this, end());
 		}
 
 	private:
@@ -56,10 +56,13 @@ namespace Core
 		const T* operator->() const { return it.operator->(); }
 
 		bool operator==(ObjectReference other) const { return it == other.it; }
+		bool operator bool() const noexcept { return cont && it != cont->end(); }
 	private:
 		friend Storage<T, BufSize>;
-		ObjectReference(iterator it) : it(it){}
+		ObjectReference(const Storage<T, BufSize>* container, iterator it) 
+			: cont(container), it(it){}
 		iterator it;
+		const Storage<T, BufSize>* cont = nullptr;
 	};
 
 	template<typename... Ts>
@@ -123,8 +126,8 @@ namespace Core
 		std::array<ProxyContainer, type_indexer::size> containers;
 	};
 
-
-	struct GenericObjectPointer
+	template<typename... Ts>
+	struct HeterogeneousStorage<Ts...>::GenericObjectPointer
 	{
 
 
