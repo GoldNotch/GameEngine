@@ -5,17 +5,34 @@
 
 namespace Engine
 {
-
 	void RunApp(IApp& app)
 	{
 		// create window
 		WindowHandle wnd = inCreateMainWindow(800, 600, "Test Title");
 
+		using storage = Core::HeterogeneousStorage<int, double, float>;
 		Core::HeterogeneousStorage<int, double, float> store;
-		store.emplace<int>(5);
+		Core::Storage<int>::ObjectPointer t = store.emplace<int>(5);
+		storage store2 = store;
+
 		store.emplace<float>(25.0f);
-		store.emplace<double>(10.0);
-		store.emplace<char>('t'); // compile-time error
+		storage::GenericObjectPointer a = store.emplace<double>(10.0);
+		auto b = static_cast<Core::Storage<double>::ObjectPointer>(a);
+		*b = 25.0;
+
+		for (auto&& val : Core::TypedView<int, decltype(store)>(store))
+		{
+
+		}
+
+		for (auto it = store.template begin<int>(); it != store.template end<int>(); ++it)
+		{
+
+		}
+
+
+		//float v2 = *pos.x;
+		//store.emplace<char>('t'); // compile-time error
 
 		/*while (!inIsShouldClose(wnd))
 		{

@@ -4,6 +4,7 @@
 #include <optional>
 #include <cassert>
 #include <type_traits>
+#include <variant>
 #include "TypeMapping.hpp"
 
 namespace Core
@@ -27,6 +28,14 @@ namespace Core
 		using container::swap;
 		using container::operator=;
 		using container::assign;
+		using container::iterator;
+		using container::const_iterator;
+		using container::reverse_iterator;
+		using container::const_reverse_iterator;
+
+		Storage() = default;
+		Storage(const Storage& other)
+			: container(other){}
 
 		struct ObjectPointer;
 		template<typename... Args>
@@ -38,101 +47,174 @@ namespace Core
 
 		void erase(ObjectPointer&& ptr)
 		{
-			container::erase(ref.it);
-			ref = ObjectPointer(this, end());
+			container::erase(ptr.it);
+			ptr = ObjectPointer(this, end());
 		}
 
 	private:
-		std::pmr::monotonic_buffer_resource pool { BufSize };
-		using iterator = container::iterator;
+		std::pmr::monotonic_buffer_resource pool{ BufSize };
 	};
+
 
 	template<typename T, size_t BufSize>
 	struct Storage<T, BufSize>::ObjectPointer final
 	{
-		T& operator*() { return it.operator*(); }
-		const T& operator*() const { return it.operator*(); }
-		T* operator->() { return it.operator->(); }
-		const T* operator->() const { return it.operator->(); }
+		ObjectPointer() = default;
+		ObjectPointer(const Storage<T, BufSize>* container, container::iterator it)
+			: cont(container), it(it) {}
 
-		bool operator==(ObjectReference other) const { return it == other.it; }
-		bool operator bool() const noexcept { return cont && it != cont->end(); }
+		constexpr T& operator*()& { return it.operator*(); }
+		constexpr const T& operator*() const& { return it.operator*(); }
+		constexpr T* operator->()& { return it.operator->(); }
+		constexpr const T* operator->() const& { return it.operator->(); }
+
+		constexpr bool operator==(ObjectPointer other) const { return it == other.it; }
+		constexpr operator bool() const noexcept { return cont && it != cont->end(); }
+		constexpr const Storage<T, BufSize>* GetStorage() const& { return cont; }
 	private:
 		friend Storage<T, BufSize>;
-		ObjectReference(const Storage<T, BufSize>* container, iterator it) 
-			: cont(container), it(it){}
-		iterator it;
+		container::iterator it;
 		const Storage<T, BufSize>* cont = nullptr;
 	};
 
+
 	template<typename... Ts>
-	struct HeterogeneousStorage
+	class HeterogeneousStorage final
 	{
-		HeterogeneousStorage() = default;
 		template<typename ObjT>
-		using ObjPtr = Storage<ObjT>::ObjectPointer;
+		using StorageBacket = Storage<ObjT>;
+		template<typename ObjT>
+		using ObjPtr = typename StorageBacket<ObjT>::ObjectPointer;
+		template<typename ObjT>
+		using typed_iterator = typename StorageBacket<ObjT>::iterator;
+		template<typename ObjT>
+		using typed_const_iterator = typename StorageBacket<ObjT>::const_iterator;
+		template<typename ObjT>
+		using typed_reverse_iterator = typename StorageBacket<ObjT>::reverse_iterator;
+		template<typename ObjT>
+		using typed_const_reverse_iterator = typename StorageBacket<ObjT>::const_reverse_iterator;
+
+
+	public:
+		HeterogeneousStorage() = default;
 		struct GenericObjectPointer;
+		friend GenericObjectPointer;
+
+		using iterator = std::variant<typed_iterator<Ts>...>;
+		using const_iterator = std::variant<typed_const_iterator<Ts>...>;
+		using reverse_iterator = std::variant<typed_reverse_iterator<Ts>...>;
+		using const_reverse_iterator = std::variant<typed_const_reverse_iterator<Ts>...>;
 
 		template <typename ObjT, typename... Args>
 		ObjPtr<ObjT> emplace(Args &&...args)
 		{
-			Storage<ObjT>& pool = containers[type_indexer::template index_of<ObjT>].Get<ObjT>();
-			return pool.emplace(std::forward<Args>(args)...);
+			return Get<ObjT>().emplace(std::forward<Args>(args)...);
 		}
 
 		template <typename ObjT>
-		void erase(ObjPtr<ObjT> && ref)
+		void erase(ObjPtr<ObjT>&& ptr)
 		{
-			Storage<ObjT>& pool = containers[type_indexer::template index_of<ObjT>].Get<ObjT>();
-			pool.erase(std::forward<ObjRef<ObjT>>(ref));
+			return Get<ObjT>().erase(std::forward<ObjPtr<ObjT>>(ptr));
 		}
+
+		void erase(GenericObjectPointer&& ptr) { erase(ptr); }
+
+		template<typename ObjT>
+		decltype(auto) begin() noexcept	{ return Get<ObjT>().begin(); }
+
+		template<typename ObjT>
+		decltype(auto) end() noexcept { return Get<ObjT>().end(); }
+
+		template<typename ObjT>
+		decltype(auto) cbegin() const noexcept { return Get<ObjT>().cbegin(); }
+
+		template<typename ObjT>
+		decltype(auto) cend() const noexcept { return Get<ObjT>().cend();	}
+
+		template<typename ObjT>
+		decltype(auto) rbegin() noexcept { return Get<ObjT>().rbegin(); }
+
+		template<typename ObjT>
+		decltype(auto) rend() noexcept { return Get<ObjT>().rend(); }
+
+		template<typename ObjT>
+		decltype(auto) crbegin() const noexcept	{ return Get<ObjT>().crbegin(); }
+
+		template<typename ObjT>
+		decltype(auto) crend() const noexcept { return Get<ObjT>().crend(); }
 
 	private:
 		using type_indexer = metaprogramming::type_table<Ts...>;
-		struct ProxyContainer
+
+		using VariadicContainer = std::variant<StorageBacket<Ts>...>;
+		std::array<VariadicContainer, type_indexer::size> containers = { StorageBacket<Ts>()... };
+
+	private:
+		template<typename ObjT>
+		StorageBacket<ObjT>& Get()& 
 		{
-			ProxyContainer() = default;
-
-			template<typename ObjT>
-			Storage<ObjT>& Get() & noexcept { Init<ObjT>(); return *cast<ObjT>(container.get()); }
-
-			template<typename ObjT>
-			const Storage<ObjT>& Get() const& noexcept { Init<ObjT>(); return *cast<ObjT>(container.get()); }
-
-		private:
-			using dtor_func = std::function<void(void*)>;
-			std::unique_ptr<void, dtor_func> container = nullptr;
-			size_t type_id;
-			/*
-			* This container can store reference on any-typed pool.
-			* I don't want make interface class IPool, because pool is finite class in Core and it can be used in many cases.
-			* So I store it like void* and use reinterpret_cast for usage
-			*/
-
-			template<typename ObjT>
-			void Init()
-			{
-				if (!container) {
-					container = std::unique_ptr<void, dtor_func>(new Storage<ObjT>(),
-						[](void* cont) { delete cast<ObjT>(cont); });
-					type_id = type_indexer::template index_of<ObjT>;
-				}
+			constexpr size_t idx = type_indexer::template index_of<ObjT>;
+			try 
+			{	
+				return std::get<StorageBacket<ObjT>>(containers[idx]);	
 			}
+			catch (const std::bad_variant_access&)
+			{ 
+				throw std::runtime_error("Type doesn't stored in this storage");	
+			}
+		}
+		template<typename ObjT>
+		const StorageBacket<ObjT>& Get() const&	{ return Get<ObjT>(); }
+	};
 
-			template<typename ObjT>
-			static Storage<ObjT>* cast(void* const ptr) { return static_cast<Storage<ObjT>*>(ptr); }
-		};
+	template<typename ObjT, typename HStorageT>
+	struct TypedView final
+	{
+		HStorageT& storage;
+		TypedView(HStorageT& storage) : storage(storage) {}
 
-		std::array<ProxyContainer, type_indexer::size> containers;
+		decltype(auto) begin() noexcept { return storage.begin<ObjT>(); }
+		decltype(auto) end() noexcept { return storage.end<ObjT>(); }
+		decltype(auto) cbegin() const noexcept { return storage.cbegin<ObjT>(); }
+		decltype(auto) cend() const noexcept { return storage.cend<ObjT>(); }
+		decltype(auto) rbegin() noexcept { return storage.rbegin<ObjT>(); }
+		decltype(auto) rend() noexcept { return storage.rend<ObjT>(); }
+		decltype(auto) crbegin() const noexcept { return storage.crbegin<ObjT>(); }
+		decltype(auto) crend() const noexcept { return storage.rend<ObjT>(); }
 	};
 
 	template<typename... Ts>
-	struct HeterogeneousStorage<Ts...>::GenericObjectPointer
+	struct HeterogeneousStorage<Ts...>::GenericObjectPointer final
 	{
+		GenericObjectPointer() = default;
 
+		template<typename ObjPtrT>
+		GenericObjectPointer(ObjPtrT ptr) : ptr(ptr) {}
+
+		template<typename ObjPtrT>
+		operator ObjPtrT() const
+		{
+			try {
+				return std::get<ObjPtrT>(ptr);
+			}
+			catch (const std::bad_variant_access&)
+			{
+				throw std::runtime_error("Type doesn't stored in this storage");
+			}
+		}
+
+		bool operator==(const GenericObjectPointer& other) const noexcept
+		{
+			return other.ptr == ptr;
+		}
+
+		operator bool() const
+		{
+			return ptr.valueless_by_exception &&
+				std::visit(ptr, [](auto&& ptr) { return ptr.operator bool(); });
+		}
 
 	private:
-		void* obj_ptr = nullptr;
-		std::type_info type_info;
+		std::variant<ObjPtr<Ts>...> ptr;
 	};
 }
