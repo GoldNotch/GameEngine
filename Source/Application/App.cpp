@@ -19,7 +19,7 @@ namespace Engine
 		storage::GenericObjectPointer a = store.emplace<double>(10.0);
 		auto b = static_cast<Core::Storage<double>::ObjectPointer>(a);
 		*b = 25.0;
-
+		store.size();
 		for (auto&& val : Core::TypedView<int, decltype(store)>(store))
 		{
 
