@@ -47,3 +47,9 @@ FUNCTION(BUILD_THIRD_PARTY THIRD_PARTY_DIR DEPS_LIST)
     ENDFOREACH()
     set(${DEPS_LIST} ${ALL_DEPENDENCIES} PARENT_SCOPE)
 ENDFUNCTION()
+
+function(COPY_FILE filename)
+    get_filename_component(_CONANFILE_NAME ${ARGUMENTS_CONANFILE} NAME)
+    # configure_file will make sure cmake re-runs when conanfile is updated
+    configure_file(${ARGUMENTS_CONANFILE} ${CMAKE_CURRENT_BINARY_DIR}/${_CONANFILE_NAME} COPYONLY)
+endfunction()

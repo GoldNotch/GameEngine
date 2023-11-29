@@ -1,0 +1,13 @@
+[requires]
+glfw/3.3.8
+
+[generators]
+CMakeDeps
+CMakeToolchain
+
+[layout]
+cmake_layout
+
+[options]
+glfw*:shared=False
+glfw*:vulkan_static=False
