@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 3.12)
-include(CMakePrintHelpers)
 include(Utils.cmake)
 
 set(this_target "Root")
@@ -20,25 +19,19 @@ cmake_policy(SET CMP0060 NEW)
 set(SOURCE_DIR ${PROJECT_SOURCE_DIR}/Source)
 
 # -------------------- Install conan packages ----------------------
-if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
-  message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
-  file(DOWNLOAD "https://raw.githubusercontent.com/conan-io/cmake-conan/0.18.1/conan.cmake"
-                "${CMAKE_BINARY_DIR}/conan.cmake"
-                TLS_VERIFY ON)
-endif()
-
-include(${CMAKE_BINARY_DIR}/conan.cmake)
-
-# copy conanfile.txt into cache
-if (NOT EXISTS "${CMAKE_BINARY_DIR}/conanfile.txt")
+if(NOT EXISTS "${CMAKE_BINARY_DIR}/conanfile.txt")
     message(STATUS "Copy conanfile.txt into CMake cache")
-    configure_file(${PROJECT_SOURCE_DIR}/conanfile.txt ${CMAKE_BINARY_DIR}/conanfile.txt COPYONLY)
+    configure_file("${PROJECT_SOURCE_DIR}/conanfile.txt" "${CMAKE_BINARY_DIR}/conanfile.txt" COPYONLY)
 endif()
 
+include(${SOURCE_DIR}/conan.cmake)
+
+conan_cmake_autodetect(settings RUNTIME static)
+message(status ${settings})
 conan_cmake_install(PATH_OR_REFERENCE .
                     BUILD missing
                     REMOTE conancenter
-                    PROFILE ${PROJECT_SOURCE_DIR}/ConanProfiles/windows)
+                    SETTINGS ${settings})
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR}/build/generators)
 list(APPEND CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR}/build/generators)
