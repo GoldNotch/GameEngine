@@ -1,6 +1,7 @@
 #include <cstdlib>
 #include <cstdio>
 #include <GLFW/glfw3.h>
+#include <Engine.h>
 
 int main()
 {
@@ -18,12 +19,16 @@ int main()
 	}
 	glfwMakeContextCurrent(window);
 
+	usConstructOptions opts{ usVideoOptions{800, 600} };
+	USEnginePtr engine = usEngine_Create(opts);
+
+
 	while (!glfwWindowShouldClose(window))
 	{
 		glfwPollEvents();
 
-
 	}
+	usEngine_Destroy(engine);
 
 	glfwTerminate();
 	return 0;

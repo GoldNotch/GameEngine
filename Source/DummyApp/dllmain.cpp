@@ -14,12 +14,26 @@
 #include <cstdio>
 #include <thread>
 #include <cmath>
+//#define APP_IMPLEMENTATION
+#include <Engine.h>
 
 
-// ---------------------------- main -------------------------------
-
-int main()
+struct USAPP_API USApp
 {
 
-	return 0;
+};
+
+USAPP_API USAppPtr usApp_Create()
+{
+	return new USApp();
+}
+
+USAPP_API void usApp_Tick(USAppPtr app)
+{
+	std::printf("Empty tick\n");
+}
+
+USAPP_API void usApp_Destroy(USAppPtr app)
+{
+	delete app;
 }
