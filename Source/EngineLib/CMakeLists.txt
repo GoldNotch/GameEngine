@@ -15,7 +15,7 @@ add_library(${this_target} SHARED ${${this_target}_SOURCE_FILES})
 set_property(TARGET ${this_target} PROPERTY CXX_STANDARD ${GLOBAL_CXX_STANDARD})  
 set_property(TARGET ${this_target} PROPERTY C_STANDARD ${GLOBAL_C_STANDARD}) 
 
-target_link_libraries(${this_target} DummyApp)
+#target_link_libraries(${this_target} DummyApp)
 
 if (NOT ${ALL_DEPENDENCIES} STREQUAL "")
 	add_dependencies(${this_target} ${ALL_DEPENDENCIES})

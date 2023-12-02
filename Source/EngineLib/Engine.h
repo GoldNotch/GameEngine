@@ -31,9 +31,6 @@ extern "C"
 
 // ------------------------- Engine API --------------------------
 
-struct USENGINE_API USEngine;
-typedef  struct USEngine* USEnginePtr;
-
 /// Options for frame's picture (width, height resolution, maybe channels, etc)
 typedef struct USENGINE_API VideoOpts
 {
@@ -47,11 +44,12 @@ typedef struct USENGINE_API ConstructOpts
 }
 usConstructOptions;
 
-typedef int pixel_t;
+typedef unsigned int color_t;
 
 typedef struct USENGINE_API Frame
 {
-	const pixel_t* video_frame;
+	const color_t* video_frame;
+	usVideoOptions opts;
 }
 usFrameResult;
 
@@ -60,11 +58,11 @@ Engine is object which creates frames.
 One frame is a picture and sound sample
 */
 
-USENGINE_API USEnginePtr usEngine_Create(usConstructOptions options);
-USENGINE_API void usBeginFrame();
-USENGINE_API void usWaitForResult();
+USENGINE_API bool usEngineInit(usConstructOptions options);
+USENGINE_API void usBeginFrame(usVideoOptions opts);
+USENGINE_API Frame usWaitForResult();
 USENGINE_API void usEndFrame();
-USENGINE_API void usEngine_Destroy(USEnginePtr engine);
+USENGINE_API void usEngineTerminate();
 
 
 // ---------------------------- App API ---------------------------
