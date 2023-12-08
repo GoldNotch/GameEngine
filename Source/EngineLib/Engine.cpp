@@ -3,6 +3,11 @@
 #include <vector>
 #include <memory>
 #include <ctime>
+#include <cassert>
+
+#include "Rendering/RenderingSystem.hpp"
+#define LOGGING_IMPLEMENTATION
+#include "Core/Logging.hpp"
 
 inline color_t RGB2UINT(unsigned char r, unsigned char g, unsigned char b, unsigned char a)
 {
@@ -12,7 +17,8 @@ inline color_t RGB2UINT(unsigned char r, unsigned char g, unsigned char b, unsig
 struct USEngine
 {
 	std::vector<color_t> result_image;
-	usVideoOptions current_opts = {0, 0};
+	usVideoOptions current_opts = { 0, 0 };
+private:
 };
 
 static std::unique_ptr<USEngine> st_engine = nullptr;
@@ -22,6 +28,7 @@ USENGINE_API bool usEngineInit(usConstructOptions options)
 	srand(time(NULL));
 	try {
 		st_engine = std::make_unique<USEngine>();
+		InitRenderingSystem();
 	}
 	catch (...)
 	{
@@ -45,7 +52,7 @@ USENGINE_API Frame usWaitForResult()
 	{
 		st_engine->result_image.push_back(RGB2UINT(rand() % 256, rand() % 256, rand() % 256, 0xFF));
 	}
-	return Frame{ st_engine->result_image.data(),  opts};
+	return Frame{ st_engine->result_image.data(),  opts };
 }
 
 

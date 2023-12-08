@@ -64,6 +64,17 @@ USENGINE_API Frame usWaitForResult();
 USENGINE_API void usEndFrame();
 USENGINE_API void usEngineTerminate();
 
+typedef enum
+{
+	INFO,
+	WARNING,
+	ERROR,
+	FATAL_ERROR
+} usLogStatus;
+typedef void (*usLogFunc)(usLogStatus, int, const char*);
+
+USENGINE_API void usSetLoggingFunc(usLogFunc func);
+
 
 // ---------------------------- App API ---------------------------
 
