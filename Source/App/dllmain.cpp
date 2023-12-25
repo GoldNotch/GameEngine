@@ -11,29 +11,23 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#include <cmath>
 #include <cstdio>
 #include <thread>
-#include <cmath>
-//#define APP_IMPLEMENTATION
-#include <Engine.h>
 
+#include "App.h"
 
-struct USAPP_API USApp
+USAPP_API void usApp_Init()
 {
-
-};
-
-USAPP_API USAppPtr usApp_Create()
-{
-	return new USApp();
+  //io::Log(usLogStatus::US_LOG_INFO, 0, "initialize App");
+  std::printf("test\n");
 }
 
-USAPP_API void usApp_Tick(USAppPtr app)
+USAPP_API void usApp_Tick()
 {
-	std::printf("Empty tick\n");
 }
 
-USAPP_API void usApp_Destroy(USAppPtr app)
+USAPP_API void usApp_Terminate()
 {
-	delete app;
+  std::printf("terminate\n");
 }

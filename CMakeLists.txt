@@ -40,5 +40,5 @@ list(APPEND CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR}/build/generators)
 
 # ------------------------- Build projects ------------------------------
 ADD_SUBDIRECTORY(${SOURCE_DIR}/EngineLib)
+ADD_SUBDIRECTORY(${SOURCE_DIR}/App)
 ADD_SUBDIRECTORY(${SOURCE_DIR}/Launcher)
-ADD_SUBDIRECTORY(${SOURCE_DIR}/DummyApp)
