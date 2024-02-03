@@ -5,8 +5,11 @@ project(${this_target})
 
 set (${this_target}_SOURCE_FILES
 	"Engine.cpp"
-	
-	"Rendering/VulkanImpl/VulkanRendering.cpp" )
+	"Rendering/VulkanImpl/VulkanRendering.cpp"
+	"Rendering/VulkanImpl/MeshPipeline.cpp"
+	"Rendering/VulkanImpl/Renderer.cpp"
+	#"Rendering/VulkanImpl/VkBootstrap/VkBootstrap.cpp"
+)
 
 # ----------------------- build library -------------------------
 add_library(${this_target} SHARED ${${this_target}_SOURCE_FILES})
@@ -22,11 +25,13 @@ target_link_libraries(${this_target} vulkan-validationlayers::vulkan-validationl
 find_package(vk-bootstrap REQUIRED FATAL_ERROR)
 target_link_libraries(${this_target} vk-bootstrap::vk-bootstrap)
 
+
 #---------------- Link third-party libraries ---------------
 
 # -------------- definitions ---------------------
 set(${this_target}_COMPILE_DEFINITIONS
 	-DENGINE_BUILD
+	-DUSE_WINDOW_OUTPUT
 )
 add_definitions(${${this_target}_COMPILE_DEFINITIONS})
 
@@ -38,3 +43,8 @@ endif()
 set(${this_target}_SYSTEM_LIBRARIES 
 )
 target_link_libraries(${this_target} ${${this_target}_SYSTEM_LIBRARIES})
+
+file(REMOVE_RECURSE  ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Shaders)
+# copy shaders into bin
+file(COPY Rendering/VulkanImpl/Shaders DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Shaders)
+file(RENAME ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Shaders/Shaders ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Shaders/Vulkan)

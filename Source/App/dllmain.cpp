@@ -16,18 +16,30 @@
 #include <thread>
 
 #include "App.h"
+#include "Game.hpp"
+
+static std::unique_ptr<Game> st_game;
 
 USAPP_API void usApp_Init()
 {
   //io::Log(usLogStatus::US_LOG_INFO, 0, "initialize App");
-  std::printf("test\n");
+  st_game = std::make_unique<Game>();
 }
 
 USAPP_API void usApp_Tick()
 {
+  st_game->Tick();
 }
 
 USAPP_API void usApp_Terminate()
 {
+  st_game.reset();
   std::printf("terminate\n");
+}
+
+
+USAPP_API void usApp_InitRenderableScene(void * const handler)
+{
+  //std::printf("collect frame data\n");
+  st_game->InitRenderableScene(handler);
 }

@@ -1,12 +1,15 @@
 #include <cassert>
 #include <cstdio>
 #include <cstdlib>
-#define GLEW_STATIC
-#include <GL/glew.h>
+//#define GLEW_STATIC
+//#include <GL/glew.h>
 
+#define USE_WINDOW_OUTPUT
+#include <App.h>
 #include <Engine.h>
 #include <GLFW/glfw3.h>
-#include <vulkan/vulkan.h>
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <GLFW/glfw3native.h>
 
 #include "Process.hpp"
 
@@ -35,9 +38,7 @@ void ConsoleLog(usLogStatus status, int code, const char * message)
 int main()
 {
   glfwInit();
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
+  glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
   GLFWwindow * window = glfwCreateWindow(800, 600, "LearnOpenGL", NULL, NULL);
   if (window == NULL)
@@ -46,16 +47,21 @@ int main()
     glfwTerminate();
     return -1;
   }
-  glfwMakeContextCurrent(window);
+  //glfwMakeContextCurrent(window);
 
-  if (glewInit() != GLEW_OK)
-  {
-    std::printf("Failed to init glew\n");
-    glfwTerminate();
-    return -1;
-  }
+  //if (glewInit() != GLEW_OK)
+  //{
+  //  std::printf("Failed to init glew\n");
+  //  glfwTerminate();
+  //  return -1;
+  //}
 
-  usConstructOptions opts{};
+  usRenderingOptions renderOpts;
+  renderOpts.gpu_autodetect = true;
+  renderOpts.hWindow = glfwGetWin32Window(window);
+  renderOpts.hInstance = GetModuleHandle(nullptr);
+  renderOpts.required_gpus = 1;
+  usConstructOptions opts{renderOpts};
   usSetLoggingFunc(ConsoleLog);
   if (!usEngineInit(opts))
   {
@@ -67,52 +73,18 @@ int main()
   App::MainProcess app_process;
   app_process.Start();
 
-  GLuint quad_texture;
-  glGenTextures(1, &quad_texture);
-  glBindTexture(GL_TEXTURE_2D, quad_texture);
-  glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
-  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-  glBindTexture(GL_TEXTURE_2D, 0);
-
   while (!glfwWindowShouldClose(window))
   {
     glfwPollEvents();
 
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
-    glViewport(0, 0, width, height);
-    app_process.Pause();
-    //collect FrameData
-    app_process.Resume();
-    usBeginFrame(usVideoOptions{width, height});
-    Frame frame = usWaitForResult();
 
-    glBindTexture(GL_TEXTURE_2D, quad_texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
-                 frame.video_frame);
-    glGenerateMipmap(GL_TEXTURE_2D);
+    usRenderableSceneHandler handler = usBeginFrame(usVideoOptions{width, height});
+    app_process.ExecuteWithPause(usApp_InitRenderableScene, handler);
+
+    usFrame frame = usRenderFrame();
     usEndFrame();
-
-    glEnable(GL_TEXTURE_2D);
-    glClearColor(0.4, 0.1, 0.3, 0);
-    glClear(GL_COLOR_BUFFER_BIT);
-    glBegin(GL_QUADS);
-    glTexCoord2f(0.0f, 0.0f);
-    glVertex3f(-1, -1, 0); // bottom left
-    glTexCoord2f(1.0f, 0.0f);
-    glVertex3f(1, -1, 0); // bottom right
-    glTexCoord2f(1.0f, 1.0f);
-    glVertex3f(1, 1, 0); // top right
-    glTexCoord2f(0.0f, 1.0f);
-    glVertex3f(-1, 1, 0.0f); // top left
-    glEnd();
-    GLenum err = glGetError();
-    glfwSwapBuffers(window);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glDisable(GL_TEXTURE_2D);
   }
   usEngineTerminate();
 

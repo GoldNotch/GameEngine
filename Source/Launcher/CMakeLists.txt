@@ -6,7 +6,7 @@ project(${this_target})
 set(${this_target}_SOURCE_FILES
   "main.cpp"
   "Process.cpp"
-  "glew/glew.c"
+  #"glew/glew.c"
 )
 
 add_executable(${this_target} ${${this_target}_SOURCE_FILES})

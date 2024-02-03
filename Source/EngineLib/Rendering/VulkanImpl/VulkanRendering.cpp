@@ -2,12 +2,17 @@
 #include <string_view>
 #include <vector>
 
-#include <VkBootstrap.h>
-#include <vulkan/vulkan.hpp>
+#ifdef USE_WINDOW_OUTPUT
+#ifdef _WIN32
+#define VK_USE_PLATFORM_WIN32_KHR
+#else
+
+#endif
+#endif
 
 #include "../../Core/Logging.hpp"
-#include "../RenderingSystem.hpp"
-
+#include "Renderer.hpp"
+#include "VulkanRendering.hpp"
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL
 debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -30,33 +35,21 @@ debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
   return VK_FALSE;
 }
 
-static vkb::Instance st_vulkanInstance;
-static vkb::PhysicalDevice st_choosenGPU;
+/// @brief initialize vulkan instance
+vkb::Instance CreateInstance();
+/// @brief choose and init physical device for vulkan
+vkb::PhysicalDevice SelectPhysicalDevice(vkb::Instance inst, VkSurfaceKHR surface);
+/// @brief platform specific function, creates surface for presentation
+vk::SurfaceKHR CreateSurface(vkb::Instance inst, const usRenderingOptions & opts);
 
-static inline bool InitInstance();
-static inline bool InitPhysicalDevices();
+static std::list<VulkanContext> st_contexts; ///< each context for each GPU
 
-struct VulkanContext
-{
-  VulkanContext(const usRenderingOptions & opts);
-  ~VulkanContext();
-
-  const vkb::DispatchTable * operator->() const {  return &dispatch_table; }
-
-private:
-  vkb::Device device;
-  vk::Queue graphics_queue;
-  vkb::DispatchTable dispatch_table;
-};
-static std::vector<VulkanContext> st_contexts;
-
+// ------------------------ API implementation ----------------------------
 
 void InitRenderingSystem(const usRenderingOptions & opts)
 {
   io::Log(US_LOG_INFO, 0, "Initialize Vulkan");
-  InitInstance();
-  InitPhysicalDevices();
-
+  auto && ctx = st_contexts.emplace_back(opts);
   io::Log(US_LOG_INFO, 0, "Vulkan initialized successfully");
 }
 
@@ -65,15 +58,23 @@ void TerminateRenderingSystem()
 {
   io::Log(US_LOG_INFO, 0, "Destroy Vulkan");
   st_contexts.clear();
-  vkb::destroy_instance(st_vulkanInstance);
   io::Log(US_LOG_INFO, 0, "Vulkan has destroyed");
 }
 
-// -------------------------- Implementation -----------------------
+void Render2D(const RenderableScene & scene)
+{
+  for (auto && ctx : st_contexts)
+    ctx.GetRenderer()->Render();
+}
+
+// -------------------------- Context Implementation -----------------------
 
 VulkanContext::VulkanContext(const usRenderingOptions & opts)
 {
-  vkb::DeviceBuilder device_builder{st_choosenGPU};
+  vulkan_instance = CreateInstance();
+  auto surface = CreateSurface(vulkan_instance, opts);
+  choosen_gpu = SelectPhysicalDevice(vulkan_instance, surface);
+  vkb::DeviceBuilder device_builder{choosen_gpu};
   auto dev_ret = device_builder.build();
   if (!dev_ret)
   {
@@ -81,59 +82,135 @@ VulkanContext::VulkanContext(const usRenderingOptions & opts)
   }
   device = dev_ret.value();
   dispatch_table = device.make_table();
-  
-  // Get the graphics queue with a helper function
-  auto graphics_queue_ret = device.get_queue(vkb::QueueType::graphics);
-  if (!graphics_queue_ret)
-  {
-    io::Log(US_LOG_ERROR, 0, "Failed to get graphics queue - %s",
-            graphics_queue_ret.error().message());
-  }
-  graphics_queue = graphics_queue_ret.value();
+
+  renderer = std::make_unique<Renderer2D>(*this, surface);
 }
 
-VulkanContext::~VulkanContext()
+VulkanContext::~VulkanContext() noexcept
 {
+  vkDeviceWaitIdle(device);
+  renderer.reset();
+
   vkb::destroy_device(device);
+  vkb::destroy_instance(vulkan_instance);
 }
 
-
-inline bool InitInstance()
+std::pair<uint32_t, vk::Queue> VulkanContext::GetQueue(vkb::QueueType type) const
 {
-  if (st_vulkanInstance.instance == VK_NULL_HANDLE)
-  {
-    vkb::InstanceBuilder builder;
-    auto inst_ret = builder.set_app_name("Example Vulkan Application")
-                      .request_validation_layers()
-                      .set_debug_callback(debugCallback)
-                      .build();
-    if (!inst_ret)
-    {
-      io::Log(US_LOG_ERROR, 0, "Failed to create Vulkan instance - %s", inst_ret.error().message());
-      return false;
-    }
-    st_vulkanInstance = inst_ret.value();
-    return true;
-  }
+  auto queue_ret = device.get_queue(type);
+  auto familly_index = device.get_queue_index(type);
+  if (!queue_ret)
+    throw std::runtime_error("failed to request queue");
+  return std::make_pair(familly_index.value(), queue_ret.value());
 }
 
-inline bool InitPhysicalDevices()
+vk::Semaphore VulkanContext::CreateVkSemaphore() const
 {
-  if (st_choosenGPU.physical_device == VK_NULL_HANDLE)
+  VkSemaphoreCreateInfo info{};
+  VkSemaphore result = VK_NULL_HANDLE;
+  info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+  // Don't use createSemaphore in dispatchTable because it's broken
+  if (vkCreateSemaphore(device, &info, nullptr, &result) != VK_SUCCESS)
+    throw std::runtime_error("failed to create semaphore");
+  return vk::Semaphore(result);
+  
+}
+
+vk::Fence VulkanContext::CreateFence(bool locked) const
+{
+  VkFenceCreateInfo info{};
+  VkFence result = VK_NULL_HANDLE;
+  info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+  if (locked)
+    info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+  // Don't use createFence in dispatchTable because it's broken
+  if (vkCreateFence(device, &info, nullptr, &result) != VK_SUCCESS)
+    throw std::runtime_error("failed to create fence");
+  return vk::Fence(result);
+}
+
+vk::CommandPool VulkanContext::CreateCommandPool(uint32_t queue_family_index) const
+{
+  VkCommandPool commandPool = VK_NULL_HANDLE;
+
+  VkCommandPoolCreateInfo poolInfo{};
+  poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+  poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+  poolInfo.queueFamilyIndex = queue_family_index;
+  // Don't use createSemaphore in dispatchTable because it's broken
+  if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS)
   {
-    vkb::PhysicalDeviceSelector selector{st_vulkanInstance};
-    auto phys_ret = selector.set_surface(VK_NULL_HANDLE)
-                      .require_present(false)
-                      .set_minimum_version(1, 1) // require a vulkan 1.1 capable device
-                      .require_dedicated_transfer_queue()
-                      .select();
-    if (!phys_ret)
-    {
-      io::Log(US_LOG_ERROR, 0, "Failed to select Vulkan Physical Device - %s",
-              phys_ret.error().message());
-      return false;
-    }
-    st_choosenGPU = phys_ret.value();
-    return true;
+    throw std::runtime_error("failed to create command pool!");
   }
+  return vk::CommandPool{commandPool};
+}
+
+vk::CommandBuffer VulkanContext::CreateCommandBuffer(vk::CommandPool pool) const
+{
+  VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
+  VkCommandBufferAllocateInfo allocInfo{};
+  allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+  allocInfo.commandPool = pool;
+  allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+  allocInfo.commandBufferCount = 1;
+
+  if (vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer) != VK_SUCCESS)
+    throw std::runtime_error("failed to allocate command buffers!");
+
+  return vk::CommandBuffer{commandBuffer};
+}
+
+// --------------------- Static functions ------------------------------
+
+inline vkb::Instance CreateInstance()
+{
+  vkb::Instance result;
+  vkb::InstanceBuilder builder;
+  auto inst_ret = builder.set_app_name("Example Vulkan Application")
+                    .request_validation_layers()
+                    .set_debug_callback(debugCallback)
+                    .build();
+  if (!inst_ret)
+  {
+    io::Log(US_LOG_ERROR, 0, "Failed to create Vulkan instance - %s", inst_ret.error().message());
+  }
+  else
+    result = inst_ret.value();
+  return result;
+}
+
+inline vkb::PhysicalDevice SelectPhysicalDevice(vkb::Instance inst, VkSurfaceKHR surface)
+{
+  vkb::PhysicalDeviceSelector selector{inst};
+  auto phys_ret = selector.set_surface(surface)
+                    .require_present(surface != VK_NULL_HANDLE)
+                    .set_desired_version(1, 3)
+                    .select();
+
+  if (!phys_ret)
+  {
+    io::Log(US_LOG_ERROR, 0, "Failed to select Vulkan Physical Device - %s",
+            phys_ret.error().message());
+    return vkb::PhysicalDevice{};
+  }
+  return phys_ret.value();
+}
+
+inline vk::SurfaceKHR CreateSurface(vkb::Instance inst, const usRenderingOptions & opts)
+{
+  VkSurfaceKHR surface = VK_NULL_HANDLE;
+#ifdef USE_WINDOW_OUTPUT
+#ifdef _WIN32
+  VkWin32SurfaceCreateInfoKHR createInfo{};
+  createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+  createInfo.hwnd = opts.hWindow;
+  createInfo.hinstance = opts.hInstance;
+
+  if (vkCreateWin32SurfaceKHR(inst, &createInfo, nullptr, &surface) != VK_SUCCESS)
+    throw std::runtime_error("failed to create window surface!");
+#else
+
+#endif
+#endif
+  return vk::SurfaceKHR(surface);
 }

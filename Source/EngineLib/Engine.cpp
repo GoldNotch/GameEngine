@@ -3,12 +3,15 @@
 #include <cassert>
 #include <ctime>
 #include <memory>
+#include <queue>
 #include <vector>
 
 #include "Rendering/RenderingSystem.hpp"
 #include "Rendering/Swapchain.hpp"
 #define LOGGING_IMPLEMENTATION
 #include "Core/Logging.hpp"
+#include "Core/Storage.hpp"
+
 
 /// @brief packs 4 separate bytes into int
 /// @param r - red channel
@@ -31,7 +34,11 @@ struct USEngine final
   USEngine(USEngine &&) = default;
   USEngine & operator=(USEngine &&) = default;
 
+  RenderableScene & GetScene() { return scene; }
+  const RenderableScene & GetScene() const { return scene; }
+
 private:
+  RenderableScene scene;
   //render::Swapchain swapchain;  ///< queue for ready frames
   // swap chain for frames
   // queue for app-thread communication
@@ -56,43 +63,51 @@ USENGINE_API bool usEngineInit(usConstructOptions options)
     io::Log(US_LOG_INFO, 0, "Initialize rendering system");
     InitRenderingSystem(options.rendering_options);
   }
-  catch (...)
+  catch (std::exception e)
   {
+    io::Log(US_LOG_INFO, 0, "Error occured in engine initialization");
     return false;
   }
   return true;
 }
 
+/// @brief terminate engine and clear all resources
+USENGINE_API void usEngineTerminate()
+{
+  TerminateRenderingSystem();
+  st_engine.reset();
+}
+
+
 /// @brief command to start frame processing
 /// @param opts - frame options
 /// @return
-USENGINE_API void usBeginFrame(usVideoOptions opts)
+USENGINE_API usRenderableSceneHandler usBeginFrame(usVideoOptions opts)
 {
   st_engine->result_image.reserve(opts.width * opts.height);
   st_engine->current_opts = opts;
   // maybe it should block app-thread to process scene and collect draw data
+  return &st_engine->GetScene();
 }
 
 /// @brief block thread-caller untill frame is ready to return
 /// @return frame data
-USENGINE_API Frame usWaitForResult()
+USENGINE_API usFrame usRenderFrame()
 {
-  auto && opts = st_engine->current_opts;
-  for (size_t i = 0; i < opts.width * opts.height; ++i)
-  {
-    st_engine->result_image.push_back(RGB2UINT(rand() % 256, rand() % 256, rand() % 256, 0xFF));
-  }
-  return Frame{st_engine->result_image.data(), opts};
+  Render2D(RenderableScene{});
+  return usFrame{};
 }
 
 /// @brief clear all frame resources
 USENGINE_API void usEndFrame()
 {
   st_engine->result_image.clear();
+  st_engine->GetScene().clear();
 }
 
-/// @brief terminate engine and clear all resources
-USENGINE_API void usEngineTerminate()
+USENGINE_API void usRenderableScene_ConstructMeshObject(usRenderableSceneHandler handler,
+                                                        usMeshObjectConstructorArgs args)
 {
-  st_engine.reset();
+  RenderableScene & scene = *reinterpret_cast<RenderableScene *>(handler);
+  scene.emplace(args);
 }
