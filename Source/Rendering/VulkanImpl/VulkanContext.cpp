@@ -2,17 +2,9 @@
 #include <string_view>
 #include <vector>
 
-#ifdef USE_WINDOW_OUTPUT
-#ifdef _WIN32
-#define VK_USE_PLATFORM_WIN32_KHR
-#else
-
-#endif
-#endif
-
 #include <Logging.hpp>
 
-//#include "Renderer.hpp"
+#include "Renderer.hpp"
 #include "VulkanContext.hpp"
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL
@@ -48,7 +40,7 @@ vk::SurfaceKHR CreateSurface(vkb::Instance inst, const usRenderingOptions & opts
 VulkanContext::VulkanContext(const usRenderingOptions & opts)
 {
   vulkan_instance = CreateInstance();
- /* auto surface = CreateSurface(vulkan_instance, opts);
+  auto surface = CreateSurface(vulkan_instance, opts);
   choosen_gpu = SelectPhysicalDevice(vulkan_instance, surface);
   vkb::DeviceBuilder device_builder{choosen_gpu};
   auto dev_ret = device_builder.build();
@@ -59,7 +51,7 @@ VulkanContext::VulkanContext(const usRenderingOptions & opts)
   device = dev_ret.value();
   dispatch_table = device.make_table();
 
-  renderer = std::make_unique<Renderer>(*this, surface);*/
+  renderer = std::make_unique<Renderer>(*this, surface);
 }
 
 VulkanContext::~VulkanContext() noexcept
@@ -141,7 +133,8 @@ vkb::Instance CreateInstance()
 {
   vkb::Instance result;
   vkb::InstanceBuilder builder;
-  auto inst_ret = builder.set_app_name("Example Vulkan Application")
+  auto inst_ret = builder
+                    .set_app_name("Example Vulkan Application")
                     //.request_validation_layers()
                     .set_debug_callback(debugCallback)
                     .build();

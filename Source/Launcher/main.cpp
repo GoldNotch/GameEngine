@@ -16,23 +16,23 @@
 
 void ConsoleLog(LogStatus status, int code, const char * message)
 {
-  //switch (status)
-  //{
-  //  case US_LOG_INFO:
-  //    std::printf("INFO: %s\n", message);
-  //    break;
-  //  case US_LOG_WARNING:
-  //    std::printf("WARNING: %s\n", message);
-  //    break;
-  //  case US_LOG_ERROR:
-  //    std::printf("ERROR(%i): %s\n", code, message);
-  //    break;
-  //  case US_LOG_FATAL_ERROR:
-  //    std::printf("FATAL_ERROR(%i): %s\nProgram is gonna abort!!!", code, message);
-  //    system("cls");
-  //    std::abort();
-  //    break;
-  //}
+  switch (status)
+  {
+    case US_LOG_INFO:
+      std::printf("INFO: %s\n", message);
+      break;
+    case US_LOG_WARNING:
+      std::printf("WARNING: %s\n", message);
+      break;
+    case US_LOG_ERROR:
+      std::printf("ERROR(%i): %s\n", code, message);
+      break;
+    case US_LOG_FATAL_ERROR:
+      std::printf("FATAL_ERROR(%i): %s\nProgram is gonna abort!!!", code, message);
+      system("cls");
+      std::abort();
+      break;
+  }
 }
 
 
@@ -49,8 +49,8 @@ int main()
     return -1;
   }
 
-  //Rendering_SetLoggingFunc(ConsoleLog);
-  //App_SetLoggingFunc(ConsoleLog);
+  Rendering_SetLoggingFunc(ConsoleLog);
+  App_SetLoggingFunc(ConsoleLog);
   //glfwMakeContextCurrent(window);
 
   //if (glewInit() != GLEW_OK)
@@ -66,15 +66,15 @@ int main()
   renderOpts.hInstance = GetModuleHandle(nullptr);
   renderOpts.required_gpus = 1;
 
-  if (!InitRenderingSystem(renderOpts))
+  if (InitRenderingSystem(renderOpts))
   {
     std::printf("Failed to init rendering system\n");
     glfwTerminate();
     return -1;
   }
 
-  //App::MainProcess app_process;
-  //app_process.Start();
+  App::MainProcess app_process;
+  app_process.Start();
 
   while (!glfwWindowShouldClose(window))
   {
@@ -84,11 +84,11 @@ int main()
     glfwGetFramebufferSize(window, &width, &height);
 
     //usRenderableSceneHandler handler = usBeginFrame(usVideoOptions{width, height});
-    //app_process.ExecuteWithPause(usApp_InitRenderableScene, nullptr);
+    app_process.ExecuteWithPause(usApp_InitRenderableScene, nullptr);
 
-    //RenderFrame(nullptr);
+    RenderFrame(nullptr);
   }
-  //TerminateRenderingSystem();
+  TerminateRenderingSystem();
 
   glfwTerminate();
   return 0;

@@ -1,11 +1,6 @@
 #ifndef APP_H
 #define APP_H
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
 #ifdef _WIN32
 #if defined(APP_STATIC_BUILD)
 #define USAPP_API
@@ -18,8 +13,14 @@ extern "C"
 #define USAPP_API
 #endif
 
-//#include "LoggingAPI.h"
-//  DECLARE_LOGGING_API(App, USAPP_API)
+#include "LoggingAPI.h"
+DECLARE_LOGGING_API(App, USAPP_API)
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 
   /// @brief initialize application module
   USAPP_API void usApp_Init();

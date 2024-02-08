@@ -43,11 +43,11 @@ PRIVATE
 #---------------- Link third-party libraries ---------------
 
 # -------------- definitions ---------------------
-set(${this_target}_COMPILE_DEFINITIONS
-	-DRENDERING_BUILD
-	-DUSE_WINDOW_OUTPUT
+target_compile_definitions(${this_target} 
+PUBLIC
+	RENDERING_BUILD
+	USE_WINDOW_OUTPUT
 )
-add_definitions(${${this_target}_COMPILE_DEFINITIONS})
 
 if (MSVC)
 	add_compile_definitions(_CRT_SECURE_NO_WARNINGS)

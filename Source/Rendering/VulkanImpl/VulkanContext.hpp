@@ -1,4 +1,11 @@
 #pragma once
+#ifdef USE_WINDOW_OUTPUT
+#ifdef _WIN32
+#define VK_USE_PLATFORM_WIN32_KHR
+//#else //TODO UNIX
+#endif
+#endif // USE_WINDOW_OUTPUT
+
 #include <VkBootstrap.h>
 #include <vulkan/vulkan.hpp>
 

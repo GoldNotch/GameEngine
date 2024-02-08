@@ -17,9 +17,9 @@
 
 #include "App.h"
 
-//#define LOGGING_IMPLEMENTATION
-//#include <Logging.hpp>
-//IMPLEMENT_LOGGING_API(App, USAPP_API)
+#define LOGGING_IMPLEMENTATION
+#include <Logging.hpp>
+IMPLEMENT_LOGGING_API(App, USAPP_API)
 
 #include "Game.hpp"
 
