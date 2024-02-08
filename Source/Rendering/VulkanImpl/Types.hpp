@@ -6,6 +6,7 @@ class CommandBuffer;
 struct SubpassDescription;
 } // namespace vk
 
+
 template<typename PipelineT>
 struct SubpassDescriptionBuilder final
 {

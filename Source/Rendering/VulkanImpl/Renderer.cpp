@@ -1,8 +1,8 @@
 #include "Renderer.hpp"
 
-#include "../../Core/Logging.hpp"
+#include <Logging.hpp>
 #include "MeshPipeline.hpp"
-#include "VulkanRendering.hpp"
+#include "VulkanContext.hpp"
 
 namespace
 {
@@ -57,7 +57,7 @@ vk::RenderPass CreateRenderPass(const VulkanContext & ctx, const vkb::Swapchain 
 
 } // namespace
 
-struct Renderer2D::Impl final
+struct Renderer::Impl final
 {
   explicit Impl(const VulkanContext & ctx, const vk::SurfaceKHR surface);
   ~Impl();
@@ -100,24 +100,24 @@ private:
   void InitFramebuffers();
 };
 
-Renderer2D::Renderer2D(const VulkanContext & ctx, const vk::SurfaceKHR & surface)
+Renderer::Renderer(const VulkanContext & ctx, const vk::SurfaceKHR & surface)
   : impl(new Impl(ctx, surface))
 {
 }
 
-Renderer2D::~Renderer2D()
+Renderer::~Renderer()
 {
   impl.reset();
 }
 
-void Renderer2D::Render() const
+void Renderer::Render() const
 {
   impl->Render();
 }
 
 // ------------------------------- Implementation ------------------------
 
-Renderer2D::Impl::Impl(const VulkanContext & ctx, const vk::SurfaceKHR surface)
+Renderer::Impl::Impl(const VulkanContext & ctx, const vk::SurfaceKHR surface)
   : context_owner(ctx)
   , surface(surface)
 {
@@ -152,7 +152,7 @@ Renderer2D::Impl::Impl(const VulkanContext & ctx, const vk::SurfaceKHR surface)
   in_flight_fence = ctx.CreateFence(true /*locked*/);
 }
 
-Renderer2D::Impl::~Impl()
+Renderer::Impl::~Impl()
 {
   context_owner->destroySemaphore(image_available_semaphore, nullptr);
   context_owner->destroySemaphore(render_finished_semaphore, nullptr);
@@ -167,7 +167,7 @@ Renderer2D::Impl::~Impl()
 }
 
 /// @brief renders one frame
-void Renderer2D::Impl::Render() const
+void Renderer::Impl::Render() const
 {
   VkFence fence = in_flight_fence;
   vkWaitForFences(context_owner.GetDevice(), 1, &fence, VK_TRUE, UINT64_MAX);
@@ -251,7 +251,7 @@ void Renderer2D::Impl::Render() const
 }
 
 
-void Renderer2D::Impl::InitFramebuffers()
+void Renderer::Impl::InitFramebuffers()
 {
   swapchain_framebuffers.resize(swapchain_imageviews.size());
   for (size_t i = 0, c = swapchain_imageviews.size(); i < c; ++i)

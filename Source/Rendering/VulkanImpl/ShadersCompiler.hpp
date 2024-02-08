@@ -3,8 +3,7 @@
 #include <string>
 #include <vector>
 
-#include "VulkanRendering.hpp"
-
+#include "VulkanContext.hpp"
 
 struct ShaderProgram
 {

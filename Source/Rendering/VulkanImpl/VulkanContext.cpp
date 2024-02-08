@@ -10,9 +10,10 @@
 #endif
 #endif
 
-#include "../../Core/Logging.hpp"
-#include "Renderer.hpp"
-#include "VulkanRendering.hpp"
+#include <Logging.hpp>
+
+//#include "Renderer.hpp"
+#include "VulkanContext.hpp"
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL
 debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -42,37 +43,12 @@ vkb::PhysicalDevice SelectPhysicalDevice(vkb::Instance inst, VkSurfaceKHR surfac
 /// @brief platform specific function, creates surface for presentation
 vk::SurfaceKHR CreateSurface(vkb::Instance inst, const usRenderingOptions & opts);
 
-static std::list<VulkanContext> st_contexts; ///< each context for each GPU
-
-// ------------------------ API implementation ----------------------------
-
-void InitRenderingSystem(const usRenderingOptions & opts)
-{
-  io::Log(US_LOG_INFO, 0, "Initialize Vulkan");
-  auto && ctx = st_contexts.emplace_back(opts);
-  io::Log(US_LOG_INFO, 0, "Vulkan initialized successfully");
-}
-
-/// @brief clear all resources for rendering system
-void TerminateRenderingSystem()
-{
-  io::Log(US_LOG_INFO, 0, "Destroy Vulkan");
-  st_contexts.clear();
-  io::Log(US_LOG_INFO, 0, "Vulkan has destroyed");
-}
-
-void Render2D(const RenderableScene & scene)
-{
-  for (auto && ctx : st_contexts)
-    ctx.GetRenderer()->Render();
-}
-
 // -------------------------- Context Implementation -----------------------
 
 VulkanContext::VulkanContext(const usRenderingOptions & opts)
 {
   vulkan_instance = CreateInstance();
-  auto surface = CreateSurface(vulkan_instance, opts);
+ /* auto surface = CreateSurface(vulkan_instance, opts);
   choosen_gpu = SelectPhysicalDevice(vulkan_instance, surface);
   vkb::DeviceBuilder device_builder{choosen_gpu};
   auto dev_ret = device_builder.build();
@@ -83,7 +59,7 @@ VulkanContext::VulkanContext(const usRenderingOptions & opts)
   device = dev_ret.value();
   dispatch_table = device.make_table();
 
-  renderer = std::make_unique<Renderer2D>(*this, surface);
+  renderer = std::make_unique<Renderer>(*this, surface);*/
 }
 
 VulkanContext::~VulkanContext() noexcept
@@ -113,7 +89,6 @@ vk::Semaphore VulkanContext::CreateVkSemaphore() const
   if (vkCreateSemaphore(device, &info, nullptr, &result) != VK_SUCCESS)
     throw std::runtime_error("failed to create semaphore");
   return vk::Semaphore(result);
-  
 }
 
 vk::Fence VulkanContext::CreateFence(bool locked) const
@@ -162,12 +137,12 @@ vk::CommandBuffer VulkanContext::CreateCommandBuffer(vk::CommandPool pool) const
 
 // --------------------- Static functions ------------------------------
 
-inline vkb::Instance CreateInstance()
+vkb::Instance CreateInstance()
 {
   vkb::Instance result;
   vkb::InstanceBuilder builder;
   auto inst_ret = builder.set_app_name("Example Vulkan Application")
-                    .request_validation_layers()
+                    //.request_validation_layers()
                     .set_debug_callback(debugCallback)
                     .build();
   if (!inst_ret)
@@ -179,12 +154,12 @@ inline vkb::Instance CreateInstance()
   return result;
 }
 
-inline vkb::PhysicalDevice SelectPhysicalDevice(vkb::Instance inst, VkSurfaceKHR surface)
+vkb::PhysicalDevice SelectPhysicalDevice(vkb::Instance inst, VkSurfaceKHR surface)
 {
   vkb::PhysicalDeviceSelector selector{inst};
   auto phys_ret = selector.set_surface(surface)
                     .require_present(surface != VK_NULL_HANDLE)
-                    .set_desired_version(1, 3)
+                    .set_minimum_version(1, 3)
                     .select();
 
   if (!phys_ret)
@@ -196,7 +171,7 @@ inline vkb::PhysicalDevice SelectPhysicalDevice(vkb::Instance inst, VkSurfaceKHR
   return phys_ret.value();
 }
 
-inline vk::SurfaceKHR CreateSurface(vkb::Instance inst, const usRenderingOptions & opts)
+vk::SurfaceKHR CreateSurface(vkb::Instance inst, const usRenderingOptions & opts)
 {
   VkSurfaceKHR surface = VK_NULL_HANDLE;
 #ifdef USE_WINDOW_OUTPUT

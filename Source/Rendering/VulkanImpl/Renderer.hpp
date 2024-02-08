@@ -4,14 +4,14 @@
 struct VulkanContext;
 namespace vk
 {
-struct CommandBuffer;
+class CommandBuffer;
 class SurfaceKHR;
 }
 
-struct Renderer2D : public IRenderer
+struct Renderer : public IRenderer
 {
-  Renderer2D(const VulkanContext & ctx, const vk::SurfaceKHR & surface);
-  virtual ~Renderer2D();
+  Renderer(const VulkanContext & ctx, const vk::SurfaceKHR & surface);
+  virtual ~Renderer();
   virtual void Render() const override;
 
 private:

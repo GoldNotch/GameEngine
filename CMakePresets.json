@@ -1,0 +1,109 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 21,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "default",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "Build/Obj/${presetName}",
+      "cacheVariables": {
+        "OUTPUT_DIRECTORY": "Build/Exe/${presetName}"
+      }
+    },
+
+    {
+      "name": "windows-default",
+      "hidden": true,
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
+    {
+      "name": "debug-default",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "release-default",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+      }
+    },	
+    {
+      "name": "Debug-x64",
+      "displayName": "Debug-x64",
+      "inherits": [ "default", "windows-default", "debug-default" ],
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
+      },
+      "cacheVariables": {
+        "PLATFORM": "x64"
+      }
+    },
+    {
+      "name": "Debug-x86",
+      "displayName": "Debug-x86",
+      "inherits": [ "default", "windows-default", "debug-default" ],
+      "architecture": {
+        "value": "x86",
+        "strategy": "external"
+      },
+      "cacheVariables": {
+        "PLATFORM": "Win32"
+      }
+    },
+    {
+      "name": "Release-x64",
+      "displayName": "Release-x64",
+      "inherits": [ "default", "windows-default", "release-default" ],
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
+      },
+      "cacheVariables": {
+        "PLATFORM": "x64"
+      }
+    },
+    {
+      "name": "Release-x86",
+      "displayName": "Release-x86",
+      "inherits": [ "default", "windows-default", "release-default" ],
+      "architecture": {
+        "value": "x86",
+        "strategy": "external"
+      },
+      "cacheVariables": {
+        "PLATFORM": "Win32"
+      }
+    },
+  ],
+  "buildPresets": [
+    {
+      "name": "Debug-x64",
+      "configurePreset": "Debug-x64"
+    },
+    {
+      "name": "Debug-x86",
+      "configurePreset": "Debug-x86"
+    },
+    {
+      "name": "Release-x64",
+      "configurePreset": "Release-x64"
+    },
+    {
+      "name": "Release-x86",
+      "configurePreset": "Release-x86"
+    },
+  ]
+}

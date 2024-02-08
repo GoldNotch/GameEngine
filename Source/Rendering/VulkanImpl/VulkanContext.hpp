@@ -2,8 +2,8 @@
 #include <VkBootstrap.h>
 #include <vulkan/vulkan.hpp>
 
-#include "../RenderingSystem.hpp"
 #include "Types.hpp"
+#include "../RenderingSystem.h"
 
 /// @brief context is object contains vulkan logical device. Also it provides access to vulkan functions
 ///			If rendering system uses several GPUs, you should create one context for each physical device

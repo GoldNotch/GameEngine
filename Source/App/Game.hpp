@@ -1,8 +1,7 @@
 #pragma once
 #include <vector>
 
-#include <Engine.h>
-#include <Engine.hpp>
+#include "App.hpp"
 struct TriangleObject final : public App::IAppObject
 {
   virtual ~TriangleObject() = default;
@@ -33,10 +32,10 @@ public:
     //TODO:pass data from trianlges to scene
     for (auto && tri : triangles)
     {
-      usMeshObjectConstructorArgs args{reinterpret_cast<const usMeshObjectVertex *>(
-                                         tri.GetVerticesData()),
-                                       tri.VerticesCount()};
-      usRenderableScene_ConstructMeshObject(scene_handler, args);
+      //usMeshObjectConstructorArgs args{reinterpret_cast<const usMeshObjectVertex *>(
+      //                                   tri.GetVerticesData()),
+      //                                 tri.VerticesCount()};
+      //usRenderableScene_ConstructMeshObject(scene_handler, args);
     }
   }
 

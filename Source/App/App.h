@@ -18,15 +18,18 @@ extern "C"
 #define USAPP_API
 #endif
 
+//#include "LoggingAPI.h"
+//  DECLARE_LOGGING_API(App, USAPP_API)
+
   /// @brief initialize application module
   USAPP_API void usApp_Init();
-  /// @brief application tick process 
+  /// @brief application tick process
   USAPP_API void usApp_Tick();
   /// @brief terminate application module
   USAPP_API void usApp_Terminate();
   /// @brief collects and fills frame data
   /// @param handler - identifier of frame data
-  USAPP_API void usApp_InitRenderableScene(void* const handler);
+  USAPP_API void usApp_InitRenderableScene(void * const handler);
 
 #ifdef __cplusplus
 }

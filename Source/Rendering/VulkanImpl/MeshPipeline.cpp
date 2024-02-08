@@ -1,7 +1,7 @@
 #include "MeshPipeline.hpp"
 
 #include "ShadersCompiler.hpp"
-#include "VulkanRendering.hpp"
+#include "VulkanContext.hpp"
 
 namespace shaders
 {
