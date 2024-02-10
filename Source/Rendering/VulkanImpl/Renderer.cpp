@@ -1,12 +1,68 @@
 #include "Renderer.hpp"
 
+#include <list>
+
 #include <Logging.hpp>
 
 #include "MeshPipeline.hpp"
 #include "VulkanContext.hpp"
-
 namespace
 {
+struct FrameData final
+{
+  FrameData(const VulkanContext & ctx, VkRenderPass render_pass, VkImageView view,
+            VkExtent2D image_extent)
+    : context_owner(ctx)
+    , image_view(view)
+  {
+    image_available_semaphore = ctx.CreateVkSemaphore();
+    render_finished_semaphore = ctx.CreateVkSemaphore();
+    is_rendering = ctx.CreateFence(true /*locked*/);
+
+    VkImageView attachments[] = {view};
+    VkFramebufferCreateInfo framebufferInfo{};
+    framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    framebufferInfo.renderPass = render_pass;
+    framebufferInfo.attachmentCount = 1;
+    framebufferInfo.pAttachments = attachments;
+    framebufferInfo.width = image_extent.width;
+    framebufferInfo.height = image_extent.height;
+    framebufferInfo.layers = 1;
+
+    if (vkCreateFramebuffer(context_owner.GetDevice(), &framebufferInfo, nullptr, &framebuffer) !=
+        VK_SUCCESS)
+    {
+      throw std::runtime_error("failed to create framebuffer!");
+    }
+  }
+
+  ~FrameData()
+  {
+    vkDestroySemaphore(context_owner.GetDevice(), image_available_semaphore, nullptr);
+    vkDestroySemaphore(context_owner.GetDevice(), render_finished_semaphore, nullptr);
+    vkDestroyFence(context_owner.GetDevice(), is_rendering, nullptr);
+    vkDestroyFramebuffer(context_owner.GetDevice(), framebuffer, nullptr);
+  }
+
+  const VkFramebuffer & GetFramebuffer() const & { return framebuffer; }
+  const VkSemaphore & GetImageAvailableSemaphore() const & { return image_available_semaphore; }
+  const VkSemaphore & GetRenderingFinishedSemaphore() const & { return render_finished_semaphore; }
+  const VkFence & GetRenderingFence() const & { return is_rendering; }
+
+private:
+  const VulkanContext & context_owner; ///< context, doesn't own
+  VkImageView image_view;              ///< image view. doesn't own
+  VkFramebuffer framebuffer;
+
+  VkSemaphore image_available_semaphore;
+  VkSemaphore render_finished_semaphore;
+  VkFence is_rendering;
+
+private:
+  FrameData(const FrameData &) = delete;
+  FrameData & operator=(const FrameData &) = delete;
+};
+
 
 template<typename... Args>
 vk::RenderPass CreateRenderPass(const VulkanContext & ctx, const vkb::Swapchain & swapchain)
@@ -66,7 +122,6 @@ struct Renderer::Impl final
   void Render() const;
 
 private:
-  //TODO: move vulkan data into Impl object in .cpp file
   const VulkanContext & context_owner;
   vk::RenderPass render_pass; ///< render pass
 
@@ -79,26 +134,17 @@ private:
   vk::CommandBuffer buffer;
 
   /// presentaqtion data
-  vk::SurfaceKHR surface;        ///< surface
-  bool use_presentation = false; ///< flag of presentation usage, true if surface is valid
-  vkb::Swapchain swapchain;      ///< swapchain
-  //TODO: swapchain images wrap with class
-  std::vector<VkImage> swapchain_images;             ///< images for swapchain
-  std::vector<VkImageView> swapchain_imageviews;     ///< image views for swapchain
-  std::vector<VkFramebuffer> swapchain_framebuffers; ///< main framebuffer
-
-  vk::Semaphore image_available_semaphore;
-  vk::Semaphore render_finished_semaphore;
-  vk::Fence in_flight_fence;
+  vk::SurfaceKHR surface;                ///< surface
+  bool use_presentation = false;         ///< flag of presentation usage, true if surface is valid
+  vkb::Swapchain swapchain;              ///< swapchain
+  std::vector<VkImage> swapchain_images; ///< images for swapchain
+  std::vector<VkImageView> swapchain_imageviews; ///< image views for swapchain
+  std::list<FrameData> frames;                   ///< framebuffers
+  mutable std::list<FrameData>::const_iterator current_frame;
 
   // pipelines
   //TODO: make it with interface
   std::unique_ptr<MeshPipeline> pipeline = nullptr;
-
-private:
-  /// @brief initialize framebuffer with created render_pass
-  /// @param render_pass
-  void InitFramebuffers();
 };
 
 Renderer::Renderer(const VulkanContext & ctx, const vk::SurfaceKHR & surface)
@@ -143,23 +189,19 @@ Renderer::Impl::Impl(const VulkanContext & ctx, const vk::SurfaceKHR surface)
     swapchain_imageviews = swapchain.get_image_views().value();
   }
   //else offscreen rendering
+
   pool = ctx.CreateCommandPool(render_family_index);
   buffer = context_owner.CreateCommandBuffer(pool);
   render_pass = CreateRenderPass<MeshPipeline>(ctx, swapchain);
   pipeline = std::make_unique<MeshPipeline>(ctx, render_pass, 0);
-  InitFramebuffers();
-  image_available_semaphore = ctx.CreateVkSemaphore();
-  render_finished_semaphore = ctx.CreateVkSemaphore();
-  in_flight_fence = ctx.CreateFence(true /*locked*/);
+  // create frames
+  for (auto && view : swapchain_imageviews)
+    frames.emplace_back(ctx, render_pass, view, swapchain.extent);
+  current_frame = frames.begin();
 }
 
 Renderer::Impl::~Impl()
 {
-  vkDestroySemaphore(context_owner.GetDevice(), image_available_semaphore, nullptr);
-  vkDestroySemaphore(context_owner.GetDevice(), render_finished_semaphore, nullptr);
-  vkDestroyFence(context_owner.GetDevice(), in_flight_fence, nullptr);
-  for (auto && fbo : swapchain_framebuffers)
-    vkDestroyFramebuffer(context_owner.GetDevice(), fbo, nullptr);
   vkDestroyRenderPass(context_owner.GetDevice(), render_pass, nullptr);
   swapchain.destroy_image_views(swapchain_imageviews);
   vkDestroyCommandPool(context_owner.GetDevice(), pool, nullptr);
@@ -170,20 +212,23 @@ Renderer::Impl::~Impl()
 /// @brief renders one frame
 void Renderer::Impl::Render() const
 {
-  VkFence fence = in_flight_fence;
-  vkWaitForFences(context_owner.GetDevice(), 1, &fence, VK_TRUE, UINT64_MAX);
-  vkResetFences(context_owner.GetDevice(), 1, &fence);
-  vkResetCommandBuffer(buffer, 0);
-
+  // wait until rendering is over
+  vkWaitForFences(context_owner.GetDevice(), 1, &current_frame->GetRenderingFence(), VK_TRUE,
+                  UINT64_MAX);
   uint32_t image_index = 0;
   if (use_presentation)
   {
     VkResult res = vkAcquireNextImageKHR(context_owner.GetDevice(), swapchain, UINT64_MAX,
-                                         image_available_semaphore, VK_NULL_HANDLE, &image_index);
+                                         current_frame->GetImageAvailableSemaphore(),
+                                         VK_NULL_HANDLE, &image_index);
     if (res != VK_SUCCESS)
       throw std::runtime_error("failed to acquire image");
   }
   //else offscreen rendering
+
+  // reset fence
+  vkResetFences(context_owner.GetDevice(), 1, &current_frame->GetRenderingFence());
+  vkResetCommandBuffer(buffer, 0);
 
   VkCommandBufferBeginInfo beginInfo{};
   beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -196,7 +241,7 @@ void Renderer::Impl::Render() const
   VkRenderPassBeginInfo renderPassInfo{};
   renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
   renderPassInfo.renderPass = render_pass;
-  renderPassInfo.framebuffer = swapchain_framebuffers[image_index];
+  renderPassInfo.framebuffer = current_frame->GetFramebuffer();
   renderPassInfo.renderArea.offset = {0, 0};
   renderPassInfo.renderArea.extent = swapchain.extent;
 
@@ -214,20 +259,18 @@ void Renderer::Impl::Render() const
   VkSubmitInfo submitInfo{};
   submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-  VkSemaphore waitSemaphores[] = {image_available_semaphore};
   VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
   submitInfo.waitSemaphoreCount = 1;
-  submitInfo.pWaitSemaphores = waitSemaphores;
+  submitInfo.pWaitSemaphores = &current_frame->GetImageAvailableSemaphore();
   submitInfo.pWaitDstStageMask = waitStages;
   submitInfo.commandBufferCount = 1;
   VkCommandBuffer buffers[] = {buffer};
   submitInfo.pCommandBuffers = buffers;
 
-  VkSemaphore signalSemaphores[] = {render_finished_semaphore};
   submitInfo.signalSemaphoreCount = 1;
-  submitInfo.pSignalSemaphores = signalSemaphores;
+  submitInfo.pSignalSemaphores = &current_frame->GetRenderingFinishedSemaphore();
 
-  if (vkQueueSubmit(render_queue, 1, &submitInfo, in_flight_fence) != VK_SUCCESS)
+  if (vkQueueSubmit(render_queue, 1, &submitInfo, current_frame->GetRenderingFence()) != VK_SUCCESS)
   {
     throw std::runtime_error("failed to submit draw command buffer!");
   }
@@ -238,7 +281,7 @@ void Renderer::Impl::Render() const
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
     presentInfo.waitSemaphoreCount = 1;
-    presentInfo.pWaitSemaphores = signalSemaphores;
+    presentInfo.pWaitSemaphores = &current_frame->GetRenderingFinishedSemaphore();
 
     VkSwapchainKHR swapChains[] = {swapchain};
     presentInfo.swapchainCount = 1;
@@ -248,28 +291,8 @@ void Renderer::Impl::Render() const
     if (VkResult res = vkQueuePresentKHR(present_queue, &presentInfo); res != VK_SUCCESS)
       throw std::runtime_error("failed to query present");
   }
-}
 
-
-void Renderer::Impl::InitFramebuffers()
-{
-  swapchain_framebuffers.resize(swapchain_imageviews.size());
-  for (size_t i = 0, c = swapchain_imageviews.size(); i < c; ++i)
-  {
-    VkImageView attachments[] = {swapchain_imageviews[i]};
-    VkFramebufferCreateInfo framebufferInfo{};
-    framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    framebufferInfo.renderPass = render_pass;
-    framebufferInfo.attachmentCount = 1;
-    framebufferInfo.pAttachments = attachments;
-    framebufferInfo.width = swapchain.extent.width;
-    framebufferInfo.height = swapchain.extent.height;
-    framebufferInfo.layers = 1;
-
-    if (vkCreateFramebuffer(context_owner.GetDevice(), &framebufferInfo, nullptr,
-                            &swapchain_framebuffers[i]) != VK_SUCCESS)
-    {
-      throw std::runtime_error("failed to create framebuffer!");
-    }
-  }
+  current_frame = std::next(current_frame);
+  if (current_frame == frames.end())
+    current_frame = frames.begin();
 }
