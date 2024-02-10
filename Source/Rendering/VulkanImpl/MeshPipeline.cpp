@@ -5,8 +5,8 @@
 
 namespace shaders
 {
-static constexpr std::string_view vertex_shader = "shaders/triangle_vert.spv";
-static constexpr std::string_view fragment_shader = "shaders/triangle_frag.spv";
+static constexpr auto vertex_shader = ResolveShaderPath("triangle_vert.spv");
+static constexpr auto fragment_shader = ResolveShaderPath("triangle_frag.spv");
 } // namespace shaders
 
 
@@ -67,8 +67,8 @@ MeshPipeline::Impl::Impl(const VulkanContext & ctx, const vk::RenderPass & rende
                          uint32_t subpass_index)
   : context(ctx)
 {
-  program.AttachShader(vk::ShaderStageFlagBits::eVertex, "Shaders/Vulkan/triangle_vert.spv")
-    .AttachShader(vk::ShaderStageFlagBits::eFragment, "Shaders/Vulkan/triangle_frag.spv");
+  program.AttachShader(vk::ShaderStageFlagBits::eVertex, shaders::vertex_shader.c_str())
+    .AttachShader(vk::ShaderStageFlagBits::eFragment, shaders::fragment_shader.c_str());
 
   VkGraphicsPipelineCreateInfo pipelineInfo{};
   pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;

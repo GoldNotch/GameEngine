@@ -1,3 +1,5 @@
+#include "VulkanContext.hpp"
+
 #include <memory>
 #include <string_view>
 #include <vector>
@@ -5,7 +7,6 @@
 #include <Logging.hpp>
 
 #include "Renderer.hpp"
-#include "VulkanContext.hpp"
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL
 debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,

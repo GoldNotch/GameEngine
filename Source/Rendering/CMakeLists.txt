@@ -28,6 +28,7 @@ find_package(glm REQUIRED FATAL_ERROR)
 find_package(vulkan-validationlayers REQUIRED FATAL_ERROR)
 find_package(vk-bootstrap REQUIRED FATAL_ERROR)
 target_link_libraries(${this_target} 
+	Catch2::Catch2WithMain
 	Vulkan::Vulkan 
 	glm::glm
 	vulkan-validationlayers::vulkan-validationlayers
@@ -47,6 +48,7 @@ target_compile_definitions(${this_target}
 PUBLIC
 	RENDERING_BUILD
 	USE_WINDOW_OUTPUT
+	DATA_PATH="Data"
 )
 
 if (MSVC)
@@ -58,7 +60,7 @@ set(${this_target}_SYSTEM_LIBRARIES
 )
 target_link_libraries(${this_target} ${${this_target}_SYSTEM_LIBRARIES})
 
-file(REMOVE_RECURSE  ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Shaders)
+file(REMOVE_RECURSE  ${DATA_DIR}/Shaders)
 # copy shaders into bin
-file(COPY VulkanImpl/Shaders DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Shaders)
-file(RENAME ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Shaders/Shaders ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Shaders/Vulkan)
+file(COPY VulkanImpl/Shaders DESTINATION ${DATA_DIR}/Shaders)
+file(RENAME ${DATA_DIR}/Shaders/Shaders ${DATA_DIR}/Shaders/Vulkan)

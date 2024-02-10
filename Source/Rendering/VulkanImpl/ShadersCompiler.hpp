@@ -3,7 +3,17 @@
 #include <string>
 #include <vector>
 
+#include <Formatter.hpp>
+#include <StaticString.hpp>
+
 #include "VulkanContext.hpp"
+
+template<std::size_t Size>
+constexpr decltype(auto) ResolveShaderPath(const char (&filename)[Size])
+{
+  return Core::static_string(DATA_PATH) + Core::static_string("/shaders/Vulkan/") +
+         Core::static_string(filename);
+}
 
 struct ShaderProgram
 {

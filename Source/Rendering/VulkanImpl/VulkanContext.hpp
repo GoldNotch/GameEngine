@@ -6,11 +6,14 @@
 #endif
 #endif // USE_WINDOW_OUTPUT
 
+#include <filesystem>
+
 #include <VkBootstrap.h>
 #include <vulkan/vulkan.hpp>
 
-#include "Types.hpp"
 #include "../RenderingSystem.h"
+#include "Types.hpp"
+
 
 /// @brief context is object contains vulkan logical device. Also it provides access to vulkan functions
 ///			If rendering system uses several GPUs, you should create one context for each physical device
@@ -31,7 +34,7 @@ struct VulkanContext final
   const vkb::PhysicalDevice & GetGPU() const & { return choosen_gpu; }
 
   // TODO: Make it global functions
-  /// @brief returns queue of specific type. doesn't own it 
+  /// @brief returns queue of specific type. doesn't own it
   std::pair<uint32_t, vk::Queue> GetQueue(vkb::QueueType type) const;
   /// @brief creates semaphore, doesn't own it
   vk::Semaphore CreateVkSemaphore() const;

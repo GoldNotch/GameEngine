@@ -30,5 +30,5 @@ set(${this_target}_COMPILE_DEFINITIONS
 add_definitions(${${this_target}_COMPILE_DEFINITIONS})
 
 if (MSVC)
-	add_compile_definitions(_HAS_ITERATOR_DEBUGGING=0) # disable iterator debugging in MSVC
+	#add_compile_definitions(_HAS_ITERATOR_DEBUGGING=0) # disable iterator debugging in MSVC
 endif()

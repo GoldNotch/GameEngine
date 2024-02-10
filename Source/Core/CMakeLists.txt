@@ -16,6 +16,8 @@ INTERFACE
 )
 
 if (MSVC)
-	add_compile_definitions(_HAS_ITERATOR_DEBUGGING=0) # disable iterator debugging in MSVC
 	add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
 endif()
+
+
+add_subdirectory(Tests)

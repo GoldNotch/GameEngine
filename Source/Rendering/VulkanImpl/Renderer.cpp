@@ -1,6 +1,7 @@
 #include "Renderer.hpp"
 
 #include <Logging.hpp>
+
 #include "MeshPipeline.hpp"
 #include "VulkanContext.hpp"
 
@@ -154,14 +155,14 @@ Renderer::Impl::Impl(const VulkanContext & ctx, const vk::SurfaceKHR surface)
 
 Renderer::Impl::~Impl()
 {
-  context_owner->destroySemaphore(image_available_semaphore, nullptr);
-  context_owner->destroySemaphore(render_finished_semaphore, nullptr);
-  context_owner->destroyFence(in_flight_fence, nullptr);
-  context_owner->destroyRenderPass(render_pass, nullptr);
-  swapchain.destroy_image_views(swapchain_imageviews);
+  vkDestroySemaphore(context_owner.GetDevice(), image_available_semaphore, nullptr);
+  vkDestroySemaphore(context_owner.GetDevice(), render_finished_semaphore, nullptr);
+  vkDestroyFence(context_owner.GetDevice(), in_flight_fence, nullptr);
   for (auto && fbo : swapchain_framebuffers)
-    context_owner->destroyFramebuffer(fbo, nullptr);
-  context_owner->destroyCommandPool(pool, nullptr);
+    vkDestroyFramebuffer(context_owner.GetDevice(), fbo, nullptr);
+  vkDestroyRenderPass(context_owner.GetDevice(), render_pass, nullptr);
+  swapchain.destroy_image_views(swapchain_imageviews);
+  vkDestroyCommandPool(context_owner.GetDevice(), pool, nullptr);
   vkb::destroy_swapchain(swapchain);
   vkb::destroy_surface(context_owner.GetInstance(), surface);
 }
@@ -178,8 +179,7 @@ void Renderer::Impl::Render() const
   if (use_presentation)
   {
     VkResult res = vkAcquireNextImageKHR(context_owner.GetDevice(), swapchain, UINT64_MAX,
-                                                      image_available_semaphore, VK_NULL_HANDLE,
-                                                      &image_index);
+                                         image_available_semaphore, VK_NULL_HANDLE, &image_index);
     if (res != VK_SUCCESS)
       throw std::runtime_error("failed to acquire image");
   }

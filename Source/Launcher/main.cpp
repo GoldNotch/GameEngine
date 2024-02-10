@@ -7,7 +7,6 @@
 #include <App.h>
 #include <GLFW/glfw3.h>
 #include <Logging.hpp>
-#define USE_WINDOW_OUTPUT
 #include <RenderingSystem.h>
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>

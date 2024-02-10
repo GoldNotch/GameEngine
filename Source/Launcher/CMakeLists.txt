@@ -32,6 +32,6 @@ target_include_directories(${this_target} PRIVATE ${glfw3_INCLUDE_DIRS})
 #target_include_directories(${this_target} PRIVATE glew)
 
 if (MSVC)
-	add_compile_definitions(_HAS_ITERATOR_DEBUGGING=0) # disable iterator debugging in MSVC
+	#add_compile_definitions(_HAS_ITERATOR_DEBUGGING=0) # disable iterator debugging in MSVC
 	add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
 endif()
