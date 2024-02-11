@@ -1,43 +1,34 @@
 #include "Renderer.hpp"
 
+#include <iterator>
 #include <list>
 
+#include <Formatter.hpp>
 #include <Logging.hpp>
 
 #include "MeshPipeline.hpp"
 #include "VulkanContext.hpp"
+
 namespace
 {
+/// @brief represents data for each frame in swapchain
 struct FrameData final
 {
   FrameData(const VulkanContext & ctx, VkRenderPass render_pass, VkImageView view,
-            VkExtent2D image_extent)
+            VkExtent2D img_extent)
     : context_owner(ctx)
-    , image_view(view)
+    , render_pass(render_pass)
   {
+    std::tie(render_queue_index, render_queue) = ctx.GetQueue(vkb::QueueType::graphics);
     image_available_semaphore = ctx.CreateVkSemaphore();
     render_finished_semaphore = ctx.CreateVkSemaphore();
     is_rendering = ctx.CreateFence(true /*locked*/);
-
-    VkImageView attachments[] = {view};
-    VkFramebufferCreateInfo framebufferInfo{};
-    framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    framebufferInfo.renderPass = render_pass;
-    framebufferInfo.attachmentCount = 1;
-    framebufferInfo.pAttachments = attachments;
-    framebufferInfo.width = image_extent.width;
-    framebufferInfo.height = image_extent.height;
-    framebufferInfo.layers = 1;
-
-    if (vkCreateFramebuffer(context_owner.GetDevice(), &framebufferInfo, nullptr, &framebuffer) !=
-        VK_SUCCESS)
-    {
-      throw std::runtime_error("failed to create framebuffer!");
-    }
+    Invalidate(view, img_extent);
   }
 
   ~FrameData()
   {
+    vkDestroyCommandPool(context_owner.GetDevice(), pool, nullptr);
     vkDestroySemaphore(context_owner.GetDevice(), image_available_semaphore, nullptr);
     vkDestroySemaphore(context_owner.GetDevice(), render_finished_semaphore, nullptr);
     vkDestroyFence(context_owner.GetDevice(), is_rendering, nullptr);
@@ -48,28 +39,113 @@ struct FrameData final
   const VkSemaphore & GetImageAvailableSemaphore() const & { return image_available_semaphore; }
   const VkSemaphore & GetRenderingFinishedSemaphore() const & { return render_finished_semaphore; }
   const VkFence & GetRenderingFence() const & { return is_rendering; }
+  const VkCommandBuffer & GetCommandBuffer() const & { return buffer; }
+
+  void WaitOldRenderingComplete() const
+  {
+    vkWaitForFences(context_owner.GetDevice(), 1, &is_rendering, VK_TRUE, UINT64_MAX);
+  }
+  void BeginRender() const;
+  void EndRender() const;
+  void Invalidate(VkImageView view, VkExtent2D new_img_extent);
 
 private:
   const VulkanContext & context_owner; ///< context, doesn't own
-  VkImageView image_view;              ///< image view. doesn't own
-  VkFramebuffer framebuffer;
+  VkRenderPass render_pass;            ///< render_pass - owner for framebuffer
+  VkQueue render_queue;
+  uint32_t render_queue_index;
 
+  // owned data
+  VkFramebuffer framebuffer = VK_NULL_HANDLE;
   VkSemaphore image_available_semaphore;
   VkSemaphore render_finished_semaphore;
   VkFence is_rendering;
+  VkCommandPool pool = VK_NULL_HANDLE;
+  VkCommandBuffer buffer = VK_NULL_HANDLE;
 
 private:
   FrameData(const FrameData &) = delete;
   FrameData & operator=(const FrameData &) = delete;
 };
 
+void FrameData::BeginRender() const
+{
+  // reset fence
+  vkResetFences(context_owner.GetDevice(), 1, &is_rendering);
+  vkResetCommandBuffer(buffer, 0);
 
+  VkCommandBufferBeginInfo beginInfo{};
+  beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+  beginInfo.flags = 0;                  // Optional
+  beginInfo.pInheritanceInfo = nullptr; // Optional
+
+  if (vkBeginCommandBuffer(buffer, &beginInfo) != VK_SUCCESS)
+    throw std::runtime_error("failed to begin recording command buffer!");
+}
+
+
+void FrameData::EndRender() const
+{
+  if (vkEndCommandBuffer(buffer) != VK_SUCCESS)
+    throw std::runtime_error("failed to record command buffer!");
+
+  VkSubmitInfo submitInfo{};
+  submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+  VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+  submitInfo.waitSemaphoreCount = 1;
+  submitInfo.pWaitSemaphores = &image_available_semaphore;
+  submitInfo.pWaitDstStageMask = waitStages;
+  submitInfo.commandBufferCount = 1;
+  VkCommandBuffer buffers[] = {buffer};
+  submitInfo.pCommandBuffers = buffers;
+
+  submitInfo.signalSemaphoreCount = 1;
+  submitInfo.pSignalSemaphores = &render_finished_semaphore;
+
+  if (vkQueueSubmit(render_queue, 1, &submitInfo, is_rendering) != VK_SUCCESS)
+    throw std::runtime_error("failed to submit draw command buffer!");
+}
+
+
+void FrameData::Invalidate(VkImageView view, VkExtent2D new_img_extent)
+{
+  VkImageView attachments[] = {view};
+  VkFramebufferCreateInfo framebufferInfo{};
+  framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+  framebufferInfo.renderPass = render_pass;
+  framebufferInfo.attachmentCount = 1;
+  framebufferInfo.pAttachments = attachments;
+  framebufferInfo.width = new_img_extent.width;
+  framebufferInfo.height = new_img_extent.height;
+  framebufferInfo.layers = 1;
+  VkFramebuffer new_framebuffer;
+  if (vkCreateFramebuffer(context_owner.GetDevice(), &framebufferInfo, nullptr, &new_framebuffer) !=
+      VK_SUCCESS)
+  {
+    throw std::runtime_error("failed to create framebuffer!");
+  }
+
+  if (framebuffer != VK_NULL_HANDLE)
+    vkDestroyFramebuffer(context_owner.GetDevice(), framebuffer, nullptr);
+  framebuffer = new_framebuffer;
+
+  if (pool != VK_NULL_HANDLE)
+    vkDestroyCommandPool(context_owner.GetDevice(), pool, nullptr);
+
+  auto new_pool = context_owner.CreateCommandPool(render_queue_index);
+  auto new_buffer = context_owner.CreateCommandBuffer(new_pool);
+  pool = new_pool;
+  buffer = new_buffer;
+}
+
+/// @brief creates render pass
 template<typename... Args>
-vk::RenderPass CreateRenderPass(const VulkanContext & ctx, const vkb::Swapchain & swapchain)
+vk::RenderPass CreateRenderPass(const VulkanContext & ctx, VkFormat image_format)
 {
   VkRenderPass renderPass{};
   VkAttachmentDescription colorAttachment{};
-  colorAttachment.format = swapchain.image_format;
+  colorAttachment.format = image_format;
   colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT; // MSAA
   colorAttachment.loadOp =
     VK_ATTACHMENT_LOAD_OP_CLEAR; // action for color/depth buffers in pass begins
@@ -91,7 +167,6 @@ vk::RenderPass CreateRenderPass(const VulkanContext & ctx, const vkb::Swapchain 
   dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
   dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
                              VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-  ;
 
   VkRenderPassCreateInfo renderPassCreateInfo{};
   renderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -105,21 +180,24 @@ vk::RenderPass CreateRenderPass(const VulkanContext & ctx, const vkb::Swapchain 
 
   if (auto res = vkCreateRenderPass(ctx.GetDevice(), &renderPassCreateInfo, nullptr, &renderPass);
       res != VK_SUCCESS)
-  {
-    io::Log(US_LOG_ERROR, 0, "Failed to create render pass - %i", res);
-  }
+    throw std::runtime_error(Formatter() << "Failed to create render pass - " << res);
 
   return vk::RenderPass(renderPass);
 }
 
 } // namespace
 
+
+/// @brief vulkan implementation for renderer
 struct Renderer::Impl final
 {
   explicit Impl(const VulkanContext & ctx, const vk::SurfaceKHR surface);
   ~Impl();
 
-  void Render() const;
+  void Render();
+
+  /// @brief destroys old surface data like framebuffers, images, images_views, ets and creates new
+  void InvalidateSurfaceResources();
 
 private:
   const VulkanContext & context_owner;
@@ -130,21 +208,23 @@ private:
   vk::Queue present_queue = VK_NULL_HANDLE;
   uint32_t present_family_index;
 
-  vk::CommandPool pool;
-  vk::CommandBuffer buffer;
-
   /// presentaqtion data
   vk::SurfaceKHR surface;                ///< surface
   bool use_presentation = false;         ///< flag of presentation usage, true if surface is valid
   vkb::Swapchain swapchain;              ///< swapchain
   std::vector<VkImage> swapchain_images; ///< images for swapchain
+  //TODO: make FrameData own imageview
   std::vector<VkImageView> swapchain_imageviews; ///< image views for swapchain
   std::list<FrameData> frames;                   ///< framebuffers
-  mutable std::list<FrameData>::const_iterator current_frame;
+  std::list<FrameData>::iterator current_frame;
 
   // pipelines
   //TODO: make it with interface
   std::unique_ptr<MeshPipeline> pipeline = nullptr;
+
+private:
+  /// destroy and create new swapchain
+  void InvalidateSwapchain();
 };
 
 Renderer::Renderer(const VulkanContext & ctx, const vk::SurfaceKHR & surface)
@@ -157,9 +237,14 @@ Renderer::~Renderer()
   impl.reset();
 }
 
-void Renderer::Render() const
+void Renderer::Render()
 {
   impl->Render();
+}
+
+void Renderer::Invalidate()
+{
+  impl->InvalidateSurfaceResources();
 }
 
 // ------------------------------- Implementation ------------------------
@@ -169,34 +254,17 @@ Renderer::Impl::Impl(const VulkanContext & ctx, const vk::SurfaceKHR surface)
   , surface(surface)
 {
   use_presentation = surface != VK_NULL_HANDLE;
-  std::tie(render_family_index, render_queue) = ctx.GetQueue(vkb::QueueType::graphics);
 
-  if (use_presentation)
-  {
-    std::tie(present_family_index, present_queue) = ctx.GetQueue(vkb::QueueType::present);
-    vkb::SwapchainBuilder swapchain_builder(ctx.GetGPU(), ctx.GetDevice(), surface,
-                                            render_family_index, present_family_index);
-    auto swap_ret = swapchain_builder.set_old_swapchain(swapchain).build();
-    if (!swap_ret)
-    {
-      io::Log(US_LOG_ERROR, 0, "Failed to create Vulkan swapchain - %s",
-              swap_ret.error().message());
-    }
-    vkb::destroy_swapchain(swapchain);
-    swapchain = swap_ret.value();
+  InvalidateSwapchain();
 
-    swapchain_images = swapchain.get_images().value();
-    swapchain_imageviews = swapchain.get_image_views().value();
-  }
-  //else offscreen rendering
+  render_pass = CreateRenderPass<MeshPipeline>(ctx, swapchain.image_format);
 
-  pool = ctx.CreateCommandPool(render_family_index);
-  buffer = context_owner.CreateCommandBuffer(pool);
-  render_pass = CreateRenderPass<MeshPipeline>(ctx, swapchain);
+  // create pipelines
   pipeline = std::make_unique<MeshPipeline>(ctx, render_pass, 0);
+
   // create frames
   for (auto && view : swapchain_imageviews)
-    frames.emplace_back(ctx, render_pass, view, swapchain.extent);
+    frames.emplace_back(context_owner, render_pass, view, swapchain.extent);
   current_frame = frames.begin();
 }
 
@@ -204,39 +272,37 @@ Renderer::Impl::~Impl()
 {
   vkDestroyRenderPass(context_owner.GetDevice(), render_pass, nullptr);
   swapchain.destroy_image_views(swapchain_imageviews);
-  vkDestroyCommandPool(context_owner.GetDevice(), pool, nullptr);
   vkb::destroy_swapchain(swapchain);
   vkb::destroy_surface(context_owner.GetInstance(), surface);
 }
 
 /// @brief renders one frame
-void Renderer::Impl::Render() const
+void Renderer::Impl::Render()
 {
-  // wait until rendering is over
-  vkWaitForFences(context_owner.GetDevice(), 1, &current_frame->GetRenderingFence(), VK_TRUE,
-                  UINT64_MAX);
+  current_frame->WaitOldRenderingComplete();
   uint32_t image_index = 0;
+
   if (use_presentation)
   {
     VkResult res = vkAcquireNextImageKHR(context_owner.GetDevice(), swapchain, UINT64_MAX,
                                          current_frame->GetImageAvailableSemaphore(),
                                          VK_NULL_HANDLE, &image_index);
-    if (res != VK_SUCCESS)
-      throw std::runtime_error("failed to acquire image");
+    if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
+    {
+      InvalidateSurfaceResources();
+      return;
+    }
+    else if (res != VK_SUCCESS)
+    {
+      io::Log(US_LOG_ERROR, res, "Failed to acquire swap chain image");
+      return;
+    }
   }
   //else offscreen rendering
 
-  // reset fence
-  vkResetFences(context_owner.GetDevice(), 1, &current_frame->GetRenderingFence());
-  vkResetCommandBuffer(buffer, 0);
+  assert(image_index == std::distance(frames.begin(), current_frame));
 
-  VkCommandBufferBeginInfo beginInfo{};
-  beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-  beginInfo.flags = 0;                  // Optional
-  beginInfo.pInheritanceInfo = nullptr; // Optional
-
-  if (vkBeginCommandBuffer(buffer, &beginInfo) != VK_SUCCESS)
-    throw std::runtime_error("failed to begin recording command buffer!");
+  current_frame->BeginRender();
 
   VkRenderPassBeginInfo renderPassInfo{};
   renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -249,31 +315,12 @@ void Renderer::Impl::Render() const
   renderPassInfo.clearValueCount = 1;
   renderPassInfo.pClearValues = &clearColor;
 
-  vkCmdBeginRenderPass(buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-  pipeline->Process(buffer);
-  vkCmdEndRenderPass(buffer);
+  vkCmdBeginRenderPass(current_frame->GetCommandBuffer(), &renderPassInfo,
+                       VK_SUBPASS_CONTENTS_INLINE);
+  pipeline->Process(current_frame->GetCommandBuffer());
+  vkCmdEndRenderPass(current_frame->GetCommandBuffer());
 
-  if (vkEndCommandBuffer(buffer) != VK_SUCCESS)
-    throw std::runtime_error("failed to record command buffer!");
-
-  VkSubmitInfo submitInfo{};
-  submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-
-  VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-  submitInfo.waitSemaphoreCount = 1;
-  submitInfo.pWaitSemaphores = &current_frame->GetImageAvailableSemaphore();
-  submitInfo.pWaitDstStageMask = waitStages;
-  submitInfo.commandBufferCount = 1;
-  VkCommandBuffer buffers[] = {buffer};
-  submitInfo.pCommandBuffers = buffers;
-
-  submitInfo.signalSemaphoreCount = 1;
-  submitInfo.pSignalSemaphores = &current_frame->GetRenderingFinishedSemaphore();
-
-  if (vkQueueSubmit(render_queue, 1, &submitInfo, current_frame->GetRenderingFence()) != VK_SUCCESS)
-  {
-    throw std::runtime_error("failed to submit draw command buffer!");
-  }
+  current_frame->EndRender();
 
   if (use_presentation)
   {
@@ -288,11 +335,62 @@ void Renderer::Impl::Render() const
     presentInfo.pSwapchains = swapChains;
     presentInfo.pImageIndices = &image_index;
     presentInfo.pResults = nullptr; // Optional
-    if (VkResult res = vkQueuePresentKHR(present_queue, &presentInfo); res != VK_SUCCESS)
-      throw std::runtime_error("failed to query present");
+    VkResult res = vkQueuePresentKHR(present_queue, &presentInfo);
+    if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
+    {
+      InvalidateSurfaceResources();
+      return;
+    }
+    else if (res != VK_SUCCESS)
+    {
+      io::Log(US_LOG_ERROR, res, "Failed to queue image in present");
+    }
   }
 
+  // requires current_frame was mutable
   current_frame = std::next(current_frame);
   if (current_frame == frames.end())
     current_frame = frames.begin();
+}
+
+
+/// @brief destroys all surface resources: swapchain, framebuffers, etc and creates new
+void Renderer::Impl::InvalidateSurfaceResources()
+{
+  if (use_presentation)
+  {
+    vkDeviceWaitIdle(context_owner.GetDevice());
+    InvalidateSwapchain();
+    size_t i = 0;
+    for (auto && frame : frames)
+      frame.Invalidate(swapchain_imageviews[i++], swapchain.extent);
+    current_frame = frames.begin();
+  }
+}
+
+/// @brief destroys old swapchain, images, image_views and creates new
+void Renderer::Impl::InvalidateSwapchain()
+{
+  if (use_presentation)
+  {
+    std::tie(present_family_index, present_queue) = context_owner.GetQueue(vkb::QueueType::present);
+    vkb::SwapchainBuilder swapchain_builder(context_owner.GetGPU(), context_owner.GetDevice(),
+                                            surface, render_family_index, present_family_index);
+    auto swap_ret = swapchain_builder.set_old_swapchain(swapchain).build();
+    if (!swap_ret)
+    {
+      throw std::runtime_error(Formatter() << "Failed to create Vulkan swapchain - "
+                                           << swap_ret.error().message());
+    }
+
+    if (!swapchain_imageviews.empty())
+      swapchain.destroy_image_views(swapchain_imageviews);
+
+    vkb::destroy_swapchain(swapchain);
+    swapchain = swap_ret.value();
+
+    swapchain_images = swapchain.get_images().value();
+    swapchain_imageviews = swapchain.get_image_views().value();
+  }
+  //else offscreen rendering
 }

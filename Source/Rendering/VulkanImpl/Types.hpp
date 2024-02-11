@@ -32,5 +32,6 @@ struct IRenderer
 
   virtual ~IRenderer() = default;
 
-  virtual void Render() const = 0;
+  virtual void Render() = 0;
+  virtual void Invalidate() = 0;
 };

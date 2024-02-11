@@ -39,3 +39,9 @@ RENDERING_API void RenderFrame(const void * const scene)
   for (auto && ctx : st_contexts)
     ctx.GetRenderer()->Render();
 }
+
+RENDERING_API void Invalidate()
+{
+  for (auto && ctx : st_contexts)
+    ctx.GetRenderer()->Invalidate();
+}

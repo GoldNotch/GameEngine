@@ -64,6 +64,8 @@ extern "C"
   /// @param scene
   RENDERING_API void RenderFrame(const void * const scene);
 
+  RENDERING_API void Invalidate();
+
 #ifdef __cplusplus
 }
 #endif

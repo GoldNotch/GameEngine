@@ -28,7 +28,7 @@ struct VulkanContext final
   const vkb::DispatchTable * operator->() const { return &dispatch_table; }
 
   /// @brief Get renderer
-  const IRenderer * GetRenderer() const { return renderer.get(); }
+  IRenderer * GetRenderer() const { return renderer.get(); }
   const vkb::Instance & GetInstance() const & { return vulkan_instance; }
   const vkb::Device & GetDevice() const & { return device; }
   const vkb::PhysicalDevice & GetGPU() const & { return choosen_gpu; }
