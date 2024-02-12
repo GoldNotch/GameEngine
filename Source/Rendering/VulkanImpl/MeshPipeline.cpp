@@ -27,6 +27,54 @@ vk::SubpassDescription SubpassDescriptionBuilder<MeshPipeline>::Get() noexcept
   return result;
 }
 
+vk::PipelineVertexInputStateCreateInfo VertexStateDescriptionBuilder<
+  Mesh::VertexData>::Get() noexcept
+{
+  static std::vector<VkVertexInputBindingDescription> bindings;
+  if (bindings.empty())
+  {
+    bindings.reserve(1);
+    {
+      VkVertexInputBindingDescription binding{};
+      binding.binding = 0;
+      binding.stride = sizeof(Mesh::VertexData);
+      binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+      bindings.emplace_back(binding);
+    }
+  }
+
+  static std::vector<VkVertexInputAttributeDescription> attributes;
+  if (attributes.empty())
+  {
+    attributes.reserve(2);
+    { // position attribute
+      VkVertexInputAttributeDescription attribute{};
+      attribute.binding = 0;
+      attribute.location = 0;
+      attribute.format = VK_FORMAT_R32G32_SFLOAT;
+      attribute.offset = offsetof(Mesh::VertexData, pos);
+      attributes.emplace_back(attribute);
+    }
+    { // color attribute
+      VkVertexInputAttributeDescription attribute;
+      attribute.binding = 0;
+      attribute.location = 1;
+      attribute.format = VK_FORMAT_R32G32B32_SFLOAT;
+      attribute.offset = offsetof(Mesh::VertexData, color);
+      attributes.emplace_back(attribute);
+    }
+  }
+
+  VkPipelineVertexInputStateCreateInfo createInfo{};
+  createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+  createInfo.vertexBindingDescriptionCount = bindings.size();
+  createInfo.pVertexBindingDescriptions = bindings.data(); // Optional
+  createInfo.vertexAttributeDescriptionCount = attributes.size();
+  createInfo.pVertexAttributeDescriptions = attributes.data(); // Optional
+
+  return createInfo;
+}
+
 
 struct MeshPipeline::Impl final
 {
@@ -82,12 +130,8 @@ MeshPipeline::Impl::Impl(const VulkanContext & ctx, const vk::RenderPass & rende
   dynamicState.pDynamicStates = dynamicStates.data();
   pipelineInfo.pDynamicState = &dynamicState;
 
-  VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
-  vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-  vertexInputInfo.vertexBindingDescriptionCount = 0;
-  vertexInputInfo.pVertexBindingDescriptions = nullptr; // Optional
-  vertexInputInfo.vertexAttributeDescriptionCount = 0;
-  vertexInputInfo.pVertexAttributeDescriptions = nullptr; // Optional
+  VkPipelineVertexInputStateCreateInfo vertexInputInfo =
+    VertexStateDescriptionBuilder<Mesh::VertexData>::Get();
   pipelineInfo.pVertexInputState = &vertexInputInfo;
 
   VkPipelineInputAssemblyStateCreateInfo inputAssembly{};

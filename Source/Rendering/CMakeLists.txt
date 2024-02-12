@@ -25,14 +25,12 @@ PRIVATE
 
 find_package(Vulkan REQUIRED FATAL_ERROR)
 find_package(glm REQUIRED FATAL_ERROR)
-find_package(vulkan-validationlayers REQUIRED FATAL_ERROR)
-find_package(vk-bootstrap REQUIRED FATAL_ERROR)
+find_package(vulkan-memory-allocator REQUIRED FATAL_ERROR)
 target_link_libraries(${this_target} 
 	Catch2::Catch2WithMain
 	Vulkan::Vulkan 
+	vulkan-memory-allocator::vulkan-memory-allocator
 	glm::glm
-	vulkan-validationlayers::vulkan-validationlayers
-	vk-bootstrap::vk-bootstrap
 )
 
 target_include_directories(${this_target} 
@@ -42,6 +40,15 @@ PRIVATE
 
 
 #---------------- Link third-party libraries ---------------
+
+include(FetchContent)
+FetchContent_Declare(
+    fetch_vk_bootstrap
+    GIT_REPOSITORY https://github.com/charles-lunarg/vk-bootstrap
+    GIT_TAG        main #suggest using a tag so the library doesn't update whenever new commits are pushed to a branch
+)
+FetchContent_MakeAvailable(fetch_vk_bootstrap)
+target_link_libraries(${this_target} vk-bootstrap::vk-bootstrap)
 
 # -------------- definitions ---------------------
 target_compile_definitions(${this_target} 

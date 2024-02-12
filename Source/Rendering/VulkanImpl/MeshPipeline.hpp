@@ -10,6 +10,11 @@ class RenderPass;
 
 struct Mesh
 {
+  struct VertexData
+  {
+    float pos[2];
+    float color[3];
+  };
 };
 
 /// @brief graphics pipeline
@@ -35,4 +40,10 @@ template<>
 struct SubpassDescriptionBuilder<MeshPipeline> final
 {
   static vk::SubpassDescription Get() noexcept;
+};
+
+template<>
+struct VertexStateDescriptionBuilder<Mesh::VertexData> final
+{
+  static vk::PipelineVertexInputStateCreateInfo Get() noexcept;
 };

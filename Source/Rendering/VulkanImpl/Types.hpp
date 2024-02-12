@@ -1,16 +1,25 @@
 #pragma once
-
+#include <vector>
 namespace vk
 {
 class CommandBuffer;
 struct SubpassDescription;
+struct PipelineVertexInputStateCreateInfo;
 } // namespace vk
 
+struct VkVertexInputBindingDescription;
+struct VkVertexInputAttributeDescription;
 
 template<typename PipelineT>
 struct SubpassDescriptionBuilder final
 {
   static vk::SubpassDescription Get() noexcept;
+};
+
+template<typename VertexDataT>
+struct VertexStateDescriptionBuilder final
+{
+  static vk::PipelineVertexInputStateCreateInfo Get() noexcept;
 };
 
 struct IPipeline
