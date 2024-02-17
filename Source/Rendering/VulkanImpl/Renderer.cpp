@@ -103,7 +103,7 @@ void FrameData::EndRender() const
   submitInfo.signalSemaphoreCount = 1;
   submitInfo.pSignalSemaphores = &render_finished_semaphore;
 
-  if (vkQueueSubmit(render_queue, 1, &submitInfo, is_rendering) != VK_SUCCESS)
+  if (auto res = vkQueueSubmit(render_queue, 1, &submitInfo, is_rendering); res != VK_SUCCESS)
     throw std::runtime_error("failed to submit draw command buffer!");
 }
 

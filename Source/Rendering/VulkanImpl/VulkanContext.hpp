@@ -10,6 +10,7 @@
 
 #include <VkBootstrap.h>
 #include <vulkan/vulkan.hpp>
+#include <StaticString.hpp>
 
 #include "../RenderingSystem.h"
 #include "Types.hpp"
@@ -58,3 +59,14 @@ private:
   VulkanContext(const VulkanContext &) = delete;
   VulkanContext & operator=(const VulkanContext &) = delete;
 };
+
+
+namespace vk::utils
+{
+template<std::size_t Size>
+constexpr decltype(auto) ResolveShaderPath(const char (&filename)[Size])
+{
+  return Core::static_string(DATA_PATH) + Core::static_string("/shaders/Vulkan/") +
+         Core::static_string(filename);
+}
+} // namespace vk::utils

@@ -54,7 +54,7 @@ public:
     std::copy(std::begin(str), std::end(str), begin());
   }
 
-  static constexpr size_t npos = std::numeric_limits<size_t>::max();
+  static constexpr size_t npos = static_cast<size_t>(-1);
 
   constexpr auto begin() noexcept { return data.begin(); }
   constexpr auto end() noexcept { return data.end(); }
@@ -165,7 +165,6 @@ public:
   //}
 
   // TODO: make compare, find, rfind, starts_with, ends_with, etc
-
 };
 
 template<size_t Size>

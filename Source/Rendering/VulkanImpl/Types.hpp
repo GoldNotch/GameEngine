@@ -4,7 +4,6 @@ namespace vk
 {
 class CommandBuffer;
 struct SubpassDescription;
-struct PipelineVertexInputStateCreateInfo;
 } // namespace vk
 
 struct VkVertexInputBindingDescription;
@@ -19,7 +18,8 @@ struct SubpassDescriptionBuilder final
 template<typename VertexDataT>
 struct VertexStateDescriptionBuilder final
 {
-  static vk::PipelineVertexInputStateCreateInfo Get() noexcept;
+  static std::vector<VkVertexInputBindingDescription> BuildBindings() noexcept;
+  static std::vector<VkVertexInputAttributeDescription> BuildAttributes() noexcept;
 };
 
 struct IPipeline

@@ -45,5 +45,6 @@ struct SubpassDescriptionBuilder<MeshPipeline> final
 template<>
 struct VertexStateDescriptionBuilder<Mesh::VertexData> final
 {
-  static vk::PipelineVertexInputStateCreateInfo Get() noexcept;
+  static std::vector<VkVertexInputBindingDescription> BuildBindings() noexcept;
+  static std::vector<VkVertexInputAttributeDescription> BuildAttributes() noexcept;
 };
