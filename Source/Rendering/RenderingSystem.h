@@ -30,6 +30,29 @@ extern "C"
 {
 #endif
 
+  typedef struct
+  {
+    float x, y;
+  } glVec2;
+  typedef struct
+  {
+    float x, y, z;
+  } glVec3;
+  typedef struct
+  {
+    float x, y, z, w;
+  } glVec4;
+
+  typedef struct MeshData
+  {
+    size_t vertices_count;
+    const glVec3 * vertices;
+    const glVec4 * colors;
+
+    size_t indices_count;
+    const size_t * indices;
+  } Mesh;
+
 
   typedef unsigned int color_t;
   /// @brief max count of used gpus in app

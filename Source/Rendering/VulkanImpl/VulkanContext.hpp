@@ -8,11 +8,12 @@
 
 #include <filesystem>
 
+#include <StaticString.hpp>
 #include <VkBootstrap.h>
 #include <vulkan/vulkan.hpp>
-#include <StaticString.hpp>
 
 #include "../RenderingSystem.h"
+#include "MemoryManager.hpp"
 #include "Types.hpp"
 
 
@@ -33,6 +34,7 @@ struct VulkanContext final
   const vkb::Instance & GetInstance() const & { return vulkan_instance; }
   const vkb::Device & GetDevice() const & { return device; }
   const vkb::PhysicalDevice & GetGPU() const & { return choosen_gpu; }
+  const MemoryManager & GetMemoryManager() const & { return *memory_manager; }
 
   // TODO: Make it global functions
   /// @brief returns queue of specific type. doesn't own it
@@ -46,7 +48,6 @@ struct VulkanContext final
   /// @brief creates command buffer in pool, doesn't own it
   vk::CommandBuffer CreateCommandBuffer(vk::CommandPool pool) const;
 
-
 private:
   vkb::Instance vulkan_instance;
   vkb::PhysicalDevice choosen_gpu;
@@ -54,6 +55,7 @@ private:
   vkb::DispatchTable dispatch_table;
 
   std::unique_ptr<IRenderer> renderer;
+  std::unique_ptr<MemoryManager> memory_manager;
 
 private:
   VulkanContext(const VulkanContext &) = delete;
@@ -70,3 +72,43 @@ constexpr decltype(auto) ResolveShaderPath(const char (&filename)[Size])
          Core::static_string(filename);
 }
 } // namespace vk::utils
+
+
+template<>
+struct std::hash<glVec2>
+{
+  std::size_t operator()(glVec2 const & vertex) const noexcept
+  {
+    std::size_t result = 0;
+    Core::utils::hash_combine(result, vertex.x);
+    Core::utils::hash_combine(result, vertex.y);
+    return result;
+  }
+};
+
+template<>
+struct std::hash<glVec3>
+{
+  std::size_t operator()(glVec3 const & vertex) const noexcept
+  {
+    std::size_t result = 0;
+    Core::utils::hash_combine(result, vertex.x);
+    Core::utils::hash_combine(result, vertex.y);
+    Core::utils::hash_combine(result, vertex.z);
+    return result;
+  }
+};
+
+template<>
+struct std::hash<glVec4>
+{
+  std::size_t operator()(glVec4 const & vertex) const noexcept
+  {
+    std::size_t result = 0;
+    Core::utils::hash_combine(result, vertex.x);
+    Core::utils::hash_combine(result, vertex.y);
+    Core::utils::hash_combine(result, vertex.z);
+    Core::utils::hash_combine(result, vertex.w);
+    return result;
+  }
+};

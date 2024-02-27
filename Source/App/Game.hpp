@@ -30,13 +30,13 @@ public:
   void InitRenderableScene(void * const scene_handler)
   {
     //TODO:pass data from trianlges to scene
-    for (auto && tri : triangles)
-    {
-      //usMeshObjectConstructorArgs args{reinterpret_cast<const usMeshObjectVertex *>(
-      //                                   tri.GetVerticesData()),
-      //                                 tri.VerticesCount()};
-      //usRenderableScene_ConstructMeshObject(scene_handler, args);
-    }
+    //for (auto && tri : triangles)
+    //{
+    //  //usMeshObjectConstructorArgs args{reinterpret_cast<const usMeshObjectVertex *>(
+    //  //                                   tri.GetVerticesData()),
+    //  //                                 tri.VerticesCount()};
+    //  //usRenderableScene_ConstructMeshObject(scene_handler, args);
+    //}
   }
 
 private:

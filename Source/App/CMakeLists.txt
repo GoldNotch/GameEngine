@@ -22,6 +22,12 @@ PRIVATE
 )
 target_link_libraries(${this_target} Rendering Core)
 
+find_package(assimp REQUIRED FATAL_ERROR)
+target_link_libraries(${this_target} 
+	Catch2::Catch2WithMain
+	assimp::assimp
+)
+
 # -------------- definitions ---------------------
 set(${this_target}_COMPILE_DEFINITIONS
 	-DAPP_BUILD

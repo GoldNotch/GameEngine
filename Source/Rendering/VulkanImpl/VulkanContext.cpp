@@ -4,8 +4,10 @@
 #include <string_view>
 #include <vector>
 
+#include <Formatter.hpp>
 #include <Logging.hpp>
 
+#include "MemoryManager.hpp"
 #include "Renderer.hpp"
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL
@@ -52,6 +54,7 @@ VulkanContext::VulkanContext(const usRenderingOptions & opts)
   device = dev_ret.value();
   dispatch_table = device.make_table();
 
+  memory_manager = std::make_unique<MemoryManager>(*this);
   renderer = std::make_unique<Renderer>(*this, surface);
 }
 
@@ -59,7 +62,7 @@ VulkanContext::~VulkanContext() noexcept
 {
   vkDeviceWaitIdle(device);
   renderer.reset();
-
+  memory_manager.reset();
   vkb::destroy_device(device);
   vkb::destroy_instance(vulkan_instance);
 }

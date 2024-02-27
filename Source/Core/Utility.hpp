@@ -26,5 +26,15 @@ constexpr std::array<ValueType, N> make_array(InIt first, InIt last)
 }
 
 
+/// @brief combines two hash result
+/// @param seed - old hash-value to combine with
+/// @param v - value to hash
+template<class T, typename Hasher = std::hash<T>>
+inline void hash_combine(std::size_t & seed, const T & v) noexcept
+{
+  Hasher hasher;
+  seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+}
+
 
 } // namespace Core::utils

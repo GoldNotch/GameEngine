@@ -7,15 +7,8 @@ namespace vk
 {
 class RenderPass;
 }
+struct MeshData;
 
-struct Mesh
-{
-  struct VertexData
-  {
-    float pos[2];
-    float color[3];
-  };
-};
 
 /// @brief graphics pipeline
 struct MeshPipeline final : public IPipeline
@@ -43,7 +36,7 @@ struct SubpassDescriptionBuilder<MeshPipeline> final
 };
 
 template<>
-struct VertexStateDescriptionBuilder<Mesh::VertexData> final
+struct VertexStateDescriptionBuilder<MeshData> final
 {
   static std::vector<VkVertexInputBindingDescription> BuildBindings() noexcept;
   static std::vector<VkVertexInputAttributeDescription> BuildAttributes() noexcept;

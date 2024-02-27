@@ -6,6 +6,7 @@
 #include <Logging.hpp>
 IMPLEMENT_LOGGING_API(Rendering, RENDERING_API)
 
+
 #include "VulkanContext.hpp"
 
 
@@ -19,7 +20,7 @@ RENDERING_API int InitRenderingSystem(usRenderingOptions opts)
   {
     auto && ctx = st_contexts.emplace_back(opts);
   }
-  catch (...)
+  catch (std::exception e)
   {
     TerminateRenderingSystem();
     return -1;
