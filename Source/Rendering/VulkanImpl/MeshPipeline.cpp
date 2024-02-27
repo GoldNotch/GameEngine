@@ -72,7 +72,7 @@ struct MeshPipeline::Impl final
   Impl(const VulkanContext & ctx, const vk::RenderPass & renderPass, uint32_t subpass);
   ~Impl();
 
-  void Process(const vk::CommandBuffer & buffer) const;
+  void Process(const vk::Rect2D & viewport, const vk::CommandBuffer & buffer) const;
 
 private:
   const VulkanContext & context;      ///< context-owner
@@ -81,6 +81,7 @@ private:
 
   MemoryManager::BufferGPU buffer{};
 };
+
 
 /// @brief constructor for pipeline
 MeshPipeline::MeshPipeline(const VulkanContext & ctx, const vk::RenderPass & renderPass,
@@ -96,10 +97,13 @@ MeshPipeline::~MeshPipeline()
 }
 
 
-void MeshPipeline::Process(const vk::CommandBuffer & buffer) const
+void MeshPipeline::Process(const vk::Rect2D & viewport, const vk::CommandBuffer & buffer) const
 {
-  impl->Process(buffer);
+  impl->Process(viewport, buffer);
 }
+
+
+// ------------------------ Implementation -----------------------
 
 /// @brief constructor, initialize all vulkan objects
 /// @param ctx
@@ -134,21 +138,20 @@ MeshPipeline::Impl::~Impl()
   context->destroyPipeline(pipeline, nullptr);
 }
 
-void MeshPipeline::Impl::Process(const vk::CommandBuffer & buffer) const
+void MeshPipeline::Impl::Process(const vk::Rect2D & vp,
+                                 const vk::CommandBuffer & buffer) const
 {
   vkCmdBindPipeline(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
   VkViewport viewport{};
-  viewport.x = 0.0f;
-  viewport.y = 0.0f;
-  viewport.width = static_cast<float>(800);
-  viewport.height = static_cast<float>(600);
+  viewport.x = static_cast<float>(vp.offset.x);
+  viewport.y = static_cast<float>(vp.offset.y);
+  viewport.width = static_cast<float>(vp.extent.width);
+  viewport.height = static_cast<float>(vp.extent.height);
   viewport.minDepth = 0.0f;
   viewport.maxDepth = 1.0f;
   vkCmdSetViewport(buffer, 0, 1, &viewport);
 
-  VkRect2D scissor{};
-  scissor.offset = {0, 0};
-  scissor.extent = {800, 600};
+  VkRect2D scissor = vp;
   vkCmdSetScissor(buffer, 0, 1, &scissor);
 
   VkBuffer vertexBuffers[] = {static_cast<vk::Buffer>(this->buffer)};

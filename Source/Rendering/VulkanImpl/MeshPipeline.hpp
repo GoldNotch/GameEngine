@@ -17,7 +17,8 @@ struct MeshPipeline final : public IPipeline
                uint32_t subpass_index);
   virtual ~MeshPipeline() override;
 
-  virtual void Process(const vk::CommandBuffer & buffer) const override;
+  virtual void Process(const vk::Rect2D & viewport,
+                       const vk::CommandBuffer & buffer) const override;
 
 private:
   /// @brief implementation incapsulates vulkan calls

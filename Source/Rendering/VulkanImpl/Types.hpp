@@ -4,6 +4,7 @@ namespace vk
 {
 class CommandBuffer;
 struct SubpassDescription;
+struct Rect2D;
 } // namespace vk
 
 struct VkVertexInputBindingDescription;
@@ -28,7 +29,7 @@ struct IPipeline
     Pipeline owns vulkan pipeline and makes subpass description to intergrate with renderer  
   */
   virtual ~IPipeline() = default;
-  virtual void Process(const vk::CommandBuffer & buffer) const = 0;
+  virtual void Process(const vk::Rect2D & viewport, const vk::CommandBuffer & buffer) const = 0;
 };
 
 /// @brief Renderer renders an image. It has own framebuffer, graphic queue, render pass and some pipelines

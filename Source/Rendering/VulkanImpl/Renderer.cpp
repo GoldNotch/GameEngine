@@ -317,7 +317,7 @@ void Renderer::Impl::Render()
 
   vkCmdBeginRenderPass(current_frame->GetCommandBuffer(), &renderPassInfo,
                        VK_SUBPASS_CONTENTS_INLINE);
-  pipeline->Process(current_frame->GetCommandBuffer());
+  pipeline->Process(vk::Rect2D({0, 0}, swapchain.extent), current_frame->GetCommandBuffer());
   vkCmdEndRenderPass(current_frame->GetCommandBuffer());
 
   current_frame->EndRender();
