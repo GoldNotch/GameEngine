@@ -10,11 +10,13 @@ struct TriangleObject final : public App::IAppObject
 
   const glVec2 * GetVerticesData() const { return vertices; }
   const glVec3 * GetColorsData() const { return colors; }
-  const size_t VerticesCount() const { return 3; }
+  const size_t VerticesCount() const { return 6; }
 
 private:
-  static constexpr glVec2 vertices[] = {{0.0f, -0.5f}, {0.5f, 0.5f}, {-0.5f, 0.5f}};
-  static constexpr glVec3 colors[] = {{0, 0, 1}, {0, 1, 0}, {1, 0, 0}};
+  static constexpr glVec2 vertices[] = {{-0.5f, -0.5f}, {0.5f, -0.5f}, {-0.5f, 0.5f},
+                                        {-0.5f, 0.5f},  {0.5f, -0.5f}, {0.5f, 0.5f}};
+  static constexpr glVec3 colors[] = {{0, 1, 1}, {1, 0, 0.5647}, {1, 1, 0},
+                                      {1, 1, 0}, {1, 0, 0.5647}, {0, 0, 0}};
 };
 
 struct Game final

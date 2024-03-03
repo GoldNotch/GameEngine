@@ -50,14 +50,6 @@ int main()
 
   Rendering_SetLoggingFunc(ConsoleLog);
   App_SetLoggingFunc(ConsoleLog);
-  //glfwMakeContextCurrent(window);
-
-  //if (glewInit() != GLEW_OK)
-  //{
-  //  std::printf("Failed to init glew\n");
-  //  glfwTerminate();
-  //  return -1;
-  //}
 
   usRenderingOptions renderOpts;
   renderOpts.gpu_autodetect = true;
