@@ -21,6 +21,8 @@ extern "C"
 {
 #endif
 
+#include <Scene.h>
+
 
   /// @brief initialize application module
   USAPP_API void usApp_Init();
@@ -30,7 +32,7 @@ extern "C"
   USAPP_API void usApp_Terminate();
   /// @brief collects and fills frame data
   /// @param handler - identifier of frame data
-  USAPP_API void usApp_InitRenderableScene(void * const handler);
+  USAPP_API void usApp_InitRenderableScene(const RenderSceneHandler scene);
 
 #ifdef __cplusplus
 }

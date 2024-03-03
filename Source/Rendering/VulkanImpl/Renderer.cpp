@@ -6,7 +6,7 @@
 #include <Formatter.hpp>
 #include <Logging.hpp>
 
-#include "MeshPipeline.hpp"
+#include "Pipelines/MeshPipeline.hpp"
 #include "VulkanContext.hpp"
 
 namespace
@@ -194,7 +194,7 @@ struct Renderer::Impl final
   explicit Impl(const VulkanContext & ctx, const vk::SurfaceKHR surface);
   ~Impl();
 
-  void Render();
+  void Render(const RenderScene & scene);
 
   /// @brief destroys old surface data like framebuffers, images, images_views, ets and creates new
   void InvalidateSurfaceResources();
@@ -220,7 +220,7 @@ private:
 
   // pipelines
   //TODO: make it with interface
-  std::unique_ptr<MeshPipeline> pipeline = nullptr;
+  std::unique_ptr<IPipeline> pipeline = nullptr;
 
 private:
   /// destroy and create new swapchain
@@ -237,9 +237,9 @@ Renderer::~Renderer()
   impl.reset();
 }
 
-void Renderer::Render()
+void Renderer::Render(const RenderScene & scene)
 {
-  impl->Render();
+  impl->Render(scene);
 }
 
 void Renderer::Invalidate()
@@ -257,10 +257,10 @@ Renderer::Impl::Impl(const VulkanContext & ctx, const vk::SurfaceKHR surface)
 
   InvalidateSwapchain();
 
-  render_pass = CreateRenderPass<MeshPipeline>(ctx, swapchain.image_format);
+  render_pass = CreateRenderPass<StaticMesh>(ctx, swapchain.image_format);
 
   // create pipelines
-  pipeline = std::make_unique<MeshPipeline>(ctx, render_pass, 0);
+  pipeline = CreateMeshPipeline(ctx, render_pass, 0);
 
   // create frames
   for (auto && view : swapchain_imageviews)
@@ -270,6 +270,7 @@ Renderer::Impl::Impl(const VulkanContext & ctx, const vk::SurfaceKHR surface)
 
 Renderer::Impl::~Impl()
 {
+  pipeline.reset();
   vkDestroyRenderPass(context_owner.GetDevice(), render_pass, nullptr);
   swapchain.destroy_image_views(swapchain_imageviews);
   vkb::destroy_swapchain(swapchain);
@@ -277,7 +278,7 @@ Renderer::Impl::~Impl()
 }
 
 /// @brief renders one frame
-void Renderer::Impl::Render()
+void Renderer::Impl::Render(const RenderScene & scene)
 {
   current_frame->WaitOldRenderingComplete();
   uint32_t image_index = 0;
@@ -317,7 +318,13 @@ void Renderer::Impl::Render()
 
   vkCmdBeginRenderPass(current_frame->GetCommandBuffer(), &renderPassInfo,
                        VK_SUBPASS_CONTENTS_INLINE);
-  pipeline->Process(vk::Rect2D({0, 0}, swapchain.extent), current_frame->GetCommandBuffer());
+  pipeline->BeginProcessing(current_frame->GetCommandBuffer(),
+                            vk::Rect2D({0, 0}, swapchain.extent));
+
+  for (auto it = scene.objects.cbegin<StaticMesh>(); it != scene.objects.cend<StaticMesh>(); ++it)
+    ProcessWithPipeline(*pipeline, current_frame->GetCommandBuffer(), *it);
+
+  pipeline->EndProcessing(current_frame->GetCommandBuffer());
   vkCmdEndRenderPass(current_frame->GetCommandBuffer());
 
   current_frame->EndRender();

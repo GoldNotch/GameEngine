@@ -25,36 +25,14 @@ DECLARE_LOGGING_API(Rendering, RENDERING_API)
 #endif
 #endif // USE_WINDOW_OUTPUT
 
+#include "Scene.h"
+
+
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-  typedef struct
-  {
-    float x, y;
-  } glVec2;
-  typedef struct
-  {
-    float x, y, z;
-  } glVec3;
-  typedef struct
-  {
-    float x, y, z, w;
-  } glVec4;
-
-  typedef struct MeshData
-  {
-    size_t vertices_count;
-    const glVec3 * vertices;
-    const glVec4 * colors;
-
-    size_t indices_count;
-    const size_t * indices;
-  } Mesh;
-
-
-  typedef unsigned int color_t;
   /// @brief max count of used gpus in app
   const size_t MaxRequiredGPUs = 1;
 
@@ -83,11 +61,13 @@ extern "C"
   /// @brief destroy all objects and clear all resources in rendering system
   RENDERING_API void TerminateRenderingSystem();
 
+  /// @brief Invalidates render resources like framebuffers (call it when change resolution)
+  RENDERING_API void Invalidate();
+
   /// @brief render scene
   /// @param scene
-  RENDERING_API void RenderFrame(const void * const scene);
+  RENDERING_API void RenderFrame();
 
-  RENDERING_API void Invalidate();
 
 #ifdef __cplusplus
 }

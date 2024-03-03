@@ -29,7 +29,7 @@ MemoryManager::~MemoryManager() noexcept
   impl.reset();
 }
 
-MemoryManager::BufferGPU MemoryManager::AllocBuffer(std::size_t size, uint32_t usage) const &
+BufferGPU MemoryManager::AllocBuffer(std::size_t size, uint32_t usage) const &
 {
   return impl->AllocBuffer(size, static_cast<VkBufferUsageFlags>(usage));
 }
@@ -52,8 +52,7 @@ MemoryManager::Impl::~Impl()
   vmaDestroyAllocator(allocator);
 }
 
-MemoryManager::BufferGPU MemoryManager::Impl::AllocBuffer(VkDeviceSize size,
-                                                          VkBufferUsageFlags usage) const
+BufferGPU MemoryManager::Impl::AllocBuffer(VkDeviceSize size, VkBufferUsageFlags usage) const
 {
   VkBufferCreateInfo bufferInfo{};
   bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -70,8 +69,8 @@ MemoryManager::BufferGPU MemoryManager::Impl::AllocBuffer(VkDeviceSize size,
 }
 
 
-MemoryManager::BufferGPU::BufferGPU(vk::Buffer buffer, void * allocation, std::size_t size,
-                                    void * allocator) noexcept
+BufferGPU::BufferGPU(vk::Buffer buffer, void * allocation, std::size_t size,
+                     void * allocator) noexcept
   : handler(static_cast<VkBuffer>(buffer))
   , mem_block(allocation)
   , allocator(allocator)
@@ -79,14 +78,14 @@ MemoryManager::BufferGPU::BufferGPU(vk::Buffer buffer, void * allocation, std::s
 {
 }
 
-MemoryManager::BufferGPU::~BufferGPU() noexcept
+BufferGPU::~BufferGPU() noexcept
 {
   if (allocator != nullptr && handler != VK_NULL_HANDLE)
-  vmaDestroyBuffer(reinterpret_cast<VmaAllocator>(allocator), reinterpret_cast<VkBuffer>(handler),
-                   reinterpret_cast<VmaAllocation>(mem_block));
+    vmaDestroyBuffer(reinterpret_cast<VmaAllocator>(allocator), reinterpret_cast<VkBuffer>(handler),
+                     reinterpret_cast<VmaAllocation>(mem_block));
 }
 
-MemoryManager::BufferGPU::BufferGPU(BufferGPU && other) noexcept
+BufferGPU::BufferGPU(BufferGPU && other) noexcept
 {
   std::swap(allocator, other.allocator);
   std::swap(handler, other.handler);
@@ -94,7 +93,7 @@ MemoryManager::BufferGPU::BufferGPU(BufferGPU && other) noexcept
   std::swap(mem_size, other.mem_size);
 }
 
-MemoryManager::BufferGPU & MemoryManager::BufferGPU::operator=(BufferGPU && other) noexcept
+BufferGPU & BufferGPU::operator=(BufferGPU && other) noexcept
 {
   std::swap(allocator, other.allocator);
   std::swap(handler, other.handler);
@@ -103,13 +102,13 @@ MemoryManager::BufferGPU & MemoryManager::BufferGPU::operator=(BufferGPU && othe
   return *this;
 }
 
-MemoryManager::BufferGPU::operator vk::Buffer() const noexcept
+BufferGPU::operator vk::Buffer() const noexcept
 {
   return reinterpret_cast<VkBuffer>(handler);
 }
 
 
-MemoryManager::BufferGPU::ScopeMapper MemoryManager::BufferGPU::Map() const
+BufferGPU::ScopeMapper BufferGPU::Map() const
 {
   void * mapped_memory = nullptr;
   if (VkResult res = vmaMapMemory(reinterpret_cast<VmaAllocator>(allocator),
@@ -117,18 +116,16 @@ MemoryManager::BufferGPU::ScopeMapper MemoryManager::BufferGPU::Map() const
       res != VK_SUCCESS)
     throw std::runtime_error(Formatter() << "Failed to map buffer memory - " << res);
 
-  return MemoryManager::BufferGPU::ScopeMapper(mapped_memory,
-                                               [this](void * mem_ptr)
-                                               {
-                                                 if (mem_ptr != nullptr)
-                                                   vmaUnmapMemory(reinterpret_cast<VmaAllocator>(
-                                                                    allocator),
-                                                                  reinterpret_cast<VmaAllocation>(
-                                                                    mem_block));
-                                               });
+  return BufferGPU::ScopeMapper(mapped_memory,
+                                [this](void * mem_ptr)
+                                {
+                                  if (mem_ptr != nullptr)
+                                    vmaUnmapMemory(reinterpret_cast<VmaAllocator>(allocator),
+                                                   reinterpret_cast<VmaAllocation>(mem_block));
+                                });
 }
 
-void MemoryManager::BufferGPU::Flush() const noexcept
+void BufferGPU::Flush() const noexcept
 {
   vmaFlushAllocation(reinterpret_cast<VmaAllocator>(allocator),
                      reinterpret_cast<VmaAllocation>(mem_block), 0, mem_size);

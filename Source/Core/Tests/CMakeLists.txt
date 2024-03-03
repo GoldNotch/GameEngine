@@ -6,7 +6,7 @@ add_executable(${test_target})
 target_sources(${test_target}
 PUBLIC
 	"Test_StaticString.cpp"
-)
+ "Test_Storage.cpp")
 target_include_directories(${test_target}  PRIVATE
 	"../"
 )

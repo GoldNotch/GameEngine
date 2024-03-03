@@ -1,18 +1,20 @@
 #pragma once
 #include <vector>
 
+#include "App.h"
 #include "App.hpp"
 struct TriangleObject final : public App::IAppObject
 {
   virtual ~TriangleObject() = default;
   void Tick() override {}
 
-  const float * GetVerticesData() const { return vertices; }
+  const glVec2 * GetVerticesData() const { return vertices; }
+  const glVec3 * GetColorsData() const { return colors; }
   const size_t VerticesCount() const { return 3; }
 
 private:
-  static constexpr float vertices[] = {-0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.5f, -0.5f, 0.0f,
-                                       1.0f,  0.0f,  0.0f, 0.5f, 1.0,  0.0f, 0.0f};
+  static constexpr glVec2 vertices[] = {{0.0f, -0.5f}, {0.5f, 0.5f}, {-0.5f, 0.5f}};
+  static constexpr glVec3 colors[] = {{0, 0, 1}, {0, 1, 0}, {1, 0, 0}};
 };
 
 struct Game final
@@ -27,19 +29,17 @@ public:
       triangle.Tick();
   }
 
-  void InitRenderableScene(void * const scene_handler)
+  void InitRenderableScene(const RenderSceneHandler scene)
   {
-    //TODO:pass data from trianlges to scene
-    //for (auto && tri : triangles)
-    //{
-    //  //usMeshObjectConstructorArgs args{reinterpret_cast<const usMeshObjectVertex *>(
-    //  //                                   tri.GetVerticesData()),
-    //  //                                 tri.VerticesCount()};
-    //  //usRenderableScene_ConstructMeshObject(scene_handler, args);
-    //}
+    StaticMesh mesh{};
+    mesh.vertices = obj.GetVerticesData();
+    mesh.vertices_count = obj.VerticesCount();
+    mesh.colors = obj.GetColorsData();
+    RenderScene_PushStaticMesh(scene, mesh);
   }
 
 private:
+  TriangleObject obj;
   std::vector<TriangleObject> triangles;
 
 private:

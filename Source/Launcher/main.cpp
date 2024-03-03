@@ -82,10 +82,10 @@ int main()
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
 
-    //usRenderableSceneHandler handler = usBeginFrame(usVideoOptions{width, height});
-    app_process.ExecuteWithPause(usApp_InitRenderableScene, nullptr);
+    RenderSceneHandler scene = AcquireRenderScene();
+    app_process.ExecuteWithPause(usApp_InitRenderableScene, scene);
 
-    RenderFrame(nullptr);
+    RenderFrame();
   }
   TerminateRenderingSystem();
 

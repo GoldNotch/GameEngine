@@ -43,8 +43,8 @@ USAPP_API void usApp_Terminate()
 }
 
 
-USAPP_API void usApp_InitRenderableScene(void * const handler)
+USAPP_API void usApp_InitRenderableScene(const RenderSceneHandler scene)
 {
   //std::printf("collect frame data\n");
-  st_game->InitRenderableScene(handler);
+  st_game->InitRenderableScene(scene);
 }

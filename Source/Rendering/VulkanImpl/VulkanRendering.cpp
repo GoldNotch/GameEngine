@@ -1,4 +1,5 @@
 #include <list>
+#include <queue>
 
 #include "../RenderingSystem.h"
 
@@ -11,6 +12,7 @@ IMPLEMENT_LOGGING_API(Rendering, RENDERING_API)
 
 
 static std::list<VulkanContext> st_contexts; ///< each context for each GPU
+static std::queue<RenderScene> st_scenes;
 // ------------------------ API implementation ----------------------------
 
 RENDERING_API int InitRenderingSystem(usRenderingOptions opts)
@@ -32,17 +34,33 @@ RENDERING_API int InitRenderingSystem(usRenderingOptions opts)
 /// @brief clear all resources for rendering system
 RENDERING_API void TerminateRenderingSystem()
 {
+  while (!st_scenes.empty())
+    st_scenes.pop();
   st_contexts.clear();
-}
-
-RENDERING_API void RenderFrame(const void * const scene)
-{
-  for (auto && ctx : st_contexts)
-    ctx.GetRenderer()->Render();
 }
 
 RENDERING_API void Invalidate()
 {
   for (auto && ctx : st_contexts)
     ctx.GetRenderer()->Invalidate();
+}
+
+RENDERING_API void RenderFrame()
+{
+  for (auto && ctx : st_contexts)
+    ctx.GetRenderer()->Render(st_scenes.front());
+  st_scenes.pop();
+}
+
+
+RENDERING_API RenderSceneHandler AcquireRenderScene()
+{
+  auto && new_scene = st_scenes.emplace();
+  return &new_scene;
+}
+
+RENDERING_API void RenderScene_PushStaticMesh(RenderSceneHandler scene, StaticMesh mesh)
+{
+  auto && last_scene = st_scenes.back();
+  last_scene.objects.emplace<StaticMesh>(mesh);
 }

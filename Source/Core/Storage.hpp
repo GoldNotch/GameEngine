@@ -102,7 +102,7 @@ namespace Core
 		const Storage<T, BufSize>* cont = nullptr; ///< pointer on owning storage
 	};
 
-
+	
 	/*
 	* HeterogeneousStorage is multi-type container.
 	* It provides O(1) complexity for insertion, deletion

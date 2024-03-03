@@ -9,6 +9,7 @@
 #include <filesystem>
 
 #include <StaticString.hpp>
+#include <Storage.hpp>
 #include <VkBootstrap.h>
 #include <vulkan/vulkan.hpp>
 
@@ -68,10 +69,16 @@ namespace vk::utils
 template<std::size_t Size>
 constexpr decltype(auto) ResolveShaderPath(const char (&filename)[Size])
 {
-  return Core::static_string(DATA_PATH) + Core::static_string("/shaders/Vulkan/") +
+  return Core::static_string(DATA_PATH) + Core::static_string("/Shaders/Vulkan/") +
          Core::static_string(filename);
 }
 } // namespace vk::utils
+
+
+struct RenderScene
+{
+  Core::HeterogeneousStorage<StaticMesh> objects;
+};
 
 
 template<>

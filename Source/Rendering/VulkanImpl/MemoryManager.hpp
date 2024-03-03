@@ -2,22 +2,18 @@
 #include <functional>
 #include <memory>
 
+#include "Types.hpp"
 struct VulkanContext;
 namespace vk
 {
 class Buffer;
 }
 
+struct BufferGPU;
 
-/*
-Вопросы на подумать:
-1) кто хранит map загруженных буферов?
-2) map по буферам или по объектам (один объект может иметь вершинный буфер + индексный буфер)
-3) Что использовать как ключ для буфера?
-*/
 struct MemoryManager final
 {
-  struct BufferGPU;
+  friend struct BufferGPU;
 
   explicit MemoryManager(const VulkanContext & ctx);
   ~MemoryManager() noexcept;
@@ -38,7 +34,7 @@ private:
 
 
 /// @brief Special structure to store the buffer handler and allocated memory block
-struct MemoryManager::BufferGPU final
+struct BufferGPU final
 {
   using UnmapFunc = std::function<void(void *)>;
   using ScopeMapper = std::unique_ptr<void, UnmapFunc>;
@@ -60,9 +56,9 @@ struct MemoryManager::BufferGPU final
 
 private:
   friend struct MemoryManager::Impl;
-  void * handler = nullptr;
-  void * mem_block = nullptr;
-  void * allocator = nullptr;
+  VulkanHandler handler = nullptr;
+  VulkanHandler mem_block = nullptr;
+  VulkanHandler allocator = nullptr;
   std::size_t mem_size = 0;
 
 private:

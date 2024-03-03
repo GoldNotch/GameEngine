@@ -18,10 +18,10 @@ INTERFACE
 target_sources (${this_target}
 PRIVATE
 	"VulkanImpl/VulkanContext.cpp"
-	"VulkanImpl/MeshPipeline.cpp"
+	"VulkanImpl/Pipelines/MeshPipeline.cpp"
 	"VulkanImpl/Renderer.cpp"
 	"VulkanImpl/VulkanRendering.cpp"  
-	"VulkanImpl/MemoryManager.cpp")
+	"VulkanImpl/MemoryManager.cpp" "Scene.h" )
 
 find_package(Vulkan REQUIRED FATAL_ERROR)
 find_package(glm REQUIRED FATAL_ERROR)
