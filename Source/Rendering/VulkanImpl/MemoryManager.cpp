@@ -7,36 +7,21 @@
 #include "vk_mem_alloc.h"
 
 
-struct MemoryManager::Impl
+struct MemoryManager final : public IMemoryManager
 {
-  VmaAllocation t;
-  explicit Impl(const VulkanContext & ctx);
-  ~Impl();
+  friend struct BufferGPU;
+  explicit MemoryManager(const VulkanContext & ctx);
+  virtual ~MemoryManager() override;
 
-  BufferGPU AllocBuffer(VkDeviceSize size, VkBufferUsageFlags usage) const;
+  virtual BufferGPU AllocBuffer(VkDeviceSize size, VkBufferUsageFlags usage) const & override;
 
 private:
   VmaAllocator allocator;
 };
 
-MemoryManager::MemoryManager(const VulkanContext & ctx)
-  : impl(new Impl(ctx))
-{
-}
-
-MemoryManager::~MemoryManager() noexcept
-{
-  impl.reset();
-}
-
-BufferGPU MemoryManager::AllocBuffer(std::size_t size, uint32_t usage) const &
-{
-  return impl->AllocBuffer(size, static_cast<VkBufferUsageFlags>(usage));
-}
-
 // --------------------- Implementation ----------------------
 
-MemoryManager::Impl::Impl(const VulkanContext & ctx)
+MemoryManager::MemoryManager(const VulkanContext & ctx)
 {
   VmaAllocatorCreateInfo allocator_info{};
   allocator_info.instance = ctx.GetInstance();
@@ -47,12 +32,12 @@ MemoryManager::Impl::Impl(const VulkanContext & ctx)
     throw std::runtime_error(Formatter() << "Failed to create buffer_allocator - " << res);
 }
 
-MemoryManager::Impl::~Impl()
+MemoryManager::~MemoryManager()
 {
   vmaDestroyAllocator(allocator);
 }
 
-BufferGPU MemoryManager::Impl::AllocBuffer(VkDeviceSize size, VkBufferUsageFlags usage) const
+BufferGPU MemoryManager::AllocBuffer(VkDeviceSize size, VkBufferUsageFlags usage) const &
 {
   VkBufferCreateInfo bufferInfo{};
   bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -129,4 +114,10 @@ void BufferGPU::Flush() const noexcept
 {
   vmaFlushAllocation(reinterpret_cast<VmaAllocator>(allocator),
                      reinterpret_cast<VmaAllocation>(mem_block), 0, mem_size);
+}
+
+
+std::unique_ptr<IMemoryManager> CreateMemoryManager(const VulkanContext & ctx)
+{
+  return std::make_unique<MemoryManager>(ctx);
 }

@@ -54,8 +54,8 @@ VulkanContext::VulkanContext(const usRenderingOptions & opts)
   device = dev_ret.value();
   dispatch_table = device.make_table();
 
-  memory_manager = std::make_unique<MemoryManager>(*this);
-  renderer = std::make_unique<Renderer>(*this, surface);
+  memory_manager = CreateMemoryManager(*this);
+  renderer = CreateRenderer(*this, surface);
 }
 
 VulkanContext::~VulkanContext() noexcept

@@ -35,7 +35,7 @@ struct VulkanContext final
   const vkb::Instance & GetInstance() const & { return vulkan_instance; }
   const vkb::Device & GetDevice() const & { return device; }
   const vkb::PhysicalDevice & GetGPU() const & { return choosen_gpu; }
-  const MemoryManager & GetMemoryManager() const & { return *memory_manager; }
+  const IMemoryManager & GetMemoryManager() const & { return *memory_manager; }
 
   // TODO: Make it global functions
   /// @brief returns queue of specific type. doesn't own it
@@ -56,7 +56,7 @@ private:
   vkb::DispatchTable dispatch_table;
 
   std::unique_ptr<IRenderer> renderer;
-  std::unique_ptr<MemoryManager> memory_manager;
+  std::unique_ptr<IMemoryManager> memory_manager;
 
 private:
   VulkanContext(const VulkanContext &) = delete;

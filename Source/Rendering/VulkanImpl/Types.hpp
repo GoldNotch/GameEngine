@@ -15,8 +15,21 @@ struct VkVertexInputAttributeDescription;
 
 struct VulkanContext;
 struct RenderScene;
+struct BufferGPU;
 
 using VulkanHandler = void *;
+
+struct IMemoryManager
+{
+  IMemoryManager() = default;
+  virtual ~IMemoryManager() = default;
+  virtual BufferGPU AllocBuffer(std::size_t size, uint32_t usage) const & = 0;
+
+protected:
+  IMemoryManager(const IMemoryManager &) = delete;
+  IMemoryManager & operator=(const IMemoryManager &) = delete;
+};
+
 
 /// @brief creates vk::SubpassDescription for special type of VertexData (actually for corresponding pipeline)
 /// @tparam VertexDataT - type of drawable data
@@ -71,8 +84,13 @@ struct IRenderer
     it owns some pipelines
   */
 
+  IRenderer() = default;
   virtual ~IRenderer() = default;
 
   virtual void Render(const RenderScene & scene) = 0;
   virtual void Invalidate() = 0;
+
+protected:
+  IRenderer(const IRenderer &) = delete;
+  IRenderer & operator=(const IRenderer &) = delete;
 };

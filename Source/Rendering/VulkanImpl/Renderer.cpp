@@ -189,15 +189,15 @@ vk::RenderPass CreateRenderPass(const VulkanContext & ctx, VkFormat image_format
 
 
 /// @brief vulkan implementation for renderer
-struct Renderer::Impl final
+struct Renderer final : public IRenderer
 {
-  explicit Impl(const VulkanContext & ctx, const vk::SurfaceKHR surface);
-  ~Impl();
+  explicit Renderer(const VulkanContext & ctx, const vk::SurfaceKHR surface);
+  virtual ~Renderer() override;
 
-  void Render(const RenderScene & scene);
+  virtual void Render(const RenderScene & scene) override;
 
   /// @brief destroys old surface data like framebuffers, images, images_views, ets and creates new
-  void InvalidateSurfaceResources();
+  virtual void Invalidate() override;
 
 private:
   const VulkanContext & context_owner;
@@ -227,29 +227,9 @@ private:
   void InvalidateSwapchain();
 };
 
-Renderer::Renderer(const VulkanContext & ctx, const vk::SurfaceKHR & surface)
-  : impl(new Impl(ctx, surface))
-{
-}
-
-Renderer::~Renderer()
-{
-  impl.reset();
-}
-
-void Renderer::Render(const RenderScene & scene)
-{
-  impl->Render(scene);
-}
-
-void Renderer::Invalidate()
-{
-  impl->InvalidateSurfaceResources();
-}
-
 // ------------------------------- Implementation ------------------------
 
-Renderer::Impl::Impl(const VulkanContext & ctx, const vk::SurfaceKHR surface)
+Renderer::Renderer(const VulkanContext & ctx, const vk::SurfaceKHR surface)
   : context_owner(ctx)
   , surface(surface)
 {
@@ -268,7 +248,7 @@ Renderer::Impl::Impl(const VulkanContext & ctx, const vk::SurfaceKHR surface)
   current_frame = frames.begin();
 }
 
-Renderer::Impl::~Impl()
+Renderer::~Renderer()
 {
   pipeline.reset();
   vkDestroyRenderPass(context_owner.GetDevice(), render_pass, nullptr);
@@ -278,7 +258,7 @@ Renderer::Impl::~Impl()
 }
 
 /// @brief renders one frame
-void Renderer::Impl::Render(const RenderScene & scene)
+void Renderer::Render(const RenderScene & scene)
 {
   current_frame->WaitOldRenderingComplete();
   uint32_t image_index = 0;
@@ -290,7 +270,7 @@ void Renderer::Impl::Render(const RenderScene & scene)
                                          VK_NULL_HANDLE, &image_index);
     if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
     {
-      InvalidateSurfaceResources();
+      Invalidate();
       return;
     }
     else if (res != VK_SUCCESS)
@@ -345,7 +325,7 @@ void Renderer::Impl::Render(const RenderScene & scene)
     VkResult res = vkQueuePresentKHR(present_queue, &presentInfo);
     if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
     {
-      InvalidateSurfaceResources();
+      Invalidate();
       return;
     }
     else if (res != VK_SUCCESS)
@@ -362,7 +342,7 @@ void Renderer::Impl::Render(const RenderScene & scene)
 
 
 /// @brief destroys all surface resources: swapchain, framebuffers, etc and creates new
-void Renderer::Impl::InvalidateSurfaceResources()
+void Renderer::Invalidate()
 {
   if (use_presentation)
   {
@@ -376,7 +356,7 @@ void Renderer::Impl::InvalidateSurfaceResources()
 }
 
 /// @brief destroys old swapchain, images, image_views and creates new
-void Renderer::Impl::InvalidateSwapchain()
+void Renderer::InvalidateSwapchain()
 {
   if (use_presentation)
   {
@@ -400,4 +380,9 @@ void Renderer::Impl::InvalidateSwapchain()
     swapchain_imageviews = swapchain.get_image_views().value();
   }
   //else offscreen rendering
+}
+
+std::unique_ptr<IRenderer> CreateRenderer(const VulkanContext & ctx, const vk::SurfaceKHR & surface)
+{
+  return std::make_unique<Renderer>(ctx, surface);
 }

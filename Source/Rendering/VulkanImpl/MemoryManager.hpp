@@ -9,29 +9,6 @@ namespace vk
 class Buffer;
 }
 
-struct BufferGPU;
-
-struct MemoryManager final
-{
-  friend struct BufferGPU;
-
-  explicit MemoryManager(const VulkanContext & ctx);
-  ~MemoryManager() noexcept;
-
-  /// @brief allocate buffer in GPU
-  /// @param size - size of buffer in bytes
-  /// @param usage - VkBufferUsageFlags - flags to define what is the buffer
-  BufferGPU AllocBuffer(std::size_t size, uint32_t usage) const &;
-
-private:
-  struct Impl;
-  std::unique_ptr<Impl> impl = nullptr;
-
-private:
-  MemoryManager(const MemoryManager &) = delete;
-  MemoryManager & operator=(const MemoryManager &) = delete;
-};
-
 
 /// @brief Special structure to store the buffer handler and allocated memory block
 struct BufferGPU final
@@ -55,7 +32,7 @@ struct BufferGPU final
   void Flush() const noexcept;
 
 private:
-  friend struct MemoryManager::Impl;
+  friend struct MemoryManager;
   VulkanHandler handler = nullptr;
   VulkanHandler mem_block = nullptr;
   VulkanHandler allocator = nullptr;
@@ -66,3 +43,5 @@ private:
   BufferGPU(const BufferGPU &) = delete;
   BufferGPU & operator=(const BufferGPU &) = delete;
 };
+
+std::unique_ptr<IMemoryManager> CreateMemoryManager(const VulkanContext & ctx);
