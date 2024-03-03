@@ -134,7 +134,7 @@ void MeshPipeline::ProcessObject(const vk::CommandBuffer & buffer, const StaticM
   }
   VkBuffer vertexBuffers[] = {static_cast<vk::Buffer>(cache_it->second),
                               static_cast<vk::Buffer>(cache_it->second)};
-  VkDeviceSize offsets[] = {0, 3 * sizeof(glVec2)};
+  VkDeviceSize offsets[] = {0, mesh.vertices_count * sizeof(glVec2)};
   vkCmdBindVertexBuffers(buffer, 0, 2, vertexBuffers, offsets);
 
   vkCmdDraw(buffer, static_cast<uint32_t>(mesh.vertices_count), 1, 0, 0);
