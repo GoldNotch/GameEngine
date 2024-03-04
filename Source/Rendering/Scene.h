@@ -47,7 +47,7 @@ extern "C"
     const glVec3 * colors;
 
     size_t indices_count;
-    const size_t * indices;
+    const unsigned int * indices;
   } StaticMesh;
 
   //----------------- Scene API ------------------------

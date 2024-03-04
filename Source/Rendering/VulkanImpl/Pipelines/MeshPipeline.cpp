@@ -61,10 +61,11 @@ struct MeshPipeline final : public IPipeline
   void ProcessObject(const vk::CommandBuffer & buffer, const StaticMesh & mesh) const;
 
 private:
-  const VulkanContext & context;                           ///< vulkan context
-  VulkanHandler pipeline;                                  ///< vulkan pipeline
-  VulkanHandler layout;                                    ///< vulkan pipeline layout
-  mutable std::unordered_map<StaticMesh, BufferGPU> cache; ///< cache of bufferized geometry
+  const VulkanContext & context; ///< vulkan context
+  VulkanHandler pipeline;        ///< vulkan pipeline
+  VulkanHandler layout;          ///< vulkan pipeline layout
+  using BuffersPair = std::pair<BufferGPU, BufferGPU>;
+  mutable std::unordered_map<StaticMesh, BuffersPair> cache; ///< cache of bufferized geometry
 
 private:
   MeshPipeline(const MeshPipeline &) = delete;
@@ -118,10 +119,10 @@ void MeshPipeline::ProcessObject(const vk::CommandBuffer & buffer, const StaticM
   if (cache_it == cache.end())
   {
     size_t size = mesh.vertices_count * (sizeof(glVec2) + sizeof(glVec3));
-    auto new_buffer =
+    auto vert_buffer =
       context.GetMemoryManager().AllocBuffer(size, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
     {
-      auto ptr = new_buffer.Map();
+      auto ptr = vert_buffer.Map();
       size_t offset = 0;
       std::memcpy(reinterpret_cast<char *>(ptr.get()) + offset, mesh.vertices,
                   mesh.vertices_count * sizeof(glVec2));
@@ -129,15 +130,39 @@ void MeshPipeline::ProcessObject(const vk::CommandBuffer & buffer, const StaticM
       std::memcpy(reinterpret_cast<char *>(ptr.get()) + offset, mesh.colors,
                   mesh.vertices_count * sizeof(glVec3));
     }
-    new_buffer.Flush();
-    cache_it = cache.insert(cache.end(), std::make_pair(mesh, std::move(new_buffer)));
+    vert_buffer.Flush();
+
+    BufferGPU ind_buffer;
+    if (mesh.indices_count > 0)
+    {
+      ind_buffer = context.GetMemoryManager().AllocBuffer(mesh.indices_count * sizeof(uint32_t),
+                                                          VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+      {
+        auto ptr = ind_buffer.Map();
+        std::memcpy(ptr.get(), mesh.indices, mesh.indices_count * sizeof(uint32_t));
+      }
+      ind_buffer.Flush();
+    }
+    cache_it =
+      cache.insert(cache.end(), std::make_pair(mesh, std::make_pair(std::move(vert_buffer),
+                                                                    std::move(ind_buffer))));
   }
-  VkBuffer vertexBuffers[] = {static_cast<vk::Buffer>(cache_it->second),
-                              static_cast<vk::Buffer>(cache_it->second)};
+
+  const bool hasIndices = static_cast<vk::Buffer>(cache_it->second.second) != VK_NULL_HANDLE;
+  VkBuffer vertexBuffers[] = {static_cast<vk::Buffer>(cache_it->second.first),
+                              static_cast<vk::Buffer>(cache_it->second.first)};
   VkDeviceSize offsets[] = {0, mesh.vertices_count * sizeof(glVec2)};
   vkCmdBindVertexBuffers(buffer, 0, 2, vertexBuffers, offsets);
 
-  vkCmdDraw(buffer, static_cast<uint32_t>(mesh.vertices_count), 1, 0, 0);
+
+  if (hasIndices)
+  {
+    vkCmdBindIndexBuffer(buffer, static_cast<vk::Buffer>(cache_it->second.second), 0,
+                         VK_INDEX_TYPE_UINT32);
+    vkCmdDrawIndexed(buffer, mesh.indices_count, 1, 0, 0, 0);
+  }
+  else
+    vkCmdDraw(buffer, static_cast<uint32_t>(mesh.vertices_count), 1, 0, 0);
 }
 
 void MeshPipeline::EndProcessing(const vk::CommandBuffer & buffer) const
