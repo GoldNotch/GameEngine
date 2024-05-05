@@ -2,20 +2,23 @@
 #include <Formatter.hpp>
 
 #include "../VulkanContext.hpp"
+#include "Pipeline.hpp"
 #include "ShaderCompiler.hpp"
 
 namespace vk::utils
 {
+
 
 struct PipelineBuilder final
 {
   explicit PipelineBuilder(const VulkanContext & ctx) noexcept;
 
   template<typename VertexDataT>
-  PipelineBuilder & SetVertexData()
+  PipelineBuilder & SetShaderAPI()
   {
-    bindings = VertexStateDescriptionBuilder<VertexDataT>::BuildBindings();
-    attributes = VertexStateDescriptionBuilder<VertexDataT>::BuildAttributes();
+    bindings = ShaderAPIBuilder<VertexDataT>::BuildBindings();
+    attributes = ShaderAPIBuilder<VertexDataT>::BuildAttributes();
+    descriptors_layout = ShaderAPIBuilder<VertexDataT>::BuildDescriptorsLayout();
     return *this;
   }
 
@@ -23,8 +26,8 @@ struct PipelineBuilder final
   PipelineBuilder & AttachShader(vk::ShaderStageFlagBits stage, const CharT * path,
                                  Args &&... args);
 
-  std::pair<vk::Pipeline, vk::PipelineLayout> Build(const VkRenderPass & renderPass,
-                                                    uint32_t subpass_index) &;
+  std::unique_ptr<Pipeline> Build(const IRenderer & renderer, const VkRenderPass & renderPass,
+                                  uint32_t subpass_index) &;
 
 private:
   const VulkanContext & context_owner; ///< context
@@ -33,6 +36,7 @@ private:
   std::vector<VkPipelineColorBlendAttachmentState> color_blend_attachments_info;
   std::vector<VkVertexInputBindingDescription> bindings;
   std::vector<VkVertexInputAttributeDescription> attributes;
+  std::vector<VkDescriptorSetLayoutBinding> descriptors_layout;
   std::vector<VkPipelineShaderStageCreateInfo> shader_stages;
   std::vector<vk::ShaderModule> shaders;
 
@@ -113,10 +117,11 @@ PipelineBuilder::PipelineBuilder(const VulkanContext & ctx) noexcept
 
 
 /// @brief build a vulkan pipeline and pipeline layout
-std::pair<vk::Pipeline, vk::PipelineLayout> PipelineBuilder::Build(const VkRenderPass & renderPass,
-                                                                   uint32_t subpass_index) &
+std::unique_ptr<Pipeline> PipelineBuilder::Build(const IRenderer & renderer,
+                                                 const VkRenderPass & renderPass,
+                                                 uint32_t subpass_index) &
 {
-  // update all array data in structs 
+  // update all array data in structs
   dynamic_states_info.dynamicStateCount = static_cast<uint32_t>(dynamic_states.size());
   dynamic_states_info.pDynamicStates = dynamic_states.data();
 
@@ -128,11 +133,23 @@ std::pair<vk::Pipeline, vk::PipelineLayout> PipelineBuilder::Build(const VkRende
   color_blend_info.attachmentCount = static_cast<uint32_t>(color_blend_attachments_info.size());
   color_blend_info.pAttachments = color_blend_attachments_info.data();
 
+  // create descriptor set layout
+  VkDescriptorSetLayoutCreateInfo dsetLayoutInfo{};
+  dsetLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+  dsetLayoutInfo.bindingCount = static_cast<uint32_t>(descriptors_layout.size());
+  dsetLayoutInfo.pBindings = descriptors_layout.data();
+
+  VkDescriptorSetLayout descr_layout;
+  if (auto res = vkCreateDescriptorSetLayout(context_owner.GetDevice(), &dsetLayoutInfo, nullptr,
+                                             &descr_layout);
+      res != VK_SUCCESS)
+    throw std::runtime_error(Formatter() << "Failed to create descriptor set layout - " << res);
+
   // create pipeline layout
   VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
   pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-  pipelineLayoutInfo.setLayoutCount = 0;            // Optional
-  pipelineLayoutInfo.pSetLayouts = nullptr;         // Optional
+  pipelineLayoutInfo.setLayoutCount = 1;            // Optional
+  pipelineLayoutInfo.pSetLayouts = &descr_layout;   // Optional
   pipelineLayoutInfo.pushConstantRangeCount = 0;    // Optional
   pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
 
@@ -172,7 +189,13 @@ std::pair<vk::Pipeline, vk::PipelineLayout> PipelineBuilder::Build(const VkRende
   for (auto && shader : shaders)
     vkDestroyShaderModule(context_owner.GetDevice(), shader, nullptr);
 
-  return {pipeline, layout};
+  auto result = std::unique_ptr<Pipeline>(
+    new Pipeline(context_owner, renderer, pipeline, layout, descr_layout));
+
+  // initialize object
+  for (auto && layout_info : descriptors_layout)
+    result->CreateUniformDescriptors(layout_info.descriptorType, layout_info.descriptorCount);
+  return result;
 }
 
 /// @brief attaches shader to the pipeline
@@ -199,6 +222,5 @@ inline PipelineBuilder & PipelineBuilder::AttachShader(vk::ShaderStageFlagBits s
   info.module = module;
   return *this;
 }
-
 
 } // namespace vk::utils

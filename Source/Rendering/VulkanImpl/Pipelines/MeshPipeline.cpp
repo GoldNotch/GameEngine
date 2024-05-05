@@ -39,31 +39,32 @@ struct MeshPipeline final : public IPipeline
   /// @param ctx - vulkan context
   /// @param renderPass - vk::RenderPass
   /// @param subpass_index - index of subpass in render pass
-  MeshPipeline(const VulkanContext & ctx, const vk::RenderPass & renderPass,
-               uint32_t subpass_index);
-
-  /// @brief destructor
-  virtual ~MeshPipeline() noexcept override;
+  MeshPipeline(const VulkanContext & ctx, const IRenderer & renderer,
+               const vk::RenderPass & renderPass, uint32_t subpass_index);
 
   /// @brief some logic in the beginning of processing (f.e. some preparations to rendering)
   /// @param buffer - command buffer
   /// @param viewport - settings for pipeline
-  virtual void BeginProcessing(const vk::CommandBuffer & buffer,
-                               const vk::Rect2D & viewport) const override;
+  void BeginProcessing(const vk::CommandBuffer & buffer,
+                       const vk::Rect2D & viewport) const override;
 
   /// @brief Some logic in the end of processing (f.e. flush all commands in buffer)
   /// @param buffer - command buffer
-  virtual void EndProcessing(const vk::CommandBuffer & buffer) const override;
+  void EndProcessing(const vk::CommandBuffer & buffer) const override;
 
   /// @brief pipeline-specific function to process one drawable object
   /// @param buffer - command buffer
   /// @param mesh - drawable data
-  void ProcessObject(const vk::CommandBuffer & buffer, const StaticMesh & mesh) const;
+  void ProcessObject(const vk::CommandBuffer & buffer, size_t frame_index,
+                     const StaticMesh & mesh) const;
 
 private:
   const VulkanContext & context; ///< vulkan context
-  VulkanHandler pipeline;        ///< vulkan pipeline
-  VulkanHandler layout;          ///< vulkan pipeline layout
+  const IRenderer & renderer;
+  std::unique_ptr<vk::utils::Pipeline> pipeline = nullptr;
+  mutable float timer = 0.0;
+
+
   using BuffersPair = std::pair<BufferGPU, BufferGPU>;
   mutable std::unordered_map<StaticMesh, BuffersPair> cache; ///< cache of bufferized geometry
 
@@ -77,29 +78,23 @@ private:
 
 /// @brief constructor, initialize all vulkan objects
 /// @param ctx
-MeshPipeline::MeshPipeline(const VulkanContext & ctx, const vk::RenderPass & renderPass,
-                           uint32_t subpass_index)
+MeshPipeline::MeshPipeline(const VulkanContext & ctx, const IRenderer & renderer,
+                           const vk::RenderPass & renderPass, uint32_t subpass_index)
   : context(ctx)
+  , renderer(renderer)
 {
   vk::utils::PipelineBuilder builder{ctx};
-  std::tie(pipeline, layout) =
-    builder.SetVertexData<StaticMesh>()
-      .AttachShader(vk::ShaderStageFlagBits::eVertex, shaders::vertex_shader.c_str())
-      .AttachShader(vk::ShaderStageFlagBits::eFragment, shaders::fragment_shader.c_str())
-      .Build(renderPass, subpass_index);
-}
+  pipeline = builder.SetShaderAPI<StaticMesh>()
+               .AttachShader(vk::ShaderStageFlagBits::eVertex, shaders::vertex_shader.c_str())
+               .AttachShader(vk::ShaderStageFlagBits::eFragment, shaders::fragment_shader.c_str())
+               .Build(renderer, renderPass, subpass_index);
 
-/// @brief destructor, destroys all vulkan objects
-MeshPipeline::~MeshPipeline() noexcept
-{
-  context->destroyPipelineLayout(reinterpret_cast<VkPipelineLayout>(layout), nullptr);
-  context->destroyPipeline(reinterpret_cast<VkPipeline>(pipeline), nullptr);
+  pipeline->GetUniformBinding(0).Alloc(4, true);
 }
 
 void MeshPipeline::BeginProcessing(const vk::CommandBuffer & buffer, const vk::Rect2D & vp) const
 {
-  vkCmdBindPipeline(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                    reinterpret_cast<VkPipeline>(pipeline));
+  vkCmdBindPipeline(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetPipeline());
   VkViewport viewport{};
   viewport.x = static_cast<float>(vp.offset.x);
   viewport.y = static_cast<float>(vp.offset.y);
@@ -111,9 +106,13 @@ void MeshPipeline::BeginProcessing(const vk::CommandBuffer & buffer, const vk::R
 
   VkRect2D scissor = vp;
   vkCmdSetScissor(buffer, 0, 1, &scissor);
+
+  //vkCmdBindDescriptorSets(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetPipelineLayout(), 0,
+  //                        1, &descr_layout, 0, nullptr);
 }
 
-void MeshPipeline::ProcessObject(const vk::CommandBuffer & buffer, const StaticMesh & mesh) const
+void MeshPipeline::ProcessObject(const vk::CommandBuffer & buffer, size_t frame_index,
+                                 const StaticMesh & mesh) const
 {
   auto cache_it = cache.find(mesh);
   if (cache_it == cache.end())
@@ -148,18 +147,25 @@ void MeshPipeline::ProcessObject(const vk::CommandBuffer & buffer, const StaticM
                                                                     std::move(ind_buffer))));
   }
 
+  float t = std::sin(timer);
+  timer += 0.001;
+  if (frame_index == 0)
+  {
+    pipeline->GetUniformBinding(0).Upload(&t, sizeof(float));
+  }
+
   const bool hasIndices = static_cast<vk::Buffer>(cache_it->second.second) != VK_NULL_HANDLE;
   VkBuffer vertexBuffers[] = {static_cast<vk::Buffer>(cache_it->second.first),
                               static_cast<vk::Buffer>(cache_it->second.first)};
   VkDeviceSize offsets[] = {0, mesh.vertices_count * sizeof(glVec2)};
   vkCmdBindVertexBuffers(buffer, 0, 2, vertexBuffers, offsets);
-
+  pipeline->GetUniformBinding(0).Bind(buffer, pipeline->GetPipelineLayout(), frame_index);
 
   if (hasIndices)
   {
     vkCmdBindIndexBuffer(buffer, static_cast<vk::Buffer>(cache_it->second.second), 0,
                          VK_INDEX_TYPE_UINT32);
-    vkCmdDrawIndexed(buffer, mesh.indices_count, 1, 0, 0, 0);
+    vkCmdDrawIndexed(buffer, static_cast<uint32_t>(mesh.indices_count), 1, 0, 0, 0);
   }
   else
     vkCmdDraw(buffer, static_cast<uint32_t>(mesh.vertices_count), 1, 0, 0);
@@ -172,13 +178,14 @@ void MeshPipeline::EndProcessing(const vk::CommandBuffer & buffer) const
 // ----------------- Pipeline template specializations -------------------------
 
 template<>
-void ProcessWithPipeline<StaticMesh>(const IPipeline & pipeline, const vk::CommandBuffer & buffer,
-                                     const StaticMesh & obj)
+void ProcessWithPipeline<StaticMesh>(const IPipeline & pipeline, size_t frame_index,
+                                     const vk::CommandBuffer & buffer, const StaticMesh & obj)
 {
   assert(typeid(pipeline) == typeid(MeshPipeline));
-  static_cast<const MeshPipeline &>(pipeline).ProcessObject(buffer, obj);
+  static_cast<const MeshPipeline &>(pipeline).ProcessObject(buffer, frame_index, obj);
 }
 
+template<>
 vk::SubpassDescription SubpassDescriptionBuilder<StaticMesh>::Get() noexcept
 {
   VkSubpassDescription result{};
@@ -196,8 +203,8 @@ vk::SubpassDescription SubpassDescriptionBuilder<StaticMesh>::Get() noexcept
   return result;
 }
 
-std::vector<VkVertexInputBindingDescription> VertexStateDescriptionBuilder<
-  StaticMesh>::BuildBindings() noexcept
+template<>
+std::vector<VkVertexInputBindingDescription> ShaderAPIBuilder<StaticMesh>::BuildBindings() noexcept
 {
   std::vector<VkVertexInputBindingDescription> bindings;
   bindings.reserve(1);
@@ -218,7 +225,8 @@ std::vector<VkVertexInputBindingDescription> VertexStateDescriptionBuilder<
   return bindings;
 }
 
-std::vector<VkVertexInputAttributeDescription> VertexStateDescriptionBuilder<
+template<>
+std::vector<VkVertexInputAttributeDescription> ShaderAPIBuilder<
   StaticMesh>::BuildAttributes() noexcept
 {
   std::vector<VkVertexInputAttributeDescription> attributes;
@@ -242,11 +250,37 @@ std::vector<VkVertexInputAttributeDescription> VertexStateDescriptionBuilder<
   return attributes;
 }
 
+template<>
+std::vector<VkDescriptorSetLayoutBinding> ShaderAPIBuilder<
+  StaticMesh>::BuildDescriptorsLayout() noexcept
+{
+  std::vector<VkDescriptorSetLayoutBinding> descriptor_sets;
+  auto && uboLayoutBinding = descriptor_sets.emplace_back(VkDescriptorSetLayoutBinding{});
+  uboLayoutBinding.binding = 0;
+  uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+  uboLayoutBinding.descriptorCount = 1;
+  uboLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+  uboLayoutBinding.pImmutableSamplers = nullptr; // Optional, for images
+
+  return descriptor_sets;
+}
+
+
+template<>
+std::vector<VkDescriptorPoolSize> ShaderAPIBuilder<StaticMesh>::BuildPoolAllocationInfo() noexcept
+{
+  std::vector<VkDescriptorPoolSize> sizes;
+  auto && uniforms_size = sizes.emplace_back();
+  uniforms_size.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+  uniforms_size.descriptorCount = 1;
+  return sizes;
+}
+
 // -----------------------------------------------------------------------
 
-std::unique_ptr<IPipeline> CreateMeshPipeline(const VulkanContext & ctx,
+std::unique_ptr<IPipeline> CreateMeshPipeline(const VulkanContext & ctx, const IRenderer & renderer,
                                               const vk::RenderPass & renderPass,
                                               uint32_t subpass_index)
 {
-  return std::make_unique<MeshPipeline>(ctx, renderPass, subpass_index);
+  return std::make_unique<MeshPipeline>(ctx, renderer, renderPass, subpass_index);
 }

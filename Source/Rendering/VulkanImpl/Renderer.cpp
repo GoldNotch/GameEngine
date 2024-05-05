@@ -192,12 +192,14 @@ vk::RenderPass CreateRenderPass(const VulkanContext & ctx, VkFormat image_format
 struct Renderer final : public IRenderer
 {
   explicit Renderer(const VulkanContext & ctx, const vk::SurfaceKHR surface);
-  virtual ~Renderer() override;
+  ~Renderer() override;
 
-  virtual void Render(const RenderScene & scene) override;
+  void Render(const RenderScene & scene) override;
 
   /// @brief destroys old surface data like framebuffers, images, images_views, ets and creates new
-  virtual void Invalidate() override;
+  void Invalidate() override;
+
+  uint32_t GetImagesCountInFlight() const override { return swapchain.image_count; }
 
 private:
   const VulkanContext & context_owner;
@@ -240,7 +242,7 @@ Renderer::Renderer(const VulkanContext & ctx, const vk::SurfaceKHR surface)
   render_pass = CreateRenderPass<StaticMesh>(ctx, swapchain.image_format);
 
   // create pipelines
-  pipeline = CreateMeshPipeline(ctx, render_pass, 0);
+  pipeline = CreateMeshPipeline(ctx, *this, render_pass, 0);
 
   // create frames
   for (auto && view : swapchain_imageviews)
@@ -302,7 +304,7 @@ void Renderer::Render(const RenderScene & scene)
                             vk::Rect2D({0, 0}, swapchain.extent));
 
   for (auto it = scene.objects.cbegin<StaticMesh>(); it != scene.objects.cend<StaticMesh>(); ++it)
-    ProcessWithPipeline(*pipeline, current_frame->GetCommandBuffer(), *it);
+    ProcessWithPipeline(*pipeline, image_index, current_frame->GetCommandBuffer(), *it);
 
   pipeline->EndProcessing(current_frame->GetCommandBuffer());
   vkCmdEndRenderPass(current_frame->GetCommandBuffer());

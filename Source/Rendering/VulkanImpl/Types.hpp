@@ -12,6 +12,8 @@ class PipelineLayout;
 } // namespace vk
 struct VkVertexInputBindingDescription;
 struct VkVertexInputAttributeDescription;
+struct VkDescriptorSetLayoutBinding;
+struct VkDescriptorPoolSize;
 
 struct VulkanContext;
 struct RenderScene;
@@ -24,6 +26,7 @@ struct IMemoryManager
   IMemoryManager() = default;
   virtual ~IMemoryManager() = default;
   virtual BufferGPU AllocBuffer(std::size_t size, uint32_t usage) const & = 0;
+  virtual BufferGPU AllocMappedBuffer(std::size_t size, uint32_t usage) const & = 0;
 
 protected:
   IMemoryManager(const IMemoryManager &) = delete;
@@ -42,11 +45,16 @@ struct SubpassDescriptionBuilder final
 /// @brief creates some vulkan resources to link shader attributes declaration with vertex data format
 /// @tparam VertexDataT - type of drawable data
 template<typename VertexDataT>
-struct VertexStateDescriptionBuilder final
+struct ShaderAPIBuilder final
 {
+  // it's for vertex attributes
   static std::vector<VkVertexInputBindingDescription> BuildBindings() noexcept;
   static std::vector<VkVertexInputAttributeDescription> BuildAttributes() noexcept;
+  // it's for resources (like uniforms, samplers, images)
+  static std::vector<VkDescriptorSetLayoutBinding> BuildDescriptorsLayout() noexcept;
+  static std::vector<VkDescriptorPoolSize> BuildPoolAllocationInfo() noexcept;
 };
+
 
 /// @brief pipeline interface. Pipeline processes one type of objects and can draw it
 struct IPipeline
@@ -72,8 +80,8 @@ protected:
 /// @param pipeline - pipeline to process it
 /// @param obj - drawable data
 template<typename ObjT>
-void ProcessWithPipeline(const IPipeline & pipeline, const vk::CommandBuffer & buffer,
-                         const ObjT & obj);
+void ProcessWithPipeline(const IPipeline & pipeline, size_t frame_index,
+                         const vk::CommandBuffer & buffer, const ObjT & obj);
 
 
 /// @brief Renderer renders an image. It has own framebuffer, graphic queue, render pass and some pipelines
@@ -87,7 +95,13 @@ struct IRenderer
   IRenderer() = default;
   virtual ~IRenderer() = default;
 
+  /// @brief rendering function
+  /// @param scene
   virtual void Render(const RenderScene & scene) = 0;
+  /// @brief get images count in swapchain queue
+  /// @return
+  virtual uint32_t GetImagesCountInFlight() const = 0;
+  /// @brief invalidate rendering surface
   virtual void Invalidate() = 0;
 
 protected:
