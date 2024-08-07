@@ -3,15 +3,31 @@
 
 namespace vk::utils
 {
+
+/// @brief Class to make connection between descriptor (uniform, image, etc) and memory buffer
 struct DescriptorBinding
 {
   DescriptorBinding(const VulkanContext & ctx, const IRenderer & renderer,
                     vk::DescriptorPool & pool, vk::DescriptorSetLayout & descr_layout,
                     VkDescriptorType type);
 
+  /// @brief allocs memory on gpu
+  /// @param size 
+  /// @param permanently_mapped 
   void Alloc(size_t size, bool permanently_mapped = false);
+
+  /// @brief upload cpu-data into gpu-data
+  /// @param data 
+  /// @param size 
+  /// @param offset 
   void Upload(const void * data, size_t size, size_t offset = 0);
-  void Bind(const vk::CommandBuffer & buffer, const vk::PipelineLayout& layout, uint32_t frame_index);
+
+  /// @brief push descriptor's binding to command buffer
+  /// @param buffer 
+  /// @param layout 
+  /// @param frame_index 
+  void Bind(const vk::CommandBuffer & buffer, const vk::PipelineLayout & layout,
+            uint32_t frame_index);
 
 
 private:
@@ -24,6 +40,7 @@ private:
 };
 
 
+/// @brief RAII class for vkPipeline
 struct Pipeline final
 {
   friend struct PipelineBuilder;
@@ -38,13 +55,13 @@ struct Pipeline final
   }
 
 private:
-  const VulkanContext & ctx;
-  const IRenderer & renderer;
-  vk::Pipeline pipeline;
-  vk::PipelineLayout layout;
-  vk::DescriptorPool pool;
-  vk::DescriptorSetLayout descriptors_layout;
-  std::vector<DescriptorBinding> descriptor_bindings;
+  const VulkanContext & ctx;                          ///< context-owner
+  const IRenderer & renderer;                         ///< renderer-owner
+  vk::Pipeline pipeline;                              ///< vkPipeline handler
+  vk::PipelineLayout layout;                          ///< pipeline layout
+  vk::DescriptorPool pool;                            ///< descriptors pool
+  vk::DescriptorSetLayout descriptors_layout;         ///< layout for descriptor sets
+  std::vector<DescriptorBinding> descriptor_bindings; ///< descriptor bindings
 
 
 private:

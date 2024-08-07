@@ -8,7 +8,7 @@
 namespace vk::utils
 {
 
-
+/// @brief Utility-class to automatize pipeline building. It provides default values to many settings nad methods to configure your pipeline
 struct PipelineBuilder final
 {
   explicit PipelineBuilder(const VulkanContext & ctx) noexcept;
