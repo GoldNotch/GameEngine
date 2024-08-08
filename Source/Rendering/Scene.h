@@ -54,9 +54,6 @@ extern "C"
 
   typedef void * RenderSceneHandler;
 
-  /// @brief gets render scene container
-  RENDERING_API RenderSceneHandler AcquireRenderScene();
-
   /// @brief pushes mesh data into scene
   RENDERING_API void RenderScene_PushStaticMesh(RenderSceneHandler scene, StaticMesh mesh);
 

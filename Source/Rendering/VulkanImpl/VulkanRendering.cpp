@@ -11,55 +11,63 @@ IMPLEMENT_LOGGING_API(Rendering, RENDERING_API)
 #include "VulkanContext.hpp"
 
 
-static std::list<VulkanContext> st_contexts; ///< each context for each GPU
-static std::queue<RenderScene> st_scenes;
+struct VulkanRenderingSystem final
+{
+  explicit VulkanRenderingSystem(const RenderingSystemConfig & config)
+    : ctx(config)
+  {
+  }
+
+  void Invalidate() { ctx.GetRenderer()->Invalidate(); }
+  void RenderFrame()
+  {
+    if (scenes.empty())
+      return;
+    ctx.GetRenderer()->Render(scenes.front());
+    scenes.pop();
+  }
+
+  RenderScene & AcquireRenderScene() & { return scenes.emplace(); }
+
+private:
+  VulkanContext ctx;
+  std::queue<RenderScene> scenes;
+};
+
+
 // ------------------------ API implementation ----------------------------
 
-RENDERING_API int InitRenderingSystem(usRenderingOptions opts)
+RENDERING_API RenderingSystem CreateRenderingSystem(RenderingSystemConfig config)
 {
-  io::Log(LogStatus::US_LOG_INFO, 0, "Initialize Vulkan");
-  try
-  {
-    auto && ctx = st_contexts.emplace_back(opts);
-  }
-  catch (std::exception e)
-  {
-    TerminateRenderingSystem();
-    return -1;
-  }
-  io::Log(LogStatus::US_LOG_INFO, 0, "Vulkan is initialized successfully");
-  return 0;
+  io::Log(LogStatus::US_LOG_INFO, 0, "Initialize Vulkan rendering system");
+  RenderingSystem system = std::make_unique<VulkanRenderingSystem>(config).release();
+  io::Log(LogStatus::US_LOG_INFO, 0, "Vulkan rendering system is initialized successfully");
+  return system;
 }
 
 /// @brief clear all resources for rendering system
-RENDERING_API void TerminateRenderingSystem()
+RENDERING_API void DestroyRenderingSystem(RenderingSystem system)
 {
-  while (!st_scenes.empty())
-    st_scenes.pop();
-  st_contexts.clear();
+  delete reinterpret_cast<VulkanRenderingSystem *>(system);
 }
 
-RENDERING_API void Invalidate()
+RENDERING_API void Invalidate(RenderingSystem system)
 {
-  for (auto && ctx : st_contexts)
-    ctx.GetRenderer()->Invalidate();
+  reinterpret_cast<VulkanRenderingSystem *>(system)->Invalidate();
 }
 
-RENDERING_API void RenderFrame()
+RENDERING_API void RenderFrame(RenderingSystem system)
 {
-  for (auto && ctx : st_contexts)
-    ctx.GetRenderer()->Render(st_scenes.front());
-  st_scenes.pop();
+  reinterpret_cast<VulkanRenderingSystem *>(system)->RenderFrame();
 }
 
-RENDERING_API RenderSceneHandler AcquireRenderScene()
+RENDERING_API RenderSceneHandler AcquireRenderScene(RenderingSystem system)
 {
-  auto && new_scene = st_scenes.emplace();
-  return &new_scene;
+  return &reinterpret_cast<VulkanRenderingSystem *>(system)->AcquireRenderScene();
 }
 
 RENDERING_API void RenderScene_PushStaticMesh(RenderSceneHandler scene, StaticMesh mesh)
 {
-  auto && last_scene = st_scenes.back();
-  last_scene.objects.emplace<StaticMesh>(mesh);
+  auto * last_scene = reinterpret_cast<RenderScene *>(scene);
+  last_scene->objects.emplace<StaticMesh>(mesh);
 }

@@ -51,13 +51,13 @@ int main()
   Rendering_SetLoggingFunc(ConsoleLog);
   App_SetLoggingFunc(ConsoleLog);
 
-  usRenderingOptions renderOpts;
+  RenderingSystemConfig renderOpts;
   renderOpts.gpu_autodetect = true;
   renderOpts.hWindow = glfwGetWin32Window(window);
   renderOpts.hInstance = GetModuleHandle(nullptr);
   renderOpts.required_gpus = 1;
-
-  if (InitRenderingSystem(renderOpts))
+  auto rendering_system = CreateRenderingSystem(renderOpts);
+  if (!rendering_system)
   {
     std::printf("Failed to init rendering system\n");
     glfwTerminate();
@@ -74,13 +74,13 @@ int main()
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
 
-    RenderSceneHandler scene = AcquireRenderScene();
+    RenderSceneHandler scene = AcquireRenderScene(rendering_system);
     app_process.ExecuteWithPause(usApp_InitRenderableScene, scene);
 
-    RenderFrame();
+    RenderFrame(rendering_system);
   }
-  TerminateRenderingSystem();
 
+  DestroyRenderingSystem(rendering_system);
   glfwTerminate();
   return 0;
 }

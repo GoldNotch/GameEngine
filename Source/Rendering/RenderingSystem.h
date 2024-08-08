@@ -51,22 +51,27 @@ extern "C"
 #endif
 #endif // USE_WINDOW_OUTPUT
 
-  } usRenderingOptions;
+  } RenderingSystemConfig;
 
+  /// @brief rendering system handler
+  typedef void * RenderingSystem;
 
   /// @brief create and init rendering system
-  /// @param opts
-  RENDERING_API int InitRenderingSystem(usRenderingOptions opts);
+  /// @param config
+  RENDERING_API RenderingSystem CreateRenderingSystem(RenderingSystemConfig config);
 
   /// @brief destroy all objects and clear all resources in rendering system
-  RENDERING_API void TerminateRenderingSystem();
+  RENDERING_API void DestroyRenderingSystem(RenderingSystem system);
 
   /// @brief Invalidates render resources like framebuffers (call it when change resolution)
-  RENDERING_API void Invalidate();
+  RENDERING_API void Invalidate(RenderingSystem system);
 
   /// @brief render scene
   /// @param scene
-  RENDERING_API void RenderFrame();
+  RENDERING_API void RenderFrame(RenderingSystem system);
+
+    /// @brief gets render scene container
+  RENDERING_API RenderSceneHandler AcquireRenderScene(RenderingSystem system);
 
 
 #ifdef __cplusplus

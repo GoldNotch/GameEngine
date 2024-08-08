@@ -12,7 +12,6 @@ INTERFACE
 PRIVATE
   "dllmain.cpp"
   "Game.hpp"
-  "App.hpp"
 )
 
 target_include_directories(${this_target} 

@@ -23,7 +23,7 @@
 struct VulkanContext final
 {
   /// @brief constructor
-  explicit VulkanContext(const usRenderingOptions & opts);
+  explicit VulkanContext(const RenderingSystemConfig & config);
   /// @brief destructor
   ~VulkanContext() noexcept;
 

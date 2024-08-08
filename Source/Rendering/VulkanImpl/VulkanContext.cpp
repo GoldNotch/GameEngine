@@ -36,14 +36,14 @@ vkb::Instance CreateInstance();
 /// @brief choose and init physical device for vulkan
 vkb::PhysicalDevice SelectPhysicalDevice(vkb::Instance inst, VkSurfaceKHR surface);
 /// @brief platform specific function, creates surface for presentation
-vk::SurfaceKHR CreateSurface(vkb::Instance inst, const usRenderingOptions & opts);
+vk::SurfaceKHR CreateSurface(vkb::Instance inst, const RenderingSystemConfig & config);
 
 // -------------------------- Context Implementation -----------------------
 
-VulkanContext::VulkanContext(const usRenderingOptions & opts)
+VulkanContext::VulkanContext(const RenderingSystemConfig & config)
 {
   vulkan_instance = CreateInstance();
-  auto surface = CreateSurface(vulkan_instance, opts);
+  auto surface = CreateSurface(vulkan_instance, config);
   choosen_gpu = SelectPhysicalDevice(vulkan_instance, surface);
   vkb::DeviceBuilder device_builder{choosen_gpu};
   auto dev_ret = device_builder.build();
@@ -168,15 +168,15 @@ vkb::PhysicalDevice SelectPhysicalDevice(vkb::Instance inst, VkSurfaceKHR surfac
   return phys_ret.value();
 }
 
-vk::SurfaceKHR CreateSurface(vkb::Instance inst, const usRenderingOptions & opts)
+vk::SurfaceKHR CreateSurface(vkb::Instance inst, const RenderingSystemConfig & config)
 {
   VkSurfaceKHR surface = VK_NULL_HANDLE;
 #ifdef USE_WINDOW_OUTPUT
 #ifdef _WIN32
   VkWin32SurfaceCreateInfoKHR createInfo{};
   createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-  createInfo.hwnd = opts.hWindow;
-  createInfo.hinstance = opts.hInstance;
+  createInfo.hwnd = config.hWindow;
+  createInfo.hinstance = config.hInstance;
 
   if (vkCreateWin32SurfaceKHR(inst, &createInfo, nullptr, &surface) != VK_SUCCESS)
     throw std::runtime_error("failed to create window surface!");

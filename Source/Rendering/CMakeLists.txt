@@ -1,6 +1,4 @@
 cmake_minimum_required(VERSION 3.13)
-
-
 set(this_target "Rendering")
 project(${this_target})
 
@@ -23,16 +21,19 @@ INTERFACE
 	"Scene.h"  
 )
 
+add_subdirectory(AssetLoader)
 add_subdirectory(VulkanImpl)
 #add_subdirectory(DirectXImpl)
 
 target_link_libraries(${this_target} 
 	Catch2::Catch2WithMain
+	AssetLoader
 )
 
 target_include_directories(${this_target} 
 PRIVATE
 	${SOURCE_DIR}/Core
+	AssetLoader/
 )
 
 # -------------- link system libraries -----------
