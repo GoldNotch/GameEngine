@@ -6,7 +6,6 @@
 #include <Formatter.hpp>
 #include <Logging.hpp>
 
-#include "Pipelines/MeshPipeline.hpp"
 #include "VulkanContext.hpp"
 
 namespace

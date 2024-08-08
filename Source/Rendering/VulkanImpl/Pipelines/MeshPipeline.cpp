@@ -1,5 +1,3 @@
-#include "MeshPipeline.hpp"
-
 #include <unordered_map>
 
 #include "../Utils/PipelineBuilder.hpp"
@@ -148,7 +146,7 @@ void MeshPipeline::ProcessObject(const vk::CommandBuffer & buffer, size_t frame_
   }
 
   float t = std::sin(timer);
-  timer += 0.001;
+  timer += 0.001f;
   if (frame_index == 0)
   {
     pipeline->GetUniformBinding(0).Upload(&t, sizeof(float));

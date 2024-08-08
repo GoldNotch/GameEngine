@@ -52,7 +52,6 @@ RENDERING_API void RenderFrame()
   st_scenes.pop();
 }
 
-
 RENDERING_API RenderSceneHandler AcquireRenderScene()
 {
   auto && new_scene = st_scenes.emplace();

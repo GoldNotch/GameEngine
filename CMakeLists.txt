@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.12)
 include(Utils.cmake)
+include(FetchContent)
 
 set(this_target "Engine")
 project(${this_target})
