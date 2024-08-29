@@ -1,10 +1,5 @@
 #pragma once
-#ifdef USE_WINDOW_OUTPUT
-#ifdef _WIN32
-#define VK_USE_PLATFORM_WIN32_KHR
-//#else //TODO UNIX
-#endif
-#endif // USE_WINDOW_OUTPUT
+
 
 #include <filesystem>
 
@@ -31,11 +26,12 @@ struct VulkanContext final
   const vkb::DispatchTable * operator->() const { return &dispatch_table; }
 
   /// @brief Get renderer
-  IRenderer * GetRenderer() const { return renderer.get(); }
   const vkb::Instance & GetInstance() const & { return vulkan_instance; }
   const vkb::Device & GetDevice() const & { return device; }
   const vkb::PhysicalDevice & GetGPU() const & { return choosen_gpu; }
+
   const IMemoryManager & GetMemoryManager() const & { return *memory_manager; }
+  ISwapchain * GetRenderer() const { return renderer.get(); }
 
   // TODO: Make it global functions
   /// @brief returns queue of specific type. doesn't own it
@@ -55,7 +51,7 @@ private:
   vkb::Device device;
   vkb::DispatchTable dispatch_table;
 
-  std::unique_ptr<IRenderer> renderer;
+  std::unique_ptr<ISwapchain> renderer;
   std::unique_ptr<IMemoryManager> memory_manager;
 
 private:

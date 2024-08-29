@@ -3,7 +3,7 @@
 
 namespace
 {
-vk::DescriptorPool CreateDescriptorsPool(const VulkanContext & ctx, const IRenderer & renderer)
+vk::DescriptorPool CreateDescriptorsPool(const VulkanContext & ctx, const ISwapchain & renderer)
 {
   auto poolSizes = ShaderAPIBuilder<StaticMesh>::BuildPoolAllocationInfo();
   uint32_t images_in_flight = renderer.GetImagesCountInFlight();
@@ -25,7 +25,7 @@ vk::DescriptorPool CreateDescriptorsPool(const VulkanContext & ctx, const IRende
 }
 
 std::vector<VkDescriptorSet> CreateDescriptorSet(const VulkanContext & ctx,
-                                                 const IRenderer & renderer, VkDescriptorPool pool,
+                                                 const ISwapchain & renderer, VkDescriptorPool pool,
                                                  VkDescriptorSetLayout layout)
 {
   uint32_t images_in_flight = renderer.GetImagesCountInFlight();
@@ -79,7 +79,7 @@ VkBufferUsageFlags DescriptorType2BufferType(VkDescriptorType type)
 
 namespace vk::utils
 {
-Pipeline::Pipeline(const VulkanContext & ctx, const IRenderer & renderer, VkPipeline pipeline,
+Pipeline::Pipeline(const VulkanContext & ctx, const ISwapchain & renderer, VkPipeline pipeline,
                    VkPipelineLayout layout, VkDescriptorSetLayout descriptors_layout) noexcept
   : ctx(ctx)
   , renderer(renderer)
@@ -108,7 +108,7 @@ Pipeline::~Pipeline() noexcept
 
 namespace vk::utils
 {
-DescriptorBinding::DescriptorBinding(const VulkanContext & ctx, const IRenderer & renderer,
+DescriptorBinding::DescriptorBinding(const VulkanContext & ctx, const ISwapchain & renderer,
                                      vk::DescriptorPool & pool,
                                      vk::DescriptorSetLayout & descr_layout, VkDescriptorType type)
   : descriptors_layout(descr_layout)

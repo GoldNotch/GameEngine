@@ -37,7 +37,7 @@ struct MeshPipeline final : public IPipeline
   /// @param ctx - vulkan context
   /// @param renderPass - vk::RenderPass
   /// @param subpass_index - index of subpass in render pass
-  MeshPipeline(const VulkanContext & ctx, const IRenderer & renderer,
+  MeshPipeline(const VulkanContext & ctx, const ISwapchain & renderer,
                const vk::RenderPass & renderPass, uint32_t subpass_index);
 
   /// @brief some logic in the beginning of processing (f.e. some preparations to rendering)
@@ -58,7 +58,7 @@ struct MeshPipeline final : public IPipeline
 
 private:
   const VulkanContext & context; ///< vulkan context
-  const IRenderer & renderer;
+  const ISwapchain & renderer;
   std::unique_ptr<vk::utils::Pipeline> pipeline = nullptr;
   mutable float timer = 0.0;
 
@@ -76,7 +76,7 @@ private:
 
 /// @brief constructor, initialize all vulkan objects
 /// @param ctx
-MeshPipeline::MeshPipeline(const VulkanContext & ctx, const IRenderer & renderer,
+MeshPipeline::MeshPipeline(const VulkanContext & ctx, const ISwapchain & renderer,
                            const vk::RenderPass & renderPass, uint32_t subpass_index)
   : context(ctx)
   , renderer(renderer)
@@ -276,7 +276,7 @@ std::vector<VkDescriptorPoolSize> ShaderAPIBuilder<StaticMesh>::BuildPoolAllocat
 
 // -----------------------------------------------------------------------
 
-std::unique_ptr<IPipeline> CreateMeshPipeline(const VulkanContext & ctx, const IRenderer & renderer,
+std::unique_ptr<IPipeline> CreateMeshPipeline(const VulkanContext & ctx, const ISwapchain & renderer,
                                               const vk::RenderPass & renderPass,
                                               uint32_t subpass_index)
 {

@@ -188,10 +188,10 @@ vk::RenderPass CreateRenderPass(const VulkanContext & ctx, VkFormat image_format
 
 
 /// @brief vulkan implementation for renderer
-struct Renderer final : public IRenderer
+struct Swapchain final : public ISwapchain
 {
-  explicit Renderer(const VulkanContext & ctx, const vk::SurfaceKHR surface);
-  ~Renderer() override;
+  explicit Swapchain(const VulkanContext & ctx, const vk::SurfaceKHR surface);
+  ~Swapchain() override;
 
   void Render(const RenderScene & scene) override;
 
@@ -230,7 +230,7 @@ private:
 
 // ------------------------------- Implementation ------------------------
 
-Renderer::Renderer(const VulkanContext & ctx, const vk::SurfaceKHR surface)
+Swapchain::Swapchain(const VulkanContext & ctx, const vk::SurfaceKHR surface)
   : context_owner(ctx)
   , surface(surface)
 {
@@ -249,7 +249,7 @@ Renderer::Renderer(const VulkanContext & ctx, const vk::SurfaceKHR surface)
   current_frame = frames.begin();
 }
 
-Renderer::~Renderer()
+Swapchain::~Swapchain()
 {
   pipeline.reset();
   vkDestroyRenderPass(context_owner.GetDevice(), render_pass, nullptr);
@@ -259,7 +259,7 @@ Renderer::~Renderer()
 }
 
 /// @brief renders one frame
-void Renderer::Render(const RenderScene & scene)
+void Swapchain::Render(const RenderScene & scene)
 {
   current_frame->WaitOldRenderingComplete();
   uint32_t image_index = 0;
@@ -343,7 +343,7 @@ void Renderer::Render(const RenderScene & scene)
 
 
 /// @brief destroys all surface resources: swapchain, framebuffers, etc and creates new
-void Renderer::Invalidate()
+void Swapchain::Invalidate()
 {
   if (use_presentation)
   {
@@ -357,7 +357,7 @@ void Renderer::Invalidate()
 }
 
 /// @brief destroys old swapchain, images, image_views and creates new
-void Renderer::InvalidateSwapchain()
+void Swapchain::InvalidateSwapchain()
 {
   if (use_presentation)
   {
@@ -383,7 +383,7 @@ void Renderer::InvalidateSwapchain()
   //else offscreen rendering
 }
 
-std::unique_ptr<IRenderer> CreateRenderer(const VulkanContext & ctx, const vk::SurfaceKHR & surface)
+std::unique_ptr<ISwapchain> CreateRenderer(const VulkanContext & ctx, const vk::SurfaceKHR & surface)
 {
-  return std::make_unique<Renderer>(ctx, surface);
+  return std::make_unique<Swapchain>(ctx, surface);
 }

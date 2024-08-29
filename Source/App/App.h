@@ -21,7 +21,7 @@ extern "C"
 {
 #endif
 
-#include <Scene.h>
+#include <Graphics.h>
 
 
   /// @brief initialize application module

@@ -7,7 +7,7 @@
 #include <App.h>
 #include <GLFW/glfw3.h>
 #include <Logging.hpp>
-#include <RenderingSystem.h>
+#include <Graphics.h>
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
 
@@ -48,12 +48,12 @@ int main()
     return -1;
   }
 
-  Rendering_SetLoggingFunc(ConsoleLog);
+  Graphics_SetLoggingFunc(ConsoleLog);
   App_SetLoggingFunc(ConsoleLog);
 
-  RenderingSystemConfig renderOpts;
+  GraphicsSystemConfig renderOpts;
   renderOpts.gpu_autodetect = true;
-  renderOpts.hWindow = glfwGetWin32Window(window);
+  renderOpts.hWnd = glfwGetWin32Window(window);
   renderOpts.hInstance = GetModuleHandle(nullptr);
   renderOpts.required_gpus = 1;
   auto rendering_system = CreateRenderingSystem(renderOpts);
@@ -77,7 +77,7 @@ int main()
     RenderSceneHandler scene = AcquireRenderScene(rendering_system);
     app_process.ExecuteWithPause(usApp_InitRenderableScene, scene);
 
-    RenderFrame(rendering_system);
+    RenderAll(rendering_system, &scene, 1);
   }
 
   DestroyRenderingSystem(rendering_system);

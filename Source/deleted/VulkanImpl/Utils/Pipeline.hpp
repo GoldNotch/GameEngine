@@ -7,7 +7,7 @@ namespace vk::utils
 /// @brief Class to make connection between descriptor (uniform, image, etc) and memory buffer
 struct DescriptorBinding
 {
-  DescriptorBinding(const VulkanContext & ctx, const IRenderer & renderer,
+  DescriptorBinding(const VulkanContext & ctx, const ISwapchain & renderer,
                     vk::DescriptorPool & pool, vk::DescriptorSetLayout & descr_layout,
                     VkDescriptorType type);
 
@@ -56,7 +56,7 @@ struct Pipeline final
 
 private:
   const VulkanContext & ctx;                          ///< context-owner
-  const IRenderer & renderer;                         ///< renderer-owner
+  const ISwapchain & renderer;                         ///< renderer-owner
   vk::Pipeline pipeline;                              ///< vkPipeline handler
   vk::PipelineLayout layout;                          ///< pipeline layout
   vk::DescriptorPool pool;                            ///< descriptors pool
@@ -65,7 +65,7 @@ private:
 
 
 private:
-  Pipeline(const VulkanContext & ctx, const IRenderer & renderer, VkPipeline pipeline,
+  Pipeline(const VulkanContext & ctx, const ISwapchain & renderer, VkPipeline pipeline,
            VkPipelineLayout layout, VkDescriptorSetLayout decriptors_layout) noexcept;
 
   void CreateUniformDescriptors(VkDescriptorType type, size_t count);

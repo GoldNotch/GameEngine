@@ -85,15 +85,15 @@ void ProcessWithPipeline(const IPipeline & pipeline, size_t frame_index,
 
 
 /// @brief Renderer renders an image. It has own framebuffer, graphic queue, render pass and some pipelines
-struct IRenderer
+struct ISwapchain
 {
   /*
     Renderer is a render-pass owner (framebuffer), also it declares a scene, owns it and renders it
     it owns some pipelines
   */
 
-  IRenderer() = default;
-  virtual ~IRenderer() = default;
+  ISwapchain() = default;
+  virtual ~ISwapchain() = default;
 
   /// @brief rendering function
   /// @param scene
@@ -105,6 +105,6 @@ struct IRenderer
   virtual void Invalidate() = 0;
 
 protected:
-  IRenderer(const IRenderer &) = delete;
-  IRenderer & operator=(const IRenderer &) = delete;
+  ISwapchain(const ISwapchain &) = delete;
+  ISwapchain & operator=(const ISwapchain &) = delete;
 };

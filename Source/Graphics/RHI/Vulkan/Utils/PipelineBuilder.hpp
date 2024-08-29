@@ -7,55 +7,6 @@
 
 namespace vk::utils
 {
-
-/// @brief Utility-class to automatize pipeline building. It provides default values to many settings nad methods to configure your pipeline
-struct PipelineBuilder final
-{
-  explicit PipelineBuilder(const VulkanContext & ctx) noexcept;
-
-  template<typename VertexDataT>
-  PipelineBuilder & SetShaderAPI()
-  {
-    bindings = ShaderAPIBuilder<VertexDataT>::BuildBindings();
-    attributes = ShaderAPIBuilder<VertexDataT>::BuildAttributes();
-    descriptors_layout = ShaderAPIBuilder<VertexDataT>::BuildDescriptorsLayout();
-    return *this;
-  }
-
-  template<typename CharT, typename... Args>
-  PipelineBuilder & AttachShader(vk::ShaderStageFlagBits stage, const CharT * path,
-                                 Args &&... args);
-
-  std::unique_ptr<Pipeline> Build(const IRenderer & renderer, const VkRenderPass & renderPass,
-                                  uint32_t subpass_index) &;
-
-private:
-  const VulkanContext & context_owner; ///< context
-
-  std::vector<VkDynamicState> dynamic_states;
-  std::vector<VkPipelineColorBlendAttachmentState> color_blend_attachments_info;
-  std::vector<VkVertexInputBindingDescription> bindings;
-  std::vector<VkVertexInputAttributeDescription> attributes;
-  std::vector<VkDescriptorSetLayoutBinding> descriptors_layout;
-  std::vector<VkPipelineShaderStageCreateInfo> shader_stages;
-  std::vector<vk::ShaderModule> shaders;
-
-
-  VkPipelineDynamicStateCreateInfo dynamic_states_info{};
-  VkPipelineVertexInputStateCreateInfo vertex_input_info{};
-  VkPipelineInputAssemblyStateCreateInfo assembly_info{};
-  VkPipelineViewportStateCreateInfo viewport_info{};
-  VkPipelineDepthStencilStateCreateInfo depth_stencil_info{};
-  VkPipelineRasterizationStateCreateInfo rasterization_info{};
-  VkPipelineMultisampleStateCreateInfo multisampling_info{};
-  VkPipelineColorBlendStateCreateInfo color_blend_info{};
-
-private:
-  PipelineBuilder(const PipelineBuilder &) = delete;
-  PipelineBuilder & operator=(const PipelineBuilder &) = delete;
-};
-
-
 /// @brief constructor for Pipeline builder
 PipelineBuilder::PipelineBuilder(const VulkanContext & ctx) noexcept
   : context_owner(ctx)
@@ -117,7 +68,7 @@ PipelineBuilder::PipelineBuilder(const VulkanContext & ctx) noexcept
 
 
 /// @brief build a vulkan pipeline and pipeline layout
-std::unique_ptr<Pipeline> PipelineBuilder::Build(const IRenderer & renderer,
+std::unique_ptr<Pipeline> PipelineBuilder::Build(const ISwapchain & renderer,
                                                  const VkRenderPass & renderPass,
                                                  uint32_t subpass_index) &
 {

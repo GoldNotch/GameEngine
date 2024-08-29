@@ -2,8 +2,7 @@ cmake_minimum_required(VERSION 3.12)
 include(Utils.cmake)
 include(FetchContent)
 
-set(this_target "Engine")
-project(${this_target})
+project(Engine)
 
 # ------------------ options and settings --------------
 
@@ -46,6 +45,6 @@ list(APPEND CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR}/build/generators)
 find_package(Catch2 REQUIRED)
 
 ADD_SUBDIRECTORY(${SOURCE_DIR}/Core)
-ADD_SUBDIRECTORY(${SOURCE_DIR}/Rendering)
+ADD_SUBDIRECTORY(${SOURCE_DIR}/Graphics)
 ADD_SUBDIRECTORY(${SOURCE_DIR}/App)
 ADD_SUBDIRECTORY(${SOURCE_DIR}/Launcher)
