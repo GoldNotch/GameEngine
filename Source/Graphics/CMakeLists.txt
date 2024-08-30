@@ -45,3 +45,8 @@ if (MSVC)
 	add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
 endif()
 
+file(REMOVE_RECURSE  ${DATA_DIR}/Shaders)
+# copy shaders into bin
+file(COPY Shaders DESTINATION ${DATA_DIR})
+#file(RENAME ${DATA_DIR}/Shaders/Shaders ${DATA_DIR}/Shaders)
+

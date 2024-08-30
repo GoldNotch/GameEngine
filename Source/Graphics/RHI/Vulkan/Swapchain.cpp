@@ -56,7 +56,7 @@ Swapchain::Swapchain(const Context & ctx, const vk::SurfaceKHR surface)
   m_usePresentation = !!surface;
 
   InvalidateSwapchain();
-  m_defaultFramebuffer = std::make_unique<DefaultFramebuffer>(ctx,
+  m_defaultFramebuffer = std::make_unique<DefaultFramebuffer>(ctx, m_swapchain->image_count,
                                                               m_swapchain->image_format,
                                                               VK_SAMPLE_COUNT_1_BIT);
   InvalidateFramebuffer();

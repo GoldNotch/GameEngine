@@ -7,22 +7,22 @@
 namespace RHI::vulkan
 {
 
-Framebuffer::Framebuffer(const Context & ctx)
+Framebuffer::Framebuffer(const Context & ctx, uint32_t buffersCount)
   : m_owner(ctx)
   , m_renderPassBuilder(new details::RenderPassBuilder())
-  , m_buffersCount(ctx.GetSwapchain().GetBuffersCount())
+  , m_buffersCount(buffersCount)
 {
   if (m_buffersCount == 0)
     throw std::runtime_error("No buffers to create");
 
-  for(uint32_t i = 0; i < m_buffersCount; ++i)
+  for (uint32_t i = 0; i < m_buffersCount; ++i)
     m_framebuffers.push_back({VK_NULL_HANDLE, details::FramebufferBuilder()});
   m_current = m_framebuffers.begin();
 }
 
 Framebuffer::~Framebuffer()
 {
-  for(auto && [framebuffer, builder] : m_framebuffers)
+  for (auto && [framebuffer, builder] : m_framebuffers)
     if (!!framebuffer)
       vkDestroyFramebuffer(m_owner.GetDevice(), framebuffer, nullptr);
   if (!!m_renderPass)
@@ -31,17 +31,16 @@ Framebuffer::~Framebuffer()
 
 void Framebuffer::Invalidate()
 {
-  if (m_invalidRenderPass || !!m_renderPass)
+  if (m_invalidRenderPass || !m_renderPass)
   {
     auto new_renderpass = m_renderPassBuilder->Make(m_owner.GetDevice());
     if (!!m_renderPass)
       vkDestroyRenderPass(m_owner.GetDevice(), m_renderPass, nullptr);
     m_renderPass = new_renderpass;
   }
-  m_invalidRenderPass = false;
 
   InvalidateFramebuffers();
-
+  m_invalidRenderPass = false;
 }
 
 void Framebuffer::SetExtent(uint32_t width, uint32_t height)
@@ -84,9 +83,9 @@ void Framebuffer::OnSwapBuffers()
 
 void Framebuffer::InvalidateFramebuffers()
 {
-  for(auto && [framebuffer, builder] : m_framebuffers)
+  for (auto && [framebuffer, builder] : m_framebuffers)
   {
-    if (m_invalidFramebuffer || !!framebuffer)
+    if (m_invalidRenderPass || m_invalidFramebuffer || !framebuffer)
     {
       auto new_framebuffer = builder.Make(m_owner.GetDevice());
       if (!!framebuffer)
@@ -100,9 +99,9 @@ void Framebuffer::InvalidateFramebuffers()
 
 // --------------------- Default Framebuffer ------------------------
 
-DefaultFramebuffer::DefaultFramebuffer(const Context & ctx,
+DefaultFramebuffer::DefaultFramebuffer(const Context & ctx, uint32_t buffersCount,
                                        VkFormat swapchainFormat, VkSampleCountFlagBits samplesCount)
-  : Framebuffer(ctx)
+  : Framebuffer(ctx, buffersCount)
 {
   VkAttachmentDescription swapchainAttachment{};
   swapchainAttachment.format = swapchainFormat;

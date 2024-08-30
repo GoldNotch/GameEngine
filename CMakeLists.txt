@@ -21,8 +21,9 @@ set(GLOBAL_CXX_STANDARD 20)
 set (CMAKE_CXX_STANDARD ${GLOBAL_CXX_STANDARD})
 set (CMAKE_C_STANDATD ${GLOBAL_C_STANDARD})
 cmake_policy(SET CMP0060 NEW)
+if(LINUX)
 add_compile_options(-fPIC)
-
+endif()
 
 # -------------------- Install conan packages ----------------------
 if(NOT EXISTS "${CMAKE_BINARY_DIR}/conanfile.txt")
@@ -40,8 +41,11 @@ conan_cmake_install(PATH_OR_REFERENCE .
                     SETTINGS ${settings})
 
 
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR}/build/${CMAKE_BUILD_TYPE}/generators)
-list(APPEND CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR}/build/${CMAKE_BUILD_TYPE}/generators)
+# it worked on Linux
+#list(APPEND CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR}/build/${CMAKE_BUILD_TYPE}/generators)
+#list(APPEND CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR}/build/${CMAKE_BUILD_TYPE}/generators)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR}/build/generators)
+list(APPEND CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR}/build/generators)
 message(STATUS ${CMAKE_MODULE_PATH})
 
 # ------------------------- Build projects ------------------------------

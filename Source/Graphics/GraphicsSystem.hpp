@@ -4,9 +4,18 @@
 #include <vector>
 
 #include <Context.hpp>
+#include <StaticString.hpp>
 
 namespace Graphics
 {
+
+template<std::size_t Size>
+constexpr decltype(auto) ResolveShaderPath(const char (&filename)[Size])
+{
+  return Core::static_string(DATA_PATH) + Core::static_string("/Shaders/") +
+         Core::static_string(filename);
+}
+
 /*
 * Scene is a container for drawable objects.
 * Internaly it's just command buffer
@@ -36,8 +45,10 @@ struct System final
   {
     m_meshPipeline =
       m_context->CreatePipeline(m_context->GetSwapchain().GetDefaultFramebuffer(), 0);
-    m_meshPipeline->AttachShader(RHI::ShaderType::Vertex, "Shaders/triangle.vert");
-    m_meshPipeline->AttachShader(RHI::ShaderType::Fragment, "Shaders/triangle.frag");
+    m_meshPipeline->AttachShader(RHI::ShaderType::Vertex,
+                                 ResolveShaderPath("triangle.vert").c_str());
+    m_meshPipeline->AttachShader(RHI::ShaderType::Fragment,
+                                 ResolveShaderPath("triangle.frag").c_str());
     m_meshPipeline->Invalidate();
   }
 

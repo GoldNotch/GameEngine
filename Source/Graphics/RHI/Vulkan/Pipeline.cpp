@@ -33,7 +33,7 @@ void Pipeline::AttachShader(ShaderType type, const char * path)
 
 void Pipeline::Invalidate()
 {
-  if (m_invalidDescriptorSetLayout || !!m_descriptorSetLayout )
+  if (m_invalidDescriptorSetLayout || !m_descriptorSetLayout )
   {
     auto new_layout = m_descriptorSetLayoutBuilder->Make(m_owner.GetDevice());
     if (!!m_descriptorSetLayout)
@@ -42,7 +42,7 @@ void Pipeline::Invalidate()
     m_layoutBuilder->AddLayout(new_layout);
   }
 
-  if (m_invalidDescriptorSetLayout || m_invalidPipelineLayout || !!m_layout)
+  if (m_invalidDescriptorSetLayout || m_invalidPipelineLayout || !m_layout)
   {
     auto new_layout = m_layoutBuilder->Make(m_owner.GetDevice());
     if (!!m_layout )
@@ -51,7 +51,7 @@ void Pipeline::Invalidate()
   }
 
   if (m_invalidPipeline || m_invalidPipelineLayout || m_invalidDescriptorSetLayout ||
-      !!m_pipeline)
+      !m_pipeline)
   {
     auto new_pipeline = m_pipelineBuilder->Make(m_owner.GetDevice(), 
        reinterpret_cast<VkRenderPass>(m_framebuffer.GetRenderPass()),

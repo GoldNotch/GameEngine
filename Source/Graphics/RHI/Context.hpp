@@ -115,7 +115,7 @@ struct IFramebuffer
   virtual void BeginRendering(CommandBufferHandle cmds) const = 0;
   virtual void EndRendering(CommandBufferHandle cmds) const = 0;
   virtual RenderPassHandle GetRenderPass() const = 0;
-  virtual void OnSwapBuffers();
+  virtual void OnSwapBuffers() = 0;
 };
 
 /// @brief frames owner. It's a queue (or swapchain)

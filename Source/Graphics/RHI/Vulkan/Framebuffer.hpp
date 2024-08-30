@@ -22,7 +22,7 @@ struct FramebufferBuilder;
 
 struct Framebuffer : public IFramebuffer
 {
-  explicit Framebuffer(const Context & ctx);
+  explicit Framebuffer(const Context & ctx, uint32_t buffersCount);
   virtual ~Framebuffer() override;
   virtual void Invalidate() override;
   virtual void SetExtent(uint32_t width, uint32_t height) override;
@@ -55,7 +55,7 @@ private:
 
 struct DefaultFramebuffer final : public Framebuffer
 {
-  explicit DefaultFramebuffer(const Context & ctx, VkFormat swapchainFormat,
+  explicit DefaultFramebuffer(const Context & ctx, uint32_t buffersCount, VkFormat swapchainFormat,
                               VkSampleCountFlagBits samplesCount);
 
   void SetSwapchainImages(const std::vector<VkImageView> & images);

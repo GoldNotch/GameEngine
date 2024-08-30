@@ -65,7 +65,7 @@ vk::SurfaceKHR CreateSurface(vkb::Instance inst, const RHI::SurfaceConfig & conf
   VkXlibSurfaceCreateInfoKHR createInfo{};
   createInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
   createInfo.window = reinterpret_cast<Window>(config.hWnd);
-  createInfo.dpy = reinterpret_cast<Display*>(config.hInstance);
+  createInfo.dpy = reinterpret_cast<Display *>(config.hInstance);
   result = vkCreateXlibSurfaceKHR(inst, &createInfo, nullptr, &surface);
 #endif
   if (result != VK_SUCCESS)
@@ -153,7 +153,7 @@ Context::~Context()
 
 std::unique_ptr<IFramebuffer> Context::CreateFramebuffer() const
 {
-  return std::make_unique<Framebuffer>(*this);
+  return std::make_unique<Framebuffer>(*this, GetSwapchain().GetBuffersCount());
 }
 
 std::unique_ptr<IPipeline> Context::CreatePipeline(const IFramebuffer & framebuffer,

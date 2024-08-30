@@ -157,8 +157,7 @@ vk::Pipeline PipelineBuilder::Make(const vk::Device & device, const VkRenderPass
   {
     auto && module = BuildShaderModule(device, path);
     compiledShaders.push_back(module);
-    VkPipelineShaderStageCreateInfo & info =
-      shaderStages.emplace_back(VkPipelineShaderStageCreateInfo{});
+    auto && info = shaderStages.emplace_back(VkPipelineShaderStageCreateInfo{});
     info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     info.stage = ::ShaderType2ShaderStageFlag(type);
     info.pName = "main";
