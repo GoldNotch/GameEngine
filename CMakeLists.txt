@@ -21,6 +21,7 @@ set(GLOBAL_CXX_STANDARD 20)
 set (CMAKE_CXX_STANDARD ${GLOBAL_CXX_STANDARD})
 set (CMAKE_C_STANDATD ${GLOBAL_C_STANDARD})
 cmake_policy(SET CMP0060 NEW)
+add_compile_options(-fPIC)
 
 
 # -------------------- Install conan packages ----------------------

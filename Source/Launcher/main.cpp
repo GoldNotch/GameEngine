@@ -8,7 +8,12 @@
 #include <GLFW/glfw3.h>
 #include <Logging.hpp>
 #include <Graphics.h>
+#ifdef _WIN32
 #define GLFW_EXPOSE_NATIVE_WIN32
+#elif defined(__linux__)
+#define GLFW_EXPOSE_NATIVE_X11
+#endif
+
 #include <GLFW/glfw3native.h>
 
 #include "Process.hpp"
@@ -53,8 +58,13 @@ int main()
 
   GraphicsSystemConfig renderOpts;
   renderOpts.gpu_autodetect = true;
+  #ifdef _WIN32
   renderOpts.hWnd = glfwGetWin32Window(window);
   renderOpts.hInstance = GetModuleHandle(nullptr);
+  #elif defined(__linux__)
+  renderOpts.hWnd = reinterpret_cast<void*>(glfwGetX11Window(window));
+  renderOpts.hInstance = glfwGetX11Display();
+  #endif
   renderOpts.required_gpus = 1;
   auto rendering_system = CreateRenderingSystem(renderOpts);
   if (!rendering_system)

@@ -9,7 +9,7 @@
 #else
 #define USAPP_API __declspec(dllimport)
 #endif
-#elif
+#else
 #define USAPP_API
 #endif
 

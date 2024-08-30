@@ -1,7 +1,8 @@
 #pragma once
 #ifdef _WIN32
 #define VK_USE_PLATFORM_WIN32_KHR
-//#else //TODO UNIX
+#else //TODO UNIX
+#define VK_USE_PLATFORM_XLIB_KHR
 #endif
 
 #include <Context.hpp>
