@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.12)
 include(Utils.cmake)
 include(FetchContent)
 
-project(Engine)
+project(Engine C CXX)
 
 # ------------------ options and settings --------------
 
@@ -11,7 +11,7 @@ option(BUILD_WITH_VULKAN "build with vulkan" OFF)
 option(BUILD_WITH_GL "build with OpenGL" OFF)
 
 set(SOURCE_DIR ${PROJECT_SOURCE_DIR}/Source)
-set(APP_DIR ${PROJECT_SOURCE_DIR}/Build/${CONFIGURATION_NAME})
+set(APP_DIR ${PROJECT_SOURCE_DIR}/Build/${CMAKE_BUILD_TYPE})
 set(DATA_DIR ${APP_DIR}/Data)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${APP_DIR}/Obj)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${APP_DIR})
@@ -38,8 +38,10 @@ conan_cmake_install(PATH_OR_REFERENCE .
                     REMOTE conancenter
                     SETTINGS ${settings})
 
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR}/build/generators)
-list(APPEND CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR}/build/generators)
+
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR}/build/${CMAKE_BUILD_TYPE}/generators)
+list(APPEND CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR}/build/${CMAKE_BUILD_TYPE}/generators)
+message(STATUS ${CMAKE_MODULE_PATH})
 
 # ------------------------- Build projects ------------------------------
 find_package(Catch2 REQUIRED)

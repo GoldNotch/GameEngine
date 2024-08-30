@@ -17,11 +17,11 @@ Pipeline::Pipeline(const Context & ctx, const IFramebuffer & framebuffer, uint32
 
 Pipeline::~Pipeline()
 {
-  if (m_pipeline != VK_NULL_HANDLE)
+  if (!!m_pipeline)
     vkDestroyPipeline(m_owner.GetDevice(), m_pipeline, nullptr);
-  if (m_layout != VK_NULL_HANDLE)
+  if (!!m_layout)
     vkDestroyPipelineLayout(m_owner.GetDevice(), m_layout, nullptr);
-  if (m_descriptorSetLayout != VK_NULL_HANDLE)
+  if (!!m_descriptorSetLayout)
     vkDestroyDescriptorSetLayout(m_owner.GetDevice(), m_descriptorSetLayout, nullptr);
 }
 
@@ -33,29 +33,30 @@ void Pipeline::AttachShader(ShaderType type, const char * path)
 
 void Pipeline::Invalidate()
 {
-  if (m_invalidDescriptorSetLayout || m_descriptorSetLayout == VK_NULL_HANDLE)
+  if (m_invalidDescriptorSetLayout || !!m_descriptorSetLayout )
   {
     auto new_layout = m_descriptorSetLayoutBuilder->Make(m_owner.GetDevice());
-    if (m_descriptorSetLayout != VK_NULL_HANDLE)
+    if (!!m_descriptorSetLayout)
       vkDestroyDescriptorSetLayout(m_owner.GetDevice(), m_descriptorSetLayout, nullptr);
     m_descriptorSetLayout = new_layout;
     m_layoutBuilder->AddLayout(new_layout);
   }
 
-  if (m_invalidDescriptorSetLayout || m_invalidPipelineLayout || m_layout == VK_NULL_HANDLE)
+  if (m_invalidDescriptorSetLayout || m_invalidPipelineLayout || !!m_layout)
   {
     auto new_layout = m_layoutBuilder->Make(m_owner.GetDevice());
-    if (m_layout != VK_NULL_HANDLE)
+    if (!!m_layout )
       vkDestroyPipelineLayout(m_owner.GetDevice(), m_layout, nullptr);
     m_layout = new_layout;
   }
 
   if (m_invalidPipeline || m_invalidPipelineLayout || m_invalidDescriptorSetLayout ||
-      m_pipeline == VK_NULL_HANDLE)
+      !!m_pipeline)
   {
-    auto new_pipeline = m_pipelineBuilder->Make(m_owner.GetDevice(), m_framebuffer,
+    auto new_pipeline = m_pipelineBuilder->Make(m_owner.GetDevice(), 
+       reinterpret_cast<VkRenderPass>(m_framebuffer.GetRenderPass()),
                                                 m_subpassIndex, m_layout);
-    if (m_pipeline != VK_NULL_HANDLE)
+    if (!!m_pipeline)
       vkDestroyPipeline(m_owner.GetDevice(), m_pipeline, nullptr);
     m_pipeline = new_pipeline;
   }

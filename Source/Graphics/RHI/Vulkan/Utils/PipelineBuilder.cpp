@@ -199,6 +199,7 @@ vk::Pipeline PipelineBuilder::Make(const vk::Device & device, const VkRenderPass
   //for (auto && layout_info : m_descriptorsLayout)
   //  result->CreateUniformDescriptors(layout_info.descriptorType, layout_info.descriptorCount);
   //return result;
+  return vk::Pipeline(pipeline);
 }
 
 void PipelineBuilder::Reset()

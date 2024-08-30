@@ -14,6 +14,7 @@ struct SurfaceConfig
 };
 
 using CommandBufferHandle = void *;
+using RenderPassHandle = void *;
 
 /// @brief One swapchain's frame
 struct IFrameData
@@ -113,6 +114,8 @@ struct IFramebuffer
   virtual void Invalidate() = 0;
   virtual void BeginRendering(CommandBufferHandle cmds) const = 0;
   virtual void EndRendering(CommandBufferHandle cmds) const = 0;
+  virtual RenderPassHandle GetRenderPass() const = 0;
+  virtual void OnSwapBuffers();
 };
 
 /// @brief frames owner. It's a queue (or swapchain)
@@ -122,6 +125,7 @@ struct ISwapchain
   virtual void Invalidate() = 0;
   //virtual IFrameData & AcquireFrame() & = 0;
   virtual void SwapBuffers() = 0;
+  virtual uint32_t GetBuffersCount() const = 0;
   virtual const IFramebuffer & GetDefaultFramebuffer() const & noexcept = 0;
 };
 

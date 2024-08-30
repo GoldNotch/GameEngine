@@ -52,7 +52,8 @@ struct Swapchain final : public ISwapchain
   //virtual IFrameData & AcquireFrame() & override;
   virtual void SwapBuffers() override;
   virtual const IFramebuffer & GetDefaultFramebuffer() const & noexcept override;
-
+  virtual uint32_t GetBuffersCount() const override;
+  
 private:
   const Context & m_owner;
 

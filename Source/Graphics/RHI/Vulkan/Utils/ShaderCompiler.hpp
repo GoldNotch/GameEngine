@@ -15,7 +15,7 @@ namespace RHI::vulkan::details
 /// @return vector of bytes
 std::string ReadSPIRV(const std::filesystem::path & path)
 {
-  thread_local std::locale loc(std::locale::empty(), new std::codecvt_utf16<char>);
+  thread_local std::locale loc("en_US.UTF-8");
 
   std::wifstream file(path.c_str(), std::ios::in | std::ios::binary);
   file.imbue(loc);

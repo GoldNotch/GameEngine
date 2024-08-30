@@ -29,45 +29,36 @@ struct Framebuffer : public IFramebuffer
   //virtual void AddColorAttachment(/*ImageFormat*/) override;
   virtual void BeginRendering(CommandBufferHandle cmds) const override;
   virtual void EndRendering(CommandBufferHandle cmds) const override;
-
-  vk::RenderPass GetRenderPass() const noexcept { return m_renderPass; }
+  virtual RenderPassHandle GetRenderPass() const noexcept override;
+  virtual void OnSwapBuffers() override;
 
 protected:
+  using BuildedFramebuffer = std::pair<vk::Framebuffer, details::FramebufferBuilder>;
+
   const Context & m_owner;
-  // framebuffer params
-  vk::Framebuffer m_framebuffer = VK_NULL_HANDLE;
+  uint32_t m_buffersCount; ///< m_framebuffers count (aka double buffering, triple buffering, etc)
+  std::list<BuildedFramebuffer> m_framebuffers;
+  std::list<BuildedFramebuffer>::iterator m_current;
   vk::RenderPass m_renderPass = VK_NULL_HANDLE;
   vk::Extent2D m_extent;
   vk::ClearValue m_clearValue;
   std::unique_ptr<details::RenderPassBuilder> m_renderPassBuilder;
-  std::unique_ptr<details::FramebufferBuilder> m_framebufferBuilder;
 
   bool m_invalidRenderPass : 1 = true;
   bool m_invalidFramebuffer : 1 = true; ///< invalidity flag
 
   friend struct DefaultFramebuffer;
-};
-
-struct DefaultFramebuffer final : public IFramebuffer
-{
-  explicit DefaultFramebuffer(const Context & ctx, size_t swapchainSize, VkFormat swapchainFormat,
-                              VkSampleCountFlagBits samplesCount);
-  virtual ~DefaultFramebuffer() override = default;
-
-  virtual void Invalidate() override;
-  virtual void SetExtent(uint32_t width, uint32_t height) override;
-  //virtual void AddColorAttachment(/*ImageFormat*/) override;
-  virtual void BeginRendering(CommandBufferHandle cmds) const override;
-  virtual void EndRendering(CommandBufferHandle cmds) const override;
-
-  void OnSwapBuffers();
-  void SetSwapchainImages(const std::vector<VkImageView> & images);
-
-  vk::RenderPass GetRenderPass() const noexcept { return m_current->GetRenderPass(); }
 
 private:
-  std::list<Framebuffer> m_framebuffers;
-  std::list<Framebuffer>::iterator m_current;
+  void InvalidateFramebuffers();
+};
+
+struct DefaultFramebuffer final : public Framebuffer
+{
+  explicit DefaultFramebuffer(const Context & ctx, VkFormat swapchainFormat,
+                              VkSampleCountFlagBits samplesCount);
+
+  void SetSwapchainImages(const std::vector<VkImageView> & images);
 };
 
 } // namespace RHI::vulkan
