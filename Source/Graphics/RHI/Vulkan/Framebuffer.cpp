@@ -154,12 +154,12 @@ void DefaultFramebuffer::EndRenderPass(const CommandBuffer & buffer)
   vkCmdEndRenderPass(buffer.GetHandle());
 }
 
-RenderPassHandle DefaultFramebuffer::GetRenderPass() const noexcept
+InternalObjectHandle DefaultFramebuffer::GetRenderPass() const noexcept
 {
   return static_cast<VkRenderPass>(m_renderPass);
 }
 
-RenderPassHandle DefaultFramebuffer::GetHandle() const noexcept
+InternalObjectHandle DefaultFramebuffer::GetHandle() const noexcept
 {
   return static_cast<VkFramebuffer>(CurFrame().m_framebuffer);
 }

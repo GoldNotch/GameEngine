@@ -37,8 +37,8 @@ struct DefaultFramebuffer : public IFramebuffer
   void BeginRenderPass(uint32_t activeFrame, const CommandBuffer & buffer);
   void EndRenderPass(const CommandBuffer & buffer);
 
-  virtual RenderPassHandle GetRenderPass() const noexcept override;
-  virtual RenderPassHandle GetHandle() const noexcept override;
+  virtual InternalObjectHandle GetRenderPass() const noexcept override;
+  virtual InternalObjectHandle GetHandle() const noexcept override;
 
 protected:
   const Context & m_owner;

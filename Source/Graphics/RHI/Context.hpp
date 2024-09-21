@@ -13,7 +13,7 @@ struct SurfaceConfig
   ExternalHandle hInstance;
 };
 
-using RenderPassHandle = void *;
+using InternalObjectHandle = void *;
 
 enum class ShaderType
 {
@@ -124,8 +124,8 @@ struct IFramebuffer
 
   /// @brief Rebuild object after settings were changed
   virtual void Invalidate() = 0;
-  virtual RenderPassHandle GetRenderPass() const = 0;
-  virtual RenderPassHandle GetHandle() const = 0;
+  virtual InternalObjectHandle GetRenderPass() const = 0;
+  virtual InternalObjectHandle GetHandle() const = 0;
 };
 
 /// @brief frames owner. API for rendering frames
