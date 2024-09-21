@@ -91,7 +91,7 @@ DefaultFramebuffer::DefaultFramebuffer(const Context & ctx, Swapchain & swapchai
     frame->SetFramebufferInvalid();
   }
 
-  m_clearValue.setColor(vk::ClearColorValue(1.0, 1.0, 0, 1));
+  m_clearValue.setColor(vk::ClearColorValue(1.0f, 1.0f, 0.0f, 1.0f));
 }
 
 DefaultFramebuffer::~DefaultFramebuffer()
