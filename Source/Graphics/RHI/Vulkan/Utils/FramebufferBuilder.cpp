@@ -156,17 +156,6 @@ void RenderPassBuilder::Reset()
 
 namespace RHI::vulkan::details //--------------- Framebuffer builder ------------
 {
-void FramebufferBuilder::SetRenderPass(const vk::RenderPass & renderPass)
-{
-  m_renderPass = renderPass;
-}
-
-void FramebufferBuilder::SetExtent(uint32_t width, uint32_t height)
-{
-  m_extent.width = width;
-  m_extent.height = height;
-}
-
 void FramebufferBuilder::AddAttachment(const vk::ImageView & image)
 {
   m_images.push_back(image);
@@ -177,15 +166,17 @@ vk::ImageView & FramebufferBuilder::SetAttachment(size_t idx) & noexcept
   return m_images[idx];
 }
 
-vk::Framebuffer FramebufferBuilder::Make(const vk::Device & device) const
+vk::Framebuffer FramebufferBuilder::Make(const vk::Device & device,
+                                         const vk::RenderPass & renderPass,
+                                         const VkExtent2D & extent) const
 {
   VkFramebufferCreateInfo framebufferInfo{};
   framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-  framebufferInfo.renderPass = m_renderPass;
+  framebufferInfo.renderPass = renderPass;
   framebufferInfo.attachmentCount = static_cast<uint32_t>(m_images.size());
   framebufferInfo.pAttachments = reinterpret_cast<const VkImageView *>(m_images.data());
-  framebufferInfo.width = m_extent.width;
-  framebufferInfo.height = m_extent.height;
+  framebufferInfo.width = extent.width;
+  framebufferInfo.height = extent.height;
   framebufferInfo.layers = 1; // кол-во изображений
   VkFramebuffer framebuffer;
   if (vkCreateFramebuffer(device, &framebufferInfo, nullptr, &framebuffer) != VK_SUCCESS)
@@ -196,7 +187,6 @@ vk::Framebuffer FramebufferBuilder::Make(const vk::Device & device) const
 void FramebufferBuilder::Reset()
 {
   m_images.clear();
-  m_extent = vk::Extent2D{0, 0};
 }
 
 } // namespace RHI::vulkan::details

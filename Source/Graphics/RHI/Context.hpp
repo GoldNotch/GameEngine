@@ -120,6 +120,7 @@ struct IPipeline
 struct IFramebuffer
 {
   virtual ~IFramebuffer() = default;
+  /// @brief Swapchain calls that on resize
   virtual void SetExtent(uint32_t width, uint32_t height) = 0;
 
   /// @brief Rebuild object after settings were changed
@@ -138,13 +139,10 @@ struct ISwapchain
   virtual ICommandBuffer * BeginFrame() = 0; 
   /// @brief End frame rendering. Uploads commands on GPU
   virtual void EndFrame() = 0; 
-
   /// @brief Get current extent (screen size)
   virtual std::pair<uint32_t, uint32_t> GetExtent() const = 0;
-
   /// @brief Get Default framebuffer
   virtual const IFramebuffer & GetDefaultFramebuffer() const & noexcept = 0;
-
   /// @brief Create thread local command buffer
   virtual std::unique_ptr<ICommandBuffer> CreateCommandBuffer() const = 0;
 };

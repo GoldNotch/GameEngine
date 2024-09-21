@@ -42,17 +42,13 @@ namespace RHI::vulkan::details
 {
 struct FramebufferBuilder final
 {
-  void SetRenderPass(const vk::RenderPass & renderPass);
-  void SetExtent(uint32_t width, uint32_t height);
   void AddAttachment(const vk::ImageView & image);
   vk::ImageView & SetAttachment(size_t idx) & noexcept;
-  vk::Framebuffer Make(const vk::Device & device) const;
+  vk::Framebuffer Make(const vk::Device & device, const vk::RenderPass & renderPass, const VkExtent2D& extent) const;
   void Reset();
 
 private:
   std::vector<vk::ImageView> m_images;
-  vk::Extent2D m_extent{0, 0};
-  vk::RenderPass m_renderPass;
 };
 
 } // namespace RHI::vulkan::details

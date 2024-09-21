@@ -30,6 +30,7 @@ struct IScene
 {
   virtual ~IScene() = default;
   virtual RHI::ICommandBuffer & Draw() & noexcept = 0;
+  virtual void SetViewport(uint32_t width, uint32_t height) = 0;
 };
 
 struct Scene : public IScene
@@ -54,7 +55,11 @@ struct Scene : public IScene
     m_meshes.push_back(mesh);
     invalid = true;
   }
-
+  void SetViewport(uint32_t width, uint32_t height) override
+  {
+    m_extent = {width, height};
+    invalid = true;
+  }
   RHI::ICommandBuffer & Draw() & noexcept override
   {
     Invalidate();
@@ -67,7 +72,7 @@ struct Scene : public IScene
     {
       m_buffer->Reset();
       m_buffer->BeginWriting(m_defaultFBO, *m_meshPipeline);
-      auto [w, h] = m_swapchain.GetExtent();
+      auto [w, h] = m_extent;
       m_buffer->SetViewport(static_cast<float>(w), static_cast<float>(h));
       m_buffer->SetScissor(0, 0, w, h);
       for (auto && mesh : m_meshes)
@@ -87,6 +92,7 @@ private:
   std::unique_ptr<RHI::ICommandBuffer> m_buffer;
   std::unique_ptr<RHI::IPipeline> m_meshPipeline;
   bool invalid : 1 = true;
+  std::pair<uint32_t, uint32_t> m_extent;
 };
 
 struct System final
@@ -98,7 +104,15 @@ struct System final
 
   ~System() { m_context->WaitForIdle(); }
 
-  void Invalidate() { m_context->GetSwapchain().Invalidate(); }
+  void Invalidate()
+  {
+    m_context->GetSwapchain().Invalidate();
+    auto [w, h] = m_context->GetSwapchain().GetExtent();
+    for (auto&& scene : m_scenes)
+    {
+      scene->SetViewport(w, h);
+    }
+  }
 
   void DrawMeshes(StaticMesh mesh)
   {
@@ -140,6 +154,8 @@ struct System final
   {
     //TODO: don't create new scene. Alloc them once in constructor (one per frame) and use here
     auto && handler = m_scenes.emplace_back(new Scene(*m_context));
+    auto [w, h] = m_context->GetSwapchain().GetExtent();
+    handler->SetViewport(w, h);
     return handler.get();
   }
 

@@ -18,6 +18,8 @@
 
 #include "Process.hpp"
 
+GraphicsSystem rendering_system;
+
 void ConsoleLog(LogStatus status, int code, const char * message)
 {
   switch (status)
@@ -39,6 +41,10 @@ void ConsoleLog(LogStatus status, int code, const char * message)
   }
 }
 
+void OnResizeWindow(GLFWwindow* window, int width, int height)
+{
+  Invalidate(rendering_system);
+}
 
 int main()
 {
@@ -52,6 +58,7 @@ int main()
     glfwTerminate();
     return -1;
   }
+  glfwSetWindowSizeCallback(window, OnResizeWindow);
 
   Graphics_SetLoggingFunc(ConsoleLog);
   App_SetLoggingFunc(ConsoleLog);
@@ -66,7 +73,7 @@ int main()
   renderOpts.hInstance = glfwGetX11Display();
 #endif
   renderOpts.required_gpus = 1;
-  auto rendering_system = CreateRenderingSystem(renderOpts);
+  rendering_system = CreateRenderingSystem(renderOpts);
   if (!rendering_system)
   {
     std::printf("Failed to init rendering system\n");

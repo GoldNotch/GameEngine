@@ -14,7 +14,7 @@ struct Framebuffer final
 {
   Framebuffer(const Context & ctx);
   ~Framebuffer();
-  void Invalidate();
+  void Invalidate(const vk::RenderPass & renderPass, const VkExtent2D & extent);
 
   vk::Framebuffer GetFramebuffer() const noexcept { return m_framebuffer; }
 
@@ -47,11 +47,11 @@ Framebuffer::~Framebuffer()
     vkDestroyFramebuffer(m_owner.GetDevice(), m_framebuffer, nullptr);
 }
 
-void Framebuffer::Invalidate()
+void Framebuffer::Invalidate(const vk::RenderPass & renderPass, const VkExtent2D & extent)
 {
   if (m_invalidFramebuffer || !m_framebuffer)
   {
-    auto new_framebuffer = m_builder->Make(m_owner.GetDevice());
+    auto new_framebuffer = m_builder->Make(m_owner.GetDevice(), renderPass, extent);
     if (!!m_framebuffer)
       vkDestroyFramebuffer(m_owner.GetDevice(), m_framebuffer, nullptr);
     m_framebuffer = new_framebuffer;
@@ -90,6 +90,7 @@ DefaultFramebuffer::DefaultFramebuffer(const Context & ctx, Swapchain & swapchai
     frame->GetBuilder().AddAttachment(VK_NULL_HANDLE);
     frame->SetFramebufferInvalid();
   }
+  m_invalidFramebuffer = true;
 
   m_clearValue.setColor(vk::ClearColorValue(1.0f, 1.0f, 0.0f, 1.0f));
 }
@@ -103,6 +104,7 @@ DefaultFramebuffer::~DefaultFramebuffer()
 void DefaultFramebuffer::SetExtent(uint32_t width, uint32_t height)
 {
   m_extent = VkExtent2D{width, height};
+  m_invalidFramebuffer = true;
 }
 
 void DefaultFramebuffer::Invalidate()
@@ -113,6 +115,7 @@ void DefaultFramebuffer::Invalidate()
     if (!!m_renderPass)
       vkDestroyRenderPass(m_owner.GetDevice(), m_renderPass, nullptr);
     m_renderPass = new_renderpass;
+    m_invalidFramebuffer = true;
   }
 
   InvalidateFramebuffers();
@@ -121,15 +124,17 @@ void DefaultFramebuffer::Invalidate()
 
 void DefaultFramebuffer::InvalidateFramebuffers()
 {
-  size_t i = 0;
-  for (auto && frame : m_frames)
+  if (m_invalidFramebuffer)
   {
-    frame->GetBuilder().SetRenderPass(m_renderPass);
-    frame->GetBuilder().SetExtent(m_extent.width, m_extent.height);
-    frame->GetBuilder().SetAttachment(0) = m_swapchain.GetImageView(i++);
-    frame->SetFramebufferInvalid();
-    frame->Invalidate();
+    size_t i = 0;
+    for (auto && frame : m_frames)
+    {
+      frame->GetBuilder().SetAttachment(0) = m_swapchain.GetImageView(i++);
+      frame->SetFramebufferInvalid();
+      frame->Invalidate(m_renderPass, m_extent);
+    }
   }
+  m_invalidFramebuffer = false;
 }
 
 void DefaultFramebuffer::BeginRenderPass(uint32_t activeFrame, const CommandBuffer & buffer)

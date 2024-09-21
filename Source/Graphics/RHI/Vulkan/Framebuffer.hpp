@@ -44,7 +44,6 @@ protected:
   const Context & m_owner;
   Swapchain & m_swapchain;
 
-
   constexpr static uint32_t InvalidIndex = static_cast<uint32_t>(-1);
   std::vector<std::unique_ptr<Framebuffer>> m_frames;
   uint32_t m_frameIndex = InvalidIndex;
@@ -53,7 +52,8 @@ protected:
   vk::Extent2D m_extent;
   vk::ClearValue m_clearValue;
   std::unique_ptr<details::RenderPassBuilder> m_renderPassBuilder;
-  bool m_invalidRenderPass : 1 = true;
+  bool m_invalidRenderPass : 1 = false;
+  bool m_invalidFramebuffer : 1 = false;
 
 
 private:
