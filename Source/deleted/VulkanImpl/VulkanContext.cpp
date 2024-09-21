@@ -139,7 +139,7 @@ vkb::Instance CreateInstance()
   vkb::InstanceBuilder builder;
   auto inst_ret = builder
                     .set_app_name("Example Vulkan Application")
-                    //.request_validation_layers()
+                    .request_validation_layers()
                     .set_debug_callback(debugCallback)
                     .build();
   if (!inst_ret)

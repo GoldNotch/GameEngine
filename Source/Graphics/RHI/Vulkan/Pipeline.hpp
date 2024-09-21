@@ -20,8 +20,11 @@ struct Pipeline final : public IPipeline
   explicit Pipeline(const Context & ctx, const IFramebuffer & framebuffer, uint32_t subpassIndex);
   virtual ~Pipeline() override;
 
-  virtual void AttachShader(ShaderType type, const char * path) override;
+  virtual void AttachShader(ShaderType type, const wchar_t * path) override;
   virtual void Invalidate() override;
+  virtual uint32_t GetSubpass() const noexcept override { return m_subpassIndex; }
+
+  vk::Pipeline GetPipelineHandle() const noexcept { return m_pipeline; }
 
 private:
   const Context & m_owner;

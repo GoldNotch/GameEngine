@@ -2,7 +2,6 @@
 #include <list>
 #include <vector>
 
-#include "Framebuffer.hpp"
 #include "VulkanContext.hpp"
 
 namespace vkb
@@ -12,64 +11,50 @@ struct Swapchain;
 
 namespace RHI::vulkan
 {
-
-struct FrameData final : public IFrameData
-{
-  explicit FrameData(const Context & ctx, VkFormat swapchainFormat);
-  virtual ~FrameData() override;
-
-  virtual void WaitForRenderingComplete() const override;
-  virtual void Submit(std::vector<CommandBufferHandle> && buffers) const override;
-
-  const VkSemaphore & GetImageAvailableSemaphore() const & { return image_available_semaphore; }
-  const VkSemaphore & GetRenderingFinishedSemaphore() const & { return render_finished_semaphore; }
-  const VkFence & GetRenderingFence() const & { return is_rendering; }
-
-private:
-  const Context & m_owner; ///< context, doesn't own
-  VkQueue m_queue;
-  uint32_t m_queueIndex;
-
-  // owned data
-  VkSemaphore image_available_semaphore;
-  VkSemaphore render_finished_semaphore;
-  VkFence is_rendering;
-
-private:
-  FrameData(const FrameData &) = delete;
-  FrameData & operator=(const FrameData &) = delete;
-};
-
+struct FrameInFlight;
+struct DefaultFramebuffer;
 
 /// @brief vulkan implementation for renderer
 struct Swapchain final : public ISwapchain
 {
+  static constexpr uint32_t InvalidImageIndex = -1;
+
   explicit Swapchain(const Context & ctx, const vk::SurfaceKHR surface);
   virtual ~Swapchain() override;
 
   /// @brief destroys old surface data like framebuffers, images, images_views, ets and creates new
   virtual void Invalidate() override;
-  //virtual IFrameData & AcquireFrame() & override;
-  virtual void SwapBuffers() override;
+  virtual ICommandBuffer * BeginFrame() override;
+  virtual void EndFrame() override;
   virtual const IFramebuffer & GetDefaultFramebuffer() const & noexcept override;
-  virtual uint32_t GetBuffersCount() const override;
-  
-private:
-  const Context & m_owner;
+  virtual std::pair<uint32_t, uint32_t> GetExtent() const override;
 
-  vk::Queue m_renderQueue = VK_NULL_HANDLE;
-  uint32_t m_renderFamilyIndex;
+  virtual std::unique_ptr<ICommandBuffer> CreateCommandBuffer() const override;
+
+  VkFormat GetImageFormat() const noexcept;
+  vk::ImageView GetImageView(size_t idx) const noexcept;
+  size_t GetBuffersCount() const noexcept;
+  vk::SwapchainKHR GetHandle() const noexcept;
+
+private:
+  static constexpr uint32_t MaxFramesInFlight = 2;
+  const Context & m_owner;
   vk::Queue m_presentQueue = VK_NULL_HANDLE;
-  uint32_t m_presentFamilyIndex;
+  uint32_t m_presentQueueIndex;
+  vk::Queue m_graphicsQueue = VK_NULL_HANDLE; // graphics queue
+  uint32_t m_graphicsQueueIndex;
 
   /// presentaqtion data
   vk::SurfaceKHR m_surface;       ///< surface
   bool m_usePresentation = false; ///< flag of presentation usage, true if surface is valid
   std::unique_ptr<vkb::Swapchain> m_swapchain; ///< swapchain
+  vk::CommandPool m_pool;
+
   std::vector<VkImage> m_swapchainImages;
   std::vector<VkImageView> m_swapchainImageViews;
-  std::list<FrameData> m_frames; ///< framebuffers
-  std::list<FrameData>::iterator m_currentFrame;
+  std::array<std::unique_ptr<FrameInFlight>, MaxFramesInFlight> m_framesInFlight{nullptr};
+  uint32_t m_activeFrame = 0;
+  uint32_t m_activeImage = 0;
 
   std::unique_ptr<DefaultFramebuffer> m_defaultFramebuffer;
 

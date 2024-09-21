@@ -1,75 +1,130 @@
 #include "Swapchain.hpp"
 
 #include <Formatter.hpp>
+#include <Logging.hpp>
 #include <VkBootstrap.h>
+
+#include "CommandBuffer.hpp"
+#include "Framebuffer.hpp"
+#include "Utils/Builders.hpp"
 
 namespace RHI::vulkan
 {
 
-FrameData::FrameData(const Context & ctx, VkFormat swapchainFormat)
+struct FrameInFlight
+{
+  explicit FrameInFlight(const Context & ctx, vk::CommandPool pool);
+  ~FrameInFlight();
+
+  void WaitForRenderingComplete() const noexcept;
+  VkSemaphore GetPresentSemaphore() const noexcept { return m_presentAvailableSemaphore; }
+  VkSemaphore GetRenderSemaphore() const noexcept { return m_renderFinishedSemaphore; }
+
+  CommandBuffer & BeginFrame() &;
+  void EndFrame();
+
+  CommandBuffer & GetCommandBuffer() & noexcept { return *m_buffer; }
+  const CommandBuffer & GetCommandBuffer() const & noexcept { return *m_buffer; }
+
+private:
+  const Context & m_owner;
+
+  vk::Queue m_graphicsQueue = VK_NULL_HANDLE; // graphics queue
+  uint32_t m_graphicsQueueIndex;
+
+  VkSemaphore m_presentAvailableSemaphore;
+  VkSemaphore m_renderFinishedSemaphore;
+  VkFence m_isRendering;
+
+  std::unique_ptr<CommandBuffer> m_buffer;
+
+private:
+  void Submit();
+};
+
+FrameInFlight::FrameInFlight(const Context & ctx, vk::CommandPool pool)
   : m_owner(ctx)
 {
-  std::tie(m_queueIndex, m_queue) = ctx.GetQueue(QueueType::Graphics);
-  image_available_semaphore = utils::CreateVkSemaphore(ctx.GetDevice());
-  render_finished_semaphore = utils::CreateVkSemaphore(ctx.GetDevice());
-  is_rendering = utils::CreateFence(ctx.GetDevice(), true /*locked*/);
+  std::tie(m_graphicsQueueIndex, m_graphicsQueue) = ctx.GetQueue(QueueType::Graphics);
+  m_presentAvailableSemaphore = utils::CreateVkSemaphore(ctx.GetDevice());
+  m_renderFinishedSemaphore = utils::CreateVkSemaphore(ctx.GetDevice());
+  m_isRendering = utils::CreateFence(ctx.GetDevice(), true /*locked*/);
+  m_buffer =
+    std::make_unique<CommandBuffer>(ctx.GetDevice(), pool, RHI::CommandBufferType::Executable);
 }
 
-FrameData::~FrameData()
+FrameInFlight::~FrameInFlight()
 {
-  vkDestroySemaphore(m_owner.GetDevice(), image_available_semaphore, nullptr);
-  vkDestroySemaphore(m_owner.GetDevice(), render_finished_semaphore, nullptr);
-  vkDestroyFence(m_owner.GetDevice(), is_rendering, nullptr);
+  vkDestroySemaphore(m_owner.GetDevice(), m_presentAvailableSemaphore, nullptr);
+  vkDestroySemaphore(m_owner.GetDevice(), m_renderFinishedSemaphore, nullptr);
+  vkDestroyFence(m_owner.GetDevice(), m_isRendering, nullptr);
 }
 
-void FrameData::WaitForRenderingComplete() const
+void FrameInFlight::WaitForRenderingComplete() const noexcept
 {
-  vkWaitForFences(m_owner.GetDevice(), 1, &is_rendering, VK_TRUE, UINT64_MAX);
+  const VkFence fence = m_isRendering;
+  vkWaitForFences(m_owner.GetDevice(), 1, &fence, VK_TRUE, UINT64_MAX);
 }
 
-void FrameData::Submit(std::vector<CommandBufferHandle> && buffers) const
+CommandBuffer & FrameInFlight::BeginFrame() &
 {
+  vkResetFences(m_owner.GetDevice(), 1, &m_isRendering);
+  m_buffer->Reset();
+  m_buffer->BeginWritingInSwapchain();
+  return *m_buffer;
+}
+
+void FrameInFlight::EndFrame()
+{
+  m_buffer->EndWriting();
+  Submit();
+}
+
+void FrameInFlight::Submit()
+{
+  const VkSemaphore imgAvail = m_presentAvailableSemaphore;
+  const VkSemaphore renderFinished = m_renderFinishedSemaphore;
+  const VkCommandBuffer buffer = m_buffer->GetHandle();
   VkSubmitInfo submitInfo{};
   submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
   VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
   submitInfo.waitSemaphoreCount = 1;
-  submitInfo.pWaitSemaphores = &image_available_semaphore;
+  submitInfo.pWaitSemaphores = &imgAvail;
   submitInfo.pWaitDstStageMask = waitStages;
-  submitInfo.commandBufferCount = static_cast<uint32_t>(buffers.size());
-  submitInfo.pCommandBuffers = reinterpret_cast<VkCommandBuffer *>(buffers.data());
+  submitInfo.commandBufferCount = 1;
+  submitInfo.pCommandBuffers = &buffer;
 
   submitInfo.signalSemaphoreCount = 1;
-  submitInfo.pSignalSemaphores = &render_finished_semaphore;
+  submitInfo.pSignalSemaphores = &renderFinished;
 
-  if (auto res = vkQueueSubmit(m_queue, 1, &submitInfo, is_rendering); res != VK_SUCCESS)
+  if (auto res = vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, m_isRendering); res != VK_SUCCESS)
     throw std::runtime_error("failed to submit draw command buffer!");
 }
 
-// -------------------------- Renderer ---------------------------
 
 Swapchain::Swapchain(const Context & ctx, const vk::SurfaceKHR surface)
   : m_owner(ctx)
   , m_surface(surface)
   , m_swapchain(std::make_unique<vkb::Swapchain>())
 {
+  std::tie(m_graphicsQueueIndex, m_graphicsQueue) = ctx.GetQueue(QueueType::Graphics);
+  m_pool = utils::CreateCommandPool(ctx.GetDevice(), m_graphicsQueueIndex);
+
+  std::tie(m_presentQueueIndex, m_presentQueue) = ctx.GetQueue(QueueType::Present);
   m_usePresentation = !!surface;
 
   InvalidateSwapchain();
-  m_defaultFramebuffer = std::make_unique<DefaultFramebuffer>(ctx, m_swapchain->image_count,
-                                                              m_swapchain->image_format,
-                                                              VK_SAMPLE_COUNT_1_BIT);
+  m_defaultFramebuffer = std::make_unique<DefaultFramebuffer>(ctx, *this, VK_SAMPLE_COUNT_1_BIT);
   InvalidateFramebuffer();
 
-  // create frames
-  for (uint32_t i = 0; i < m_swapchain->image_count; ++i)
-    auto && frame = m_frames.emplace_back(m_owner, m_swapchain->image_format);
-
-  m_currentFrame = m_frames.begin();
+  for (auto && frame : m_framesInFlight)
+    frame = std::make_unique<FrameInFlight>(ctx, m_pool);
 }
 
 Swapchain::~Swapchain()
 {
+  vkDestroyCommandPool(m_owner.GetDevice(), m_pool, nullptr);
   //vkDestroyRenderPass(context_owner.GetDevice(), render_pass, nullptr);
   m_swapchain->destroy_image_views(m_swapchainImageViews);
   vkb::destroy_swapchain(*m_swapchain);
@@ -80,17 +135,9 @@ void Swapchain::Invalidate()
 {
   if (m_usePresentation)
   {
-    vkDeviceWaitIdle(m_owner.GetDevice());
+    m_owner.WaitForIdle();
     InvalidateSwapchain();
     InvalidateFramebuffer();
-
-    //auto it = m_frames.begin();
-    //for (uint32_t i = 0; i < m_swapchain->image_count; ++i)
-    //{
-    //  it->Invalidate(m_swapchainImageViews[i], m_swapchain->extent);
-    //  it = std::next(it);
-    //}
-    m_currentFrame = m_frames.begin();
   }
 }
 
@@ -98,9 +145,10 @@ void Swapchain::InvalidateSwapchain()
 {
   if (m_usePresentation)
   {
-    std::tie(m_presentFamilyIndex, m_presentQueue) = m_owner.GetQueue(QueueType::Present);
+    auto [presentIndex, presentQueue] = m_owner.GetQueue(QueueType::Present);
+    auto [renderIndex, renderQueue] = m_owner.GetQueue(QueueType::Present);
     vkb::SwapchainBuilder swapchain_builder(m_owner.GetGPU(), m_owner.GetDevice(), m_surface,
-                                            m_renderFamilyIndex, m_presentFamilyIndex);
+                                            renderIndex, presentIndex);
     auto swap_ret = swapchain_builder.set_old_swapchain(*m_swapchain).build();
     if (!swap_ret)
     {
@@ -124,24 +172,105 @@ void Swapchain::InvalidateFramebuffer()
 {
   auto && extent = m_swapchain->extent;
   m_defaultFramebuffer->SetExtent(extent.width, extent.height);
-  m_defaultFramebuffer->SetSwapchainImages(m_swapchainImageViews);
   m_defaultFramebuffer->Invalidate();
 }
 
-void Swapchain::SwapBuffers()
+ICommandBuffer * Swapchain::BeginFrame()
 {
-  m_currentFrame = std::next(m_currentFrame);
-  if (m_currentFrame == m_frames.end())
-    m_currentFrame = m_frames.begin();
-  m_defaultFramebuffer->OnSwapBuffers();
+  // select image view for drawing
+  if (!m_usePresentation)
+    return nullptr;
+
+  auto && activeFrameInFLight = m_framesInFlight[m_activeFrame];
+  activeFrameInFLight->WaitForRenderingComplete();
+
+  uint32_t imageIndex = InvalidImageIndex;
+  auto res = vkAcquireNextImageKHR(m_owner.GetDevice(), m_swapchain->swapchain, UINT64_MAX,
+                                   activeFrameInFLight->GetPresentSemaphore(), VK_NULL_HANDLE,
+                                   &imageIndex);
+  if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
+  {
+    Invalidate();
+    return nullptr;
+  }
+  else if (res != VK_SUCCESS)
+  {
+    io::Log(US_LOG_ERROR, res, "Failed to acquire swap chain image");
+    return nullptr;
+  }
+
+  m_activeImage = imageIndex;
+
+  auto && result = activeFrameInFLight->BeginFrame();
+  m_defaultFramebuffer->BeginRenderPass(m_activeImage, activeFrameInFLight->GetCommandBuffer());
+  return &result;
+}
+
+void Swapchain::EndFrame()
+{
+  auto && activeFrameInFLight = m_framesInFlight[m_activeFrame];
+  m_defaultFramebuffer->EndRenderPass(activeFrameInFLight->GetCommandBuffer());
+  activeFrameInFLight->EndFrame();
+
+  const VkSwapchainKHR swapchains[] = {GetHandle()};
+  const VkSemaphore renderFinishedSem = activeFrameInFLight->GetRenderSemaphore();
+  VkPresentInfoKHR presentInfo{};
+  presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+  presentInfo.waitSemaphoreCount = 1;
+  presentInfo.pWaitSemaphores = &renderFinishedSem;
+  presentInfo.swapchainCount = 1;
+  presentInfo.pSwapchains = swapchains;
+  presentInfo.pImageIndices = &m_activeImage;
+  presentInfo.pResults = nullptr; // Optional
+  auto res = vkQueuePresentKHR(m_presentQueue, &presentInfo);
+  if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
+  {
+    Invalidate();
+    return;
+  }
+  else if (res != VK_SUCCESS)
+  {
+    io::Log(US_LOG_ERROR, res, "Failed to queue image in present");
+  }
+
+  m_activeFrame = (m_activeFrame + 1) % m_framesInFlight.size();
 }
 
 const IFramebuffer & Swapchain::GetDefaultFramebuffer() const & noexcept
 {
   return *m_defaultFramebuffer;
 }
-uint32_t Swapchain::GetBuffersCount() const
+
+std::pair<uint32_t, uint32_t> Swapchain::GetExtent() const
+{
+  return {m_swapchain->extent.width, m_swapchain->extent.height};
+}
+
+std::unique_ptr<ICommandBuffer> Swapchain::CreateCommandBuffer() const
+{
+  return std::make_unique<CommandBuffer>(m_owner.GetDevice(), m_pool,
+                                         CommandBufferType::ThreadLocal);
+}
+
+VkFormat Swapchain::GetImageFormat() const noexcept
+{
+  return m_swapchain->image_format;
+}
+
+vk::SwapchainKHR Swapchain::GetHandle() const noexcept
+{
+  return m_swapchain->swapchain;
+}
+
+vk::ImageView Swapchain::GetImageView(size_t idx) const noexcept
+{
+  return m_swapchainImageViews[idx];
+}
+
+size_t Swapchain::GetBuffersCount() const noexcept
 {
   return m_swapchain->image_count;
 }
+
+
 } // namespace RHI::vulkan

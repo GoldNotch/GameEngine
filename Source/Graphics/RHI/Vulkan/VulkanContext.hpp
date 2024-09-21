@@ -34,6 +34,7 @@ struct Context final : public IContext
   virtual std::unique_ptr<IFramebuffer> CreateFramebuffer() const override;
   virtual std::unique_ptr<IPipeline> CreatePipeline(const IFramebuffer & framebuffer,
                                                     uint32_t subpassIndex) const override;
+  virtual void WaitForIdle() const override;
 
   const vk::Instance GetInstance() const;
   const vk::Device GetDevice() const;
@@ -65,7 +66,5 @@ vk::Semaphore CreateVkSemaphore(vk::Device device);
 vk::Fence CreateFence(vk::Device device, bool locked = false);
 /// @brief creates command pool for thread, doesn't own it
 vk::CommandPool CreateCommandPool(vk::Device device, uint32_t queue_family_index);
-/// @brief creates command buffer in pool, doesn't own it
-vk::CommandBuffer CreateCommandBuffer(vk::Device device, vk::CommandPool pool);
 
 } // namespace RHI::vulkan::utils

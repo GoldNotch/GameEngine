@@ -6,8 +6,8 @@
 
 #include <App.h>
 #include <GLFW/glfw3.h>
-#include <Logging.hpp>
 #include <Graphics.h>
+#include <Logging.hpp>
 #ifdef _WIN32
 #define GLFW_EXPOSE_NATIVE_WIN32
 #elif defined(__linux__)
@@ -58,13 +58,13 @@ int main()
 
   GraphicsSystemConfig renderOpts;
   renderOpts.gpu_autodetect = true;
-  #ifdef _WIN32
+#ifdef _WIN32
   renderOpts.hWnd = glfwGetWin32Window(window);
   renderOpts.hInstance = GetModuleHandle(nullptr);
-  #elif defined(__linux__)
-  renderOpts.hWnd = reinterpret_cast<void*>(glfwGetX11Window(window));
+#elif defined(__linux__)
+  renderOpts.hWnd = reinterpret_cast<void *>(glfwGetX11Window(window));
   renderOpts.hInstance = glfwGetX11Display();
-  #endif
+#endif
   renderOpts.required_gpus = 1;
   auto rendering_system = CreateRenderingSystem(renderOpts);
   if (!rendering_system)
@@ -77,6 +77,8 @@ int main()
   App::MainProcess app_process;
   app_process.Start();
 
+  RenderSceneHandler scene = AcquireRenderScene(rendering_system);
+  app_process.ExecuteWithPause(usApp_InitRenderableScene, scene);
   while (!glfwWindowShouldClose(window))
   {
     glfwPollEvents();
@@ -84,8 +86,6 @@ int main()
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
 
-    RenderSceneHandler scene = AcquireRenderScene(rendering_system);
-    app_process.ExecuteWithPause(usApp_InitRenderableScene, scene);
 
     RenderAll(rendering_system, &scene, 1);
   }

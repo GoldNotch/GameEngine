@@ -12,7 +12,7 @@ PRIVATE
 	"Framebuffer.hpp"
 	"Pipeline.hpp"
 	"Utils/Builders.hpp"
-)
+ "CommandBuffer.cpp")
 
 
 # -------------- definitions ---------------------

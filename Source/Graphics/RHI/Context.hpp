@@ -13,19 +13,7 @@ struct SurfaceConfig
   ExternalHandle hInstance;
 };
 
-using CommandBufferHandle = void *;
 using RenderPassHandle = void *;
-
-/// @brief One swapchain's frame
-struct IFrameData
-{
-  //void PushCommand();
-  // contains CommandBuffer and you can write it from several threads
-  virtual ~IFrameData() = default;
-  virtual void Submit(std::vector<CommandBufferHandle> && buffers)
-    const = 0; // send command buffer to GPU and render it
-  virtual void WaitForRenderingComplete() const = 0;
-};
 
 enum class ShaderType
 {
@@ -100,11 +88,29 @@ enum class BlendFactor
   OneMinusSrc1Alpha,
 };
 
+enum class ShaderImageSlot
+{
+  Color,
+  DepthStencil,
+  Input,
+  TOTAL
+};
+
+enum class CommandBufferType
+{
+  Executable, ///< executable in GPU
+  ThreadLocal ///< filled in separate thread
+};
+
+struct ICommandBuffer;
+
 struct IPipeline
 {
   virtual ~IPipeline() = default;
-  virtual void AttachShader(ShaderType type, const char * path) = 0;
+  virtual void AttachShader(ShaderType type, const wchar_t * path) = 0;
   virtual void Invalidate() = 0;
+
+  virtual uint32_t GetSubpass() const = 0;
 };
 
 struct IFramebuffer
@@ -112,10 +118,8 @@ struct IFramebuffer
   virtual ~IFramebuffer() = default;
   virtual void SetExtent(uint32_t width, uint32_t height) = 0;
   virtual void Invalidate() = 0;
-  virtual void BeginRendering(CommandBufferHandle cmds) const = 0;
-  virtual void EndRendering(CommandBufferHandle cmds) const = 0;
   virtual RenderPassHandle GetRenderPass() const = 0;
-  virtual void OnSwapBuffers() = 0;
+  virtual RenderPassHandle GetHandle() const = 0;
 };
 
 /// @brief frames owner. It's a queue (or swapchain)
@@ -123,10 +127,30 @@ struct ISwapchain
 {
   virtual ~ISwapchain() = default;
   virtual void Invalidate() = 0;
-  //virtual IFrameData & AcquireFrame() & = 0;
-  virtual void SwapBuffers() = 0;
-  virtual uint32_t GetBuffersCount() const = 0;
+  virtual ICommandBuffer * BeginFrame() = 0; ///< Begin Rendering
+  virtual void EndFrame() = 0;  ///< End Rendering
+  virtual std::pair<uint32_t, uint32_t> GetExtent() const = 0;
+
+
   virtual const IFramebuffer & GetDefaultFramebuffer() const & noexcept = 0;
+  virtual std::unique_ptr<ICommandBuffer> CreateCommandBuffer() const = 0;
+};
+
+struct ICommandBuffer
+{
+  virtual ~ICommandBuffer() = default;
+
+  virtual void DrawVertices(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex = 0,
+                            uint32_t firstInstance = 0) const = 0;
+  virtual void SetViewport(float width, float height) = 0;
+  virtual void SetScissor(int32_t x, int32_t y, uint32_t width, uint32_t height) = 0;
+
+  virtual void Reset() const = 0;
+  
+  virtual void BeginWriting(const IFramebuffer& framebuffer, const IPipeline & pipeline) = 0;
+  virtual void EndWriting() = 0;
+  virtual void AddCommands(const ICommandBuffer & buffer) const = 0;
+  virtual CommandBufferType GetType() const noexcept = 0;
 };
 
 struct IContext
@@ -134,6 +158,8 @@ struct IContext
   virtual ~IContext() = default;
   virtual ISwapchain & GetSwapchain() & noexcept = 0;
   virtual const ISwapchain & GetSwapchain() const & noexcept = 0;
+  virtual void WaitForIdle() const = 0;
+
   virtual std::unique_ptr<IFramebuffer> CreateFramebuffer() const = 0;
   virtual std::unique_ptr<IPipeline> CreatePipeline(const IFramebuffer & framebuffer,
                                                     uint32_t subpassIndex) const = 0;

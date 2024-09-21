@@ -1,5 +1,6 @@
 #pragma once
 #include <algorithm>
+#include <list>
 #include <memory>
 #include <vector>
 
@@ -10,10 +11,12 @@ namespace Graphics
 {
 
 template<std::size_t Size>
-constexpr decltype(auto) ResolveShaderPath(const char (&filename)[Size])
+constexpr decltype(auto) ResolveShaderPath(const wchar_t (&filename)[Size])
 {
-  return Core::static_string(DATA_PATH) + Core::static_string("/Shaders/") +
-         Core::static_string(filename);
+#define WC(x) L##x
+  return Core::static_wstring(WC("Data")) + Core::static_wstring(L"/Shaders/") +
+         Core::static_wstring(filename);
+#undef WC
 }
 
 /*
@@ -26,16 +29,64 @@ constexpr decltype(auto) ResolveShaderPath(const char (&filename)[Size])
 struct IScene
 {
   virtual ~IScene() = default;
-  //virtual std::vector<RHI::CommandBufferHandle> GetCommands() const = 0;
+  virtual RHI::ICommandBuffer & Draw() & noexcept = 0;
 };
 
 struct Scene : public IScene
 {
-  explicit Scene(const RHI::IContext & ctx) {}
+  Scene(const RHI::IContext & ctx)
+    : m_owner(ctx)
+    , m_swapchain(ctx.GetSwapchain())
+    , m_defaultFBO(ctx.GetSwapchain().GetDefaultFramebuffer())
+  {
+    m_buffer = ctx.GetSwapchain().CreateCommandBuffer();
 
-  void PushStaticMesh(const StaticMesh & mesh);
+    m_meshPipeline = ctx.CreatePipeline(ctx.GetSwapchain().GetDefaultFramebuffer(), 0);
+    m_meshPipeline->AttachShader(RHI::ShaderType::Vertex,
+                                 ResolveShaderPath(L"triangle_vert.spv").c_str());
+    m_meshPipeline->AttachShader(RHI::ShaderType::Fragment,
+                                 ResolveShaderPath(L"triangle_frag.spv").c_str());
+    m_meshPipeline->Invalidate();
+  }
+
+  void PushStaticMesh(const StaticMesh & mesh)
+  {
+    m_meshes.push_back(mesh);
+    invalid = true;
+  }
+
+  RHI::ICommandBuffer & Draw() & noexcept override
+  {
+    Invalidate();
+    return *m_buffer;
+  }
+
+  void Invalidate()
+  {
+    if (invalid)
+    {
+      m_buffer->Reset();
+      m_buffer->BeginWriting(m_defaultFBO, *m_meshPipeline);
+      auto [w, h] = m_swapchain.GetExtent();
+      m_buffer->SetViewport(static_cast<float>(w), static_cast<float>(h));
+      m_buffer->SetScissor(0, 0, w, h);
+      for (auto && mesh : m_meshes)
+      {
+        m_buffer->DrawVertices(3, 1);
+      }
+      m_buffer->EndWriting();
+    }
+    invalid = false;
+  }
 
 private:
+  const RHI::IContext & m_owner;
+  const RHI::ISwapchain & m_swapchain;
+  const RHI::IFramebuffer & m_defaultFBO;
+  std::vector<StaticMesh> m_meshes;
+  std::unique_ptr<RHI::ICommandBuffer> m_buffer;
+  std::unique_ptr<RHI::IPipeline> m_meshPipeline;
+  bool invalid : 1 = true;
 };
 
 struct System final
@@ -43,14 +94,9 @@ struct System final
   explicit System(const GraphicsSystemConfig & config)
     : m_context(RHI::CreateContext(RHI::SurfaceConfig{config.hWnd, config.hInstance}))
   {
-    m_meshPipeline =
-      m_context->CreatePipeline(m_context->GetSwapchain().GetDefaultFramebuffer(), 0);
-    m_meshPipeline->AttachShader(RHI::ShaderType::Vertex,
-                                 ResolveShaderPath("triangle.vert").c_str());
-    m_meshPipeline->AttachShader(RHI::ShaderType::Fragment,
-                                 ResolveShaderPath("triangle.frag").c_str());
-    m_meshPipeline->Invalidate();
   }
+
+  ~System() { m_context->WaitForIdle(); }
 
   void Invalidate() { m_context->GetSwapchain().Invalidate(); }
 
@@ -77,27 +123,29 @@ struct System final
   /// @param count
   void RenderAll(const IScene * scenes, size_t count)
   {
-    //auto && renderer = m_context->GetSwapchain().GetDefaultFramebuffer();
-    //auto && frame = renderer.AcquireFrame();
-    //std::vector<RHI::CommandBufferHandle> total_buffer;
-    //for (size_t i = 0; i < count; ++i)
-    //{
-    //  std::vector<RHI::CommandBufferHandle> buffer = scenes->GetCommands();
-    //  total_buffer.insert(std::end(total_buffer), std::begin(buffer), std::end(buffer));
-    //}
-    //frame.Submit(std::move(total_buffer));
-    //renderer.SwapFrame();
+    auto && swapchain = m_context->GetSwapchain();
+
+    for (auto && scene : m_scenes)
+      scene->Draw();
+    RHI::ICommandBuffer * buf = swapchain.BeginFrame();
+    if (buf)
+    {
+      for (auto && scene : m_scenes)
+        buf->AddCommands(scene->Draw());
+      swapchain.EndFrame();
+    }
   }
 
-  Scene & AcquireRenderScene() & noexcept
+  IScene * AcquireRenderScene() noexcept
   {
     //TODO: don't create new scene. Alloc them once in constructor (one per frame) and use here
-    return *std::make_unique<Scene>(*m_context).release();
+    auto && handler = m_scenes.emplace_back(new Scene(*m_context));
+    return handler.get();
   }
 
 private:
   std::unique_ptr<RHI::IContext> m_context;
-  std::unique_ptr<RHI::IPipeline> m_meshPipeline;
+  std::vector<std::unique_ptr<IScene>> m_scenes;
 };
 
 } // namespace Graphics

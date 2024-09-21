@@ -23,18 +23,16 @@ namespace RHI::vulkan::details
 
 struct RenderPassBuilder final
 {
+  using SubpassSlots = std::vector<std::pair<ShaderImageSlot, uint32_t>>;
   void AddAttachment(const VkAttachmentDescription & description);
+  void AddSubpass(SubpassSlots slotsLayout);
 
   vk::RenderPass Make(const vk::Device & device) const;
   void Reset();
 
 private:
-  using SubpassAttachments = std::vector<VkAttachmentReference>;
+  std::vector<SubpassSlots> m_slots;
   std::vector<VkAttachmentDescription> m_attachments;
-  //std::vector<AttachmentUsage> m_usageFlags;
-  std::vector<SubpassAttachments> m_attachmentRefs;
-  std::vector<VkSubpassDescription> m_subpasses;
-  std::vector<VkSubpassDependency> m_dependencies;
 };
 
 } // namespace RHI::vulkan::details
@@ -75,9 +73,8 @@ private:
 
 struct PipelineLayoutBuilder final
 {
-  vk::PipelineLayout Make(const vk::Device & device) const;
+  vk::PipelineLayout Make(const vk::Device & device, const vk::DescriptorSetLayout & layout) const;
   void Reset() { m_layouts.clear(); }
-  void AddLayout(const vk::DescriptorSetLayout & layout) { m_layouts.push_back(layout); }
 
 private:
   std::vector<VkDescriptorSetLayout> m_layouts;
@@ -108,7 +105,7 @@ struct PipelineBuilder final
 private:
   MeshTopology m_topology = MeshTopology::Triangle;
 
-  float m_lineWidth;
+  float m_lineWidth = 1.0f;
   PolygonMode m_polygonMode;
 
   CullingMode m_cullingMode;

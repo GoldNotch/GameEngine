@@ -1,7 +1,7 @@
 #pragma once
 #include <codecvt>
+#include <cstdio>
 #include <filesystem>
-#include <fstream>
 #include <string>
 #include <vector>
 
@@ -13,20 +13,24 @@ namespace RHI::vulkan::details
 /// @brief reads shader SPIR-V file as binary
 /// @param filename - path to file
 /// @return vector of bytes
-std::string ReadSPIRV(const std::filesystem::path & path)
+std::vector<uint32_t> ReadSPIRV(const std::filesystem::path & path)
 {
-  thread_local std::locale loc("en_US.UTF-8");
-
-  std::wifstream file(path.c_str(), std::ios::in | std::ios::binary);
-  if (!file.is_open() || !file.good())
-    throw std::runtime_error("failed to open file!");
-
-  std::stringstream ss;
-  file.imbue(loc);
-  ss << file.rdbuf();
-
-  file.close();
-  return ss.str();
+  std::vector<uint32_t> words;
+  FILE * f = _wfopen(path.c_str(), L"rb");
+  if (f)
+  {
+    fseek(f, 0, SEEK_END);
+    auto len = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    auto new_size = len % 4 == 0 ? len / 4 : len / 4 + 1;
+    words.resize(new_size, 0);
+    size_t read_elems = fread(words.data(), sizeof(uint32_t), words.size(), f);
+    assert(read_elems > 0);
+    fclose(f);
+  }
+  else
+    throw std::runtime_error(Formatter() << "Failed to open file - " << path);
+  return words;
 }
 
 
@@ -39,8 +43,8 @@ vk::ShaderModule BuildShaderModule(const vk::Device & device, const std::filesys
   auto code = ReadSPIRV(path);
   VkShaderModuleCreateInfo createInfo{};
   createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-  createInfo.codeSize = code.size();
-  createInfo.pCode = reinterpret_cast<const uint32_t *>(code.data());
+  createInfo.codeSize = code.size() * sizeof(uint32_t);
+  createInfo.pCode = code.data();
 
   VkShaderModule module;
   if (VkResult result = vkCreateShaderModule(device, &createInfo, nullptr, &module);

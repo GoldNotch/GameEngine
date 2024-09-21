@@ -37,10 +37,11 @@ GRAPHICS_API void RenderAll(GraphicsSystem system, const RenderSceneHandler * sc
 /// @brief gets render scene container
 GRAPHICS_API RenderSceneHandler AcquireRenderScene(GraphicsSystem system)
 {
-  return nullptr;
+  return reinterpret_cast<Graphics::System *>(system)->AcquireRenderScene();
 }
 
 /// @brief pushes mesh data into scene
 GRAPHICS_API void RenderScene_PushStaticMesh(RenderSceneHandler scene, StaticMesh mesh)
 {
+  reinterpret_cast<Graphics::Scene *>(scene)->PushStaticMesh(mesh);
 }

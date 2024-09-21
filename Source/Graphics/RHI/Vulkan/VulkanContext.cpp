@@ -4,6 +4,7 @@
 #include <Logging.hpp>
 #include <VkBootstrap.h>
 
+#include "CommandBuffer.hpp"
 #include "Framebuffer.hpp"
 #include "Pipeline.hpp"
 #include "Swapchain.hpp"
@@ -41,7 +42,7 @@ vkb::Instance CreateInstance(const char * appName)
   vkb::InstanceBuilder builder;
   auto inst_ret = builder
                     .set_app_name(appName)
-                    //.request_validation_layers()
+                    .request_validation_layers()
                     .set_debug_callback(VulkanDebugCallback)
                     .build();
   if (!inst_ret || !inst_ret.has_value())
@@ -153,14 +154,18 @@ Context::~Context()
 
 std::unique_ptr<IFramebuffer> Context::CreateFramebuffer() const
 {
-  return std::make_unique<Framebuffer>(*this, GetSwapchain().GetBuffersCount());
+  return nullptr; //std::make_unique<Framebuffer>(*this, GetSwapchain().GetBuffersCount());
 }
 
 std::unique_ptr<IPipeline> Context::CreatePipeline(const IFramebuffer & framebuffer,
                                                    uint32_t subpassIndex) const
 {
-  return std::make_unique<Pipeline>(*this, static_cast<const Framebuffer &>(framebuffer),
-                                    subpassIndex);
+  return std::make_unique<Pipeline>(*this, framebuffer, subpassIndex);
+}
+
+void Context::WaitForIdle() const
+{
+  vkDeviceWaitIdle(GetDevice());
 }
 
 const vk::Instance Context::GetInstance() const
@@ -229,26 +234,10 @@ vk::CommandPool CreateCommandPool(vk::Device device, uint32_t queue_family_index
   poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
   poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
   poolInfo.queueFamilyIndex = queue_family_index;
-  // Don't use createSemaphore in dispatchTable because it's broken
   if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS)
   {
     throw std::runtime_error("failed to create command pool!");
   }
   return vk::CommandPool{commandPool};
-}
-
-vk::CommandBuffer CreateCommandBuffer(vk::Device device, vk::CommandPool pool)
-{
-  VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
-  VkCommandBufferAllocateInfo allocInfo{};
-  allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-  allocInfo.commandPool = pool;
-  allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-  allocInfo.commandBufferCount = 1;
-
-  if (vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer) != VK_SUCCESS)
-    throw std::runtime_error("failed to allocate command buffers!");
-
-  return vk::CommandBuffer{commandBuffer};
 }
 } // namespace RHI::vulkan::utils
