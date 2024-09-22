@@ -6,13 +6,17 @@ PRIVATE
 	"Pipeline.cpp" 
 	"Utils/PipelineBuilder.cpp" 
 	"Utils/FramebufferBuilder.cpp"
+	"CommandBuffer.cpp" 
+	"BufferGPU.cpp"
 PRIVATE
 	"VulkanContext.hpp"
 	"Swapchain.hpp"
 	"Framebuffer.hpp"
 	"Pipeline.hpp"
 	"Utils/Builders.hpp"
- "CommandBuffer.cpp")
+	"CommandBuffer.hpp"
+	"BufferGPU.hpp"
+)
 
 
 # -------------- definitions ---------------------

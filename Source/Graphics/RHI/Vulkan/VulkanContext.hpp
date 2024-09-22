@@ -4,12 +4,18 @@
 #else //TODO UNIX
 #define VK_USE_PLATFORM_XLIB_KHR
 #endif
+//#define ENABLE_VALIDATION_LAYERS
 
 #include <Context.hpp>
 #include <vulkan/vulkan.hpp>
 
 namespace RHI::vulkan
 {
+
+namespace details
+{
+using InternalHandle = void *;
+}
 
 enum class QueueType
 {
@@ -18,6 +24,8 @@ enum class QueueType
   Compute,
   Transfer
 };
+
+struct BuffersAllocator;
 
 /// @brief context is object contains vulkan logical device. Also it provides access to vulkan functions
 ///			If rendering system uses several GPUs, you should create one context for each physical device
@@ -34,21 +42,22 @@ struct Context final : public IContext
   virtual std::unique_ptr<IFramebuffer> CreateFramebuffer() const override;
   virtual std::unique_ptr<IPipeline> CreatePipeline(const IFramebuffer & framebuffer,
                                                     uint32_t subpassIndex) const override;
+
+  virtual std::unique_ptr<IBufferGPU> AllocBuffer(size_t size, BufferGPUUsage usage,
+                                                  bool mapped = false) const override;
   virtual void WaitForIdle() const override;
 
   const vk::Instance GetInstance() const;
   const vk::Device GetDevice() const;
   const vk::PhysicalDevice GetGPU() const;
   std::pair<uint32_t, VkQueue> GetQueue(QueueType type) const;
-
-  //const IMemoryManager & GetMemoryManager() const & { return *memory_manager; }
-  /// @brief Get renderer
+  uint32_t GetVulkanVersion() const;
 
 private:
   struct Impl;
   std::unique_ptr<Impl> m_impl;
   std::unique_ptr<ISwapchain> m_swapchain;
-  //std::unique_ptr<IMemoryManager> memory_manager;
+  std::unique_ptr<BuffersAllocator> m_allocator;
 
 private:
   Context(const Context &) = delete;

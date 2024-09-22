@@ -5,6 +5,7 @@
 #include <vector>
 
 #include <Context.hpp>
+#include <Scene.h>
 #include <StaticString.hpp>
 
 namespace Graphics
@@ -47,12 +48,36 @@ struct Scene : public IScene
                                  ResolveShaderPath(L"triangle_vert.spv").c_str());
     m_meshPipeline->AttachShader(RHI::ShaderType::Fragment,
                                  ResolveShaderPath(L"triangle_frag.spv").c_str());
+
+    m_meshPipeline->AddInputBinding(0, sizeof(glVec2), RHI::InputBindingType::VertexData);
+    m_meshPipeline->AddInputAttribute(0, 0, 0, 2, RHI::InputAttributeElementType::FLOAT);
+    m_meshPipeline->AddInputBinding(1, sizeof(glVec3), RHI::InputBindingType::VertexData);
+    m_meshPipeline->AddInputAttribute(1, 1, 0, 3, RHI::InputAttributeElementType::FLOAT);
     m_meshPipeline->Invalidate();
   }
 
   void PushStaticMesh(const StaticMesh & mesh)
   {
     m_meshes.push_back(mesh);
+    m_vertices =
+      m_owner.AllocBuffer(mesh.vertices_count * sizeof(glVec2), RHI::BufferGPUUsage::VertexBuffer);
+    {
+      auto && data = m_vertices->Map();
+      std::memcpy(data.get(), mesh.vertices, mesh.vertices_count * sizeof(glVec2));
+    }
+    m_colors =
+      m_owner.AllocBuffer(mesh.vertices_count * sizeof(glVec3), RHI::BufferGPUUsage::VertexBuffer);
+    {
+      auto && data = m_colors->Map();
+      std::memcpy(data.get(), mesh.colors, mesh.vertices_count * sizeof(glVec3));
+    }
+    m_indices =
+      m_owner.AllocBuffer(mesh.indices_count * sizeof(uint32_t), RHI::BufferGPUUsage::IndexBuffer);
+    {
+      auto && data = m_indices->Map();
+      std::memcpy(data.get(), mesh.indices, mesh.indices_count * sizeof(uint32_t));
+    }
+
     invalid = true;
   }
   void SetViewport(uint32_t width, uint32_t height) override
@@ -60,6 +85,7 @@ struct Scene : public IScene
     m_extent = {width, height};
     invalid = true;
   }
+
   RHI::ICommandBuffer & Draw() & noexcept override
   {
     Invalidate();
@@ -77,7 +103,10 @@ struct Scene : public IScene
       m_buffer->SetScissor(0, 0, w, h);
       for (auto && mesh : m_meshes)
       {
-        m_buffer->DrawVertices(3, 1);
+        m_buffer->BindVertexBuffer(0, *m_vertices);
+        m_buffer->BindVertexBuffer(1, *m_colors);
+        m_buffer->BindIndexBuffer(*m_indices, RHI::IndexType::UINT32);
+        m_buffer->DrawIndexedVertices(6, 1);
       }
       m_buffer->EndWriting();
     }
@@ -88,9 +117,13 @@ private:
   const RHI::IContext & m_owner;
   const RHI::ISwapchain & m_swapchain;
   const RHI::IFramebuffer & m_defaultFBO;
+
   std::vector<StaticMesh> m_meshes;
   std::unique_ptr<RHI::ICommandBuffer> m_buffer;
   std::unique_ptr<RHI::IPipeline> m_meshPipeline;
+  std::unique_ptr<RHI::IBufferGPU> m_vertices;
+  std::unique_ptr<RHI::IBufferGPU> m_colors;
+  std::unique_ptr<RHI::IBufferGPU> m_indices;
   bool invalid : 1 = true;
   std::pair<uint32_t, uint32_t> m_extent;
 };
@@ -108,7 +141,7 @@ struct System final
   {
     m_context->GetSwapchain().Invalidate();
     auto [w, h] = m_context->GetSwapchain().GetExtent();
-    for (auto&& scene : m_scenes)
+    for (auto && scene : m_scenes)
     {
       scene->SetViewport(w, h);
     }

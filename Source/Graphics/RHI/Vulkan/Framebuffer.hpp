@@ -1,9 +1,6 @@
 #pragma once
 #include <list>
 
-#include <Context.hpp>
-#include <vulkan/vulkan.hpp>
-
 #include "VulkanContext.hpp"
 
 namespace vkb

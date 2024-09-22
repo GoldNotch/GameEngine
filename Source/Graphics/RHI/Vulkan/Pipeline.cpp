@@ -31,6 +31,19 @@ void Pipeline::AttachShader(ShaderType type, const wchar_t * path)
   m_invalidPipeline = true;
 }
 
+void Pipeline::AddInputBinding(uint32_t slot, uint32_t stride, InputBindingType type)
+{
+  m_pipelineBuilder->AddInputBinding(slot, stride, type);
+  m_invalidPipeline = true;
+}
+
+void Pipeline::AddInputAttribute(uint32_t binding, uint32_t location, uint32_t offset,
+                                 uint32_t elemsCount, InputAttributeElementType elemsType)
+{
+  m_pipelineBuilder->AddInputAttribute(binding, location, offset, elemsCount, elemsType);
+  m_invalidPipeline = true;
+}
+
 void Pipeline::Invalidate()
 {
   if (m_invalidDescriptorSetLayout || !m_descriptorSetLayout)

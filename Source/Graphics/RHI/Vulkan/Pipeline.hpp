@@ -1,8 +1,5 @@
 #pragma once
 
-#include <Context.hpp>
-#include <vulkan/vulkan.hpp>
-
 #include "VulkanContext.hpp"
 
 namespace RHI::vulkan
@@ -21,6 +18,10 @@ struct Pipeline final : public IPipeline
   virtual ~Pipeline() override;
 
   virtual void AttachShader(ShaderType type, const wchar_t * path) override;
+  virtual void AddInputBinding(uint32_t slot, uint32_t stride, InputBindingType type) override;
+  virtual void AddInputAttribute(uint32_t binding, uint32_t location, uint32_t offset,
+                                 uint32_t elemsCount, InputAttributeElementType elemsType) override;
+
   virtual void Invalidate() override;
   virtual uint32_t GetSubpass() const noexcept override { return m_subpassIndex; }
 

@@ -4,6 +4,7 @@
 #include <Logging.hpp>
 #include <VkBootstrap.h>
 
+#include "BufferGPU.hpp"
 #include "CommandBuffer.hpp"
 #include "Framebuffer.hpp"
 #include "Pipeline.hpp"
@@ -36,14 +37,17 @@ VulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 }
 
 
-vkb::Instance CreateInstance(const char * appName)
+vkb::Instance CreateInstance(const char * appName, uint32_t apiVersion)
 {
   vkb::Instance result;
   vkb::InstanceBuilder builder;
   auto inst_ret = builder
                     .set_app_name(appName)
+#ifdef ENABLE_VALIDATION_LAYERS
                     .request_validation_layers()
+#endif
                     .set_debug_callback(VulkanDebugCallback)
+                    .set_minimum_instance_version(apiVersion)
                     .build();
   if (!inst_ret || !inst_ret.has_value())
     io::Log(US_LOG_ERROR, 0, "Failed to create Vulkan instance - %s", inst_ret.error().message());
@@ -75,12 +79,13 @@ vk::SurfaceKHR CreateSurface(vkb::Instance inst, const RHI::SurfaceConfig & conf
 }
 
 vkb::PhysicalDevice SelectPhysicalDevice(vkb::Instance inst,
-                                         VkSurfaceKHR surface /* = VK_NULL_HANDLE*/)
+                                         VkSurfaceKHR surface /* = VK_NULL_HANDLE*/,
+                                         const std::pair<uint32_t, uint32_t> & apiVersion)
 {
   vkb::PhysicalDeviceSelector selector{inst};
   auto phys_ret = selector.set_surface(surface)
                     .require_present(surface != VK_NULL_HANDLE)
-                    .set_minimum_version(1, 3)
+                    .set_minimum_version(apiVersion.first, apiVersion.second)
                     .select();
 
   if (!phys_ret)
@@ -97,13 +102,16 @@ vkb::PhysicalDevice SelectPhysicalDevice(vkb::Instance inst,
 
 namespace RHI::vulkan
 {
+constexpr uint32_t VulkanAPIVersion = VK_API_VERSION_1_3;
+constexpr std::pair<uint32_t, uint32_t> VulkanAPIVersionPair = {1, 3};
+
 struct Context::Impl final
 {
   Impl(const char * appName, const SurfaceConfig & config, vk::SurfaceKHR & surface)
   {
-    m_instance = CreateInstance("AppName");
+    m_instance = CreateInstance("AppName", VulkanAPIVersion);
     surface = CreateSurface(m_instance, config);
-    m_gpu = SelectPhysicalDevice(m_instance, surface);
+    m_gpu = SelectPhysicalDevice(m_instance, surface, VulkanAPIVersionPair);
     vkb::DeviceBuilder device_builder{m_gpu};
     auto dev_ret = device_builder.build();
     if (!dev_ret)
@@ -143,8 +151,8 @@ Context::Context(const SurfaceConfig & config)
 {
   vk::SurfaceKHR surface;
   m_impl = std::make_unique<Impl>("appName", config, surface);
-  //memory_manager = CreateMemoryManager(*this);
   m_swapchain = std::make_unique<Swapchain>(*this, surface);
+  m_allocator = std::make_unique<BuffersAllocator>(*this);
 }
 
 Context::~Context()
@@ -161,6 +169,12 @@ std::unique_ptr<IPipeline> Context::CreatePipeline(const IFramebuffer & framebuf
                                                    uint32_t subpassIndex) const
 {
   return std::make_unique<Pipeline>(*this, framebuffer, subpassIndex);
+}
+
+std::unique_ptr<IBufferGPU> Context::AllocBuffer(size_t size, BufferGPUUsage usage,
+                                                 bool mapped /* = false*/) const
+{
+  return std::make_unique<BufferGPU>(size, usage, *m_allocator, mapped);
 }
 
 void Context::WaitForIdle() const
@@ -186,6 +200,11 @@ const vk::PhysicalDevice Context::GetGPU() const
 std::pair<uint32_t, VkQueue> Context::GetQueue(QueueType type) const
 {
   return m_impl->GetQueue(static_cast<vkb::QueueType>(type));
+}
+
+uint32_t Context::GetVulkanVersion() const
+{
+  return VulkanAPIVersion;
 }
 
 } // namespace RHI::vulkan

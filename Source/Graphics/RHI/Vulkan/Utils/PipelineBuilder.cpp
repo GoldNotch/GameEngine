@@ -49,6 +49,56 @@ void DescriptorSetLayoutBuilder::Reset()
 
 namespace RHI::vulkan::details
 {
+VkVertexInputRate InputBindingType2VulkanEnum(InputBindingType type)
+{
+  switch (type)
+  {
+    case InputBindingType::VertexData:
+      return VK_VERTEX_INPUT_RATE_VERTEX;
+    case InputBindingType::InstanceData:
+      return VK_VERTEX_INPUT_RATE_INSTANCE;
+    default:
+      throw std::runtime_error("Failed to cast InputBindingType to vulkan enum");
+  }
+}
+
+VkFormat InputAttributeElementFormat2VulkanEnum(uint32_t elemsCount, InputAttributeElementType type)
+{
+  switch (type)
+  {
+    case InputAttributeElementType::FLOAT:
+    {
+      constexpr VkFormat formats[] = {VK_FORMAT_UNDEFINED, VK_FORMAT_R32_SFLOAT,
+                                      VK_FORMAT_R32G32_SFLOAT, VK_FORMAT_R32G32B32_SFLOAT,
+                                      VK_FORMAT_R32G32B32A32_SFLOAT};
+      return formats[elemsCount];
+    }
+    case InputAttributeElementType::DOUBLE:
+    {
+      constexpr VkFormat formats[] = {VK_FORMAT_UNDEFINED, VK_FORMAT_R64_SFLOAT,
+                                      VK_FORMAT_R64G64_SFLOAT, VK_FORMAT_R64G64B64_SFLOAT,
+                                      VK_FORMAT_R64G64B64A64_SFLOAT};
+      return formats[elemsCount];
+    }
+    case InputAttributeElementType::UINT:
+    {
+      constexpr VkFormat formats[] = {VK_FORMAT_UNDEFINED, VK_FORMAT_R32_UINT,
+                                      VK_FORMAT_R32G32_UINT, VK_FORMAT_R32G32B32_UINT,
+                                      VK_FORMAT_R32G32B32A32_UINT};
+      return formats[elemsCount];
+    }
+    case InputAttributeElementType::SINT:
+    {
+      constexpr VkFormat formats[] = {VK_FORMAT_UNDEFINED, VK_FORMAT_R32_SINT,
+                                      VK_FORMAT_R32G32_SINT, VK_FORMAT_R32G32B32_SINT,
+                                      VK_FORMAT_R32G32B32A32_SINT};
+      return formats[elemsCount];
+    }
+    default:
+      throw std::runtime_error("Failed to cast InputAttributeFormat to vulkan enum");
+  }
+}
+
 
 vk::PipelineLayout PipelineLayoutBuilder::Make(
   const vk::Device & device, const vk::DescriptorSetLayout & descriptorsLayout) const
@@ -226,6 +276,24 @@ void PipelineBuilder::Reset()
 void PipelineBuilder::AttachShader(RHI::ShaderType type, const std::filesystem::path & path)
 {
   m_attachedShaders.push_back({type, path});
+}
+
+void PipelineBuilder::AddInputBinding(uint32_t slot, uint32_t stride, InputBindingType type)
+{
+  auto && bindingDescription = m_bindings.emplace_back();
+  bindingDescription.binding = slot;
+  bindingDescription.stride = stride;
+  bindingDescription.inputRate = details::InputBindingType2VulkanEnum(type);
+}
+
+void PipelineBuilder::AddInputAttribute(uint32_t binding, uint32_t location, uint32_t offset,
+                                        uint32_t elemsCount, InputAttributeElementType type)
+{
+  auto && attrDescription = m_attributes.emplace_back();
+  attrDescription.binding = binding;
+  attrDescription.location = location;
+  attrDescription.offset = offset;
+  attrDescription.format = details::InputAttributeElementFormat2VulkanEnum(elemsCount, type);
 }
 
 } // namespace RHI::vulkan::details

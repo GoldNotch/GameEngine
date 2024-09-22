@@ -44,7 +44,8 @@ struct FramebufferBuilder final
 {
   void AddAttachment(const vk::ImageView & image);
   vk::ImageView & SetAttachment(size_t idx) & noexcept;
-  vk::Framebuffer Make(const vk::Device & device, const vk::RenderPass & renderPass, const VkExtent2D& extent) const;
+  vk::Framebuffer Make(const vk::Device & device, const vk::RenderPass & renderPass,
+                       const VkExtent2D & extent) const;
   void Reset();
 
 private:
@@ -97,6 +98,9 @@ struct PipelineBuilder final
 
   void SetBlendEnabled(bool value) { m_blendEnabled = value; }
 
+  void AddInputBinding(uint32_t slot, uint32_t stride, InputBindingType type);
+  void AddInputAttribute(uint32_t binding, uint32_t location, uint32_t offset, uint32_t elemsCount,
+                         InputAttributeElementType type);
 
 private:
   MeshTopology m_topology = MeshTopology::Triangle;
