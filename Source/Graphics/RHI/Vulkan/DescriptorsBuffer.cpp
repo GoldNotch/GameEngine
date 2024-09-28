@@ -76,18 +76,18 @@ void LinkBufferToDescriptor(const Context & ctx, VkDescriptorSet set, VkDescript
   vkUpdateDescriptorSets(ctx.GetDevice(), 1, &descriptorWrite, 0, nullptr);
 }
 
-VkBufferUsageFlags DescriptorType2BufferType(VkDescriptorType type)
+RHI::BufferGPUUsage DescriptorType2BufferUsage(VkDescriptorType type)
 {
   switch (type)
   {
     /*case VK_DESCRIPTOR_TYPE_SAMPLER:
       return VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;*/
     case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
-      return VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+      return BufferGPUUsage::UniformBuffer;
     case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
-      return VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+      return BufferGPUUsage::StorageBuffer;
     default:
-      return 0;
+      throw std::runtime_error("Failed to cast DescriptorType to BufferUsage");
   }
 }
 } // namespace details
@@ -150,7 +150,7 @@ IBufferGPU * DescriptorBuffer::DeclareUniform(uint32_t binding, ShaderType shade
   m_invalidLayout = true;
 
   m_capacity[type]++;
-  auto && new_buffer = m_owner.AllocBuffer(size, BufferGPUUsage::UniformBuffer, true);
+  auto && new_buffer = m_owner.AllocBuffer(size, details::DescriptorType2BufferUsage(type), true);
   auto && descriptedBuffer = m_buffers.emplace_back(type, std::move(new_buffer));
   return descriptedBuffer.second.get();
 }
