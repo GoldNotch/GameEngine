@@ -27,6 +27,7 @@ struct BufferGPU : public IBufferGPU
   virtual void Flush() const noexcept override;
   virtual bool IsMapped() const noexcept override;
   virtual InternalObjectHandle GetHandle() const noexcept override;
+  virtual size_t Size() const noexcept override { return m_size; }
 
 private:
   using AllocInfoRawMemory = std::array<uint32_t, 14>;

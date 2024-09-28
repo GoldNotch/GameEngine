@@ -53,6 +53,8 @@ struct Scene : public IScene
     m_meshPipeline->AddInputAttribute(0, 0, 0, 2, RHI::InputAttributeElementType::FLOAT);
     m_meshPipeline->AddInputBinding(1, sizeof(glVec3), RHI::InputBindingType::VertexData);
     m_meshPipeline->AddInputAttribute(1, 1, 0, 3, RHI::InputAttributeElementType::FLOAT);
+
+    m_ubo = m_meshPipeline->DeclareUniform("t", 0, RHI::ShaderType::Fragment, sizeof(float));
     m_meshPipeline->Invalidate();
   }
 
@@ -88,6 +90,15 @@ struct Scene : public IScene
 
   RHI::ICommandBuffer & Draw() & noexcept override
   {
+    // set uniforms
+    static float t = 0.0f;
+    float g = std::sin(t);
+    t += 0.001;
+    if (auto && map = m_ubo->Map())
+    {
+      std::memcpy(map.get(), &g, sizeof(float));
+    }
+
     Invalidate();
     return *m_buffer;
   }
@@ -124,6 +135,7 @@ private:
   std::unique_ptr<RHI::IBufferGPU> m_vertices;
   std::unique_ptr<RHI::IBufferGPU> m_colors;
   std::unique_ptr<RHI::IBufferGPU> m_indices;
+  RHI::IBufferGPU * m_ubo;
   bool invalid : 1 = true;
   std::pair<uint32_t, uint32_t> m_extent;
 };

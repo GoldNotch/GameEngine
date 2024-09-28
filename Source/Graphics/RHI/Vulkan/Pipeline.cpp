@@ -1,5 +1,6 @@
 #include "Pipeline.hpp"
 
+#include "DescriptorsBuffer.hpp"
 #include "Framebuffer.hpp"
 #include "Utils/Builders.hpp"
 namespace RHI::vulkan
@@ -10,7 +11,7 @@ Pipeline::Pipeline(const Context & ctx, const IFramebuffer & framebuffer, uint32
   , m_framebuffer(framebuffer)
   , m_subpassIndex(subpassIndex)
 {
-  m_descriptorSetLayoutBuilder = std::make_unique<details::DescriptorSetLayoutBuilder>();
+  m_descriptors = std::make_unique<DescriptorBuffer>(ctx);
   m_layoutBuilder = std::make_unique<details::PipelineLayoutBuilder>();
   m_pipelineBuilder = std::make_unique<details::PipelineBuilder>();
 }
@@ -21,8 +22,6 @@ Pipeline::~Pipeline()
     vkDestroyPipeline(m_owner.GetDevice(), m_pipeline, nullptr);
   if (!!m_layout)
     vkDestroyPipelineLayout(m_owner.GetDevice(), m_layout, nullptr);
-  if (!!m_descriptorSetLayout)
-    vkDestroyDescriptorSetLayout(m_owner.GetDevice(), m_descriptorSetLayout, nullptr);
 }
 
 void Pipeline::AttachShader(ShaderType type, const wchar_t * path)
@@ -44,25 +43,27 @@ void Pipeline::AddInputAttribute(uint32_t binding, uint32_t location, uint32_t o
   m_invalidPipeline = true;
 }
 
+IBufferGPU * Pipeline::DeclareUniform(const char * name, uint32_t binding, ShaderType shaderStage,
+                                      uint32_t size)
+{
+  return m_descriptors->DeclareUniform(binding, shaderStage, size);
+}
+
 void Pipeline::Invalidate()
 {
-  if (m_invalidDescriptorSetLayout || !m_descriptorSetLayout)
-  {
-    auto new_layout = m_descriptorSetLayoutBuilder->Make(m_owner.GetDevice());
-    if (!!m_descriptorSetLayout)
-      vkDestroyDescriptorSetLayout(m_owner.GetDevice(), m_descriptorSetLayout, nullptr);
-    m_descriptorSetLayout = new_layout;
-  }
+  m_descriptors->Invalidate();
 
-  if (m_invalidDescriptorSetLayout || m_invalidPipelineLayout || !m_layout)
+  if (m_invalidPipelineLayout || !m_layout)
   {
-    auto new_layout = m_layoutBuilder->Make(m_owner.GetDevice(), m_descriptorSetLayout);
+    auto new_layout = m_layoutBuilder->Make(m_owner.GetDevice(), m_descriptors->GetLayoutHandle());
     if (!!m_layout)
       vkDestroyPipelineLayout(m_owner.GetDevice(), m_layout, nullptr);
     m_layout = new_layout;
+    m_invalidPipelineLayout = false;
+    m_invalidPipeline = true;
   }
 
-  if (m_invalidPipeline || m_invalidPipelineLayout || m_invalidDescriptorSetLayout || !m_pipeline)
+  if (m_invalidPipeline || !m_pipeline)
   {
     auto new_pipeline =
       m_pipelineBuilder->Make(m_owner.GetDevice(),
@@ -71,11 +72,15 @@ void Pipeline::Invalidate()
     if (!!m_pipeline)
       vkDestroyPipeline(m_owner.GetDevice(), m_pipeline, nullptr);
     m_pipeline = new_pipeline;
+    m_invalidPipeline = false;
   }
+}
 
-  m_invalidPipeline = false;
-  m_invalidPipelineLayout = false;
-  m_invalidDescriptorSetLayout = false;
+void Pipeline::Bind(const vk::CommandBuffer & buffer, VkPipelineBindPoint bindPoint) const
+{
+  const VkDescriptorSet set = m_descriptors->GetHandle();
+  vkCmdBindPipeline(buffer, bindPoint, m_pipeline);
+  vkCmdBindDescriptorSets(buffer, bindPoint, m_layout, 0, 1, &set, 1, nullptr);
 }
 
 } // namespace RHI::vulkan

@@ -8,6 +8,7 @@ PRIVATE
 	"Utils/FramebufferBuilder.cpp"
 	"CommandBuffer.cpp" 
 	"BufferGPU.cpp"
+	"DescriptorsBuffer.cpp"
 PRIVATE
 	"VulkanContext.hpp"
 	"Swapchain.hpp"
@@ -16,6 +17,7 @@ PRIVATE
 	"Utils/Builders.hpp"
 	"CommandBuffer.hpp"
 	"BufferGPU.hpp"
+	"DescriptorsBuffer.hpp"
 )
 
 

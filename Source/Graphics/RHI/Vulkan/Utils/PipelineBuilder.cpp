@@ -7,15 +7,9 @@
 namespace
 {
 
-VkShaderStageFlagBits ShaderType2ShaderStageFlag(RHI::ShaderType type)
+VkShaderStageFlagBits ShaderType2VulkanEnum(RHI::ShaderType type)
 {
-  constexpr static VkShaderStageFlagBits mapping[] = {VK_SHADER_STAGE_VERTEX_BIT,
-                                                      VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
-                                                      VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT,
-                                                      VK_SHADER_STAGE_GEOMETRY_BIT,
-                                                      VK_SHADER_STAGE_FRAGMENT_BIT,
-                                                      VK_SHADER_STAGE_COMPUTE_BIT};
-  return mapping[static_cast<size_t>(type)];
+  return static_cast<VkShaderStageFlagBits>(type);
 }
 
 } // namespace
@@ -27,11 +21,8 @@ vk::DescriptorSetLayout DescriptorSetLayoutBuilder::Make(const vk::Device & devi
   // create descriptor set layout
   VkDescriptorSetLayoutCreateInfo dsetLayoutInfo{};
   dsetLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-  dsetLayoutInfo.bindingCount = static_cast<uint32_t>(m_descriptorsLayout.size());
-  dsetLayoutInfo.pBindings = m_descriptorsLayout.data();
-
-  if (m_descriptorsLayout.empty())
-    return VK_NULL_HANDLE;
+  dsetLayoutInfo.bindingCount = static_cast<uint32_t>(m_uniformDescriptions.size());
+  dsetLayoutInfo.pBindings = m_uniformDescriptions.data();
 
   VkDescriptorSetLayout descr_layout;
   if (auto res = vkCreateDescriptorSetLayout(device, &dsetLayoutInfo, nullptr, &descr_layout);
@@ -42,7 +33,17 @@ vk::DescriptorSetLayout DescriptorSetLayoutBuilder::Make(const vk::Device & devi
 
 void DescriptorSetLayoutBuilder::Reset()
 {
-  m_descriptorsLayout.clear();
+  m_uniformDescriptions.clear();
+}
+
+void DescriptorSetLayoutBuilder::DeclareUniform(uint32_t binding, ShaderType shaderStagesMask)
+{
+  auto && uniformBinding = m_uniformDescriptions.emplace_back();
+  uniformBinding.binding = binding;
+  uniformBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+  uniformBinding.descriptorCount = 1;
+  uniformBinding.stageFlags = ShaderType2VulkanEnum(shaderStagesMask);
+  uniformBinding.pImmutableSamplers = nullptr; // Optional
 }
 
 } // namespace RHI::vulkan::details
@@ -215,7 +216,7 @@ vk::Pipeline PipelineBuilder::Make(const vk::Device & device, const VkRenderPass
     compiledShaders.push_back(module);
     auto && info = shaderStages.emplace_back(VkPipelineShaderStageCreateInfo{});
     info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    info.stage = ::ShaderType2ShaderStageFlag(type);
+    info.stage = ::ShaderType2VulkanEnum(type);
     info.pName = "main";
     info.module = module;
   }

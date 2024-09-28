@@ -1,4 +1,5 @@
 #include "Pipeline.hpp"
+#include "DescriptorsBuffer.hpp"
 
 
 namespace
@@ -138,6 +139,7 @@ void DescriptorBinding::Alloc(size_t size, bool permanently_mapped /*= false*/)
     ::LinkBufferToDescriptor(ctx, descriptor_sets[i], type, bufferInfo);
   }
 }
+
 
 void DescriptorBinding::Upload(const void * data, size_t size, size_t offset /* = 0*/)
 {

@@ -16,14 +16,16 @@ struct SurfaceConfig
 
 using InternalObjectHandle = void *;
 
+#define BIT(x) (1 << (x))
+
 enum class ShaderType
 {
-  Vertex,
-  TessellationControl,
-  TessellationEvaluation,
-  Geometry,
-  Fragment,
-  Compute,
+  Vertex = BIT(0),
+  TessellationControl = BIT(1),
+  TessellationEvaluation = BIT(2),
+  Geometry = BIT(3),
+  Fragment = BIT(4),
+  Compute = BIT(5),
 };
 
 enum class MeshTopology
@@ -137,6 +139,12 @@ enum class IndexType
 struct ICommandBuffer;
 struct IBufferGPU;
 
+struct IUniform
+{
+  virtual ~IUniform() = default;
+  virtual void Upload(const void * data, size_t size, size_t offset = 0) = 0;
+};
+
 struct IPipeline
 {
   virtual ~IPipeline() = default;
@@ -146,6 +154,9 @@ struct IPipeline
   virtual void AddInputBinding(uint32_t slot, uint32_t stride, InputBindingType type) = 0;
   virtual void AddInputAttribute(uint32_t binding, uint32_t location, uint32_t offset,
                                  uint32_t elemsCount, InputAttributeElementType elemsType) = 0;
+
+  virtual IBufferGPU * DeclareUniform(const char * name, uint32_t binding, ShaderType shaderStage,
+                                      uint32_t size) = 0;
 
   /// @brief Rebuild object after settings were changed
   virtual void Invalidate() = 0;
@@ -225,6 +236,7 @@ struct IBufferGPU
   virtual void Flush() const noexcept = 0;
   virtual bool IsMapped() const noexcept = 0;
   virtual InternalObjectHandle GetHandle() const noexcept = 0;
+  virtual size_t Size() const noexcept = 0;
 };
 
 

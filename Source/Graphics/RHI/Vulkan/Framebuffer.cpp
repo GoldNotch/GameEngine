@@ -55,8 +55,8 @@ void Framebuffer::Invalidate(const vk::RenderPass & renderPass, const VkExtent2D
     if (!!m_framebuffer)
       vkDestroyFramebuffer(m_owner.GetDevice(), m_framebuffer, nullptr);
     m_framebuffer = new_framebuffer;
+    m_invalidFramebuffer = false;
   }
-  m_invalidFramebuffer = false;
 }
 
 
@@ -115,11 +115,11 @@ void DefaultFramebuffer::Invalidate()
     if (!!m_renderPass)
       vkDestroyRenderPass(m_owner.GetDevice(), m_renderPass, nullptr);
     m_renderPass = new_renderpass;
+    m_invalidRenderPass = false;
     m_invalidFramebuffer = true;
   }
 
   InvalidateFramebuffers();
-  m_invalidRenderPass = false;
 }
 
 void DefaultFramebuffer::InvalidateFramebuffers()
@@ -133,8 +133,8 @@ void DefaultFramebuffer::InvalidateFramebuffers()
       frame->SetFramebufferInvalid();
       frame->Invalidate(m_renderPass, m_extent);
     }
+    m_invalidFramebuffer = false;
   }
-  m_invalidFramebuffer = false;
 }
 
 void DefaultFramebuffer::BeginRenderPass(uint32_t activeFrame, const CommandBuffer & buffer)

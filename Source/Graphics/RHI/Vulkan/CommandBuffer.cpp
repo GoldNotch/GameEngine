@@ -82,7 +82,7 @@ void CommandBuffer::BeginWriting(const IFramebuffer & framebuffer, const IPipeli
     throw std::runtime_error("failed to begin recording command buffer!");
 
   auto && vkPipeline = static_cast<const Pipeline &>(pipeline);
-  vkCmdBindPipeline(m_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline.GetPipelineHandle());
+  vkPipeline.Bind(m_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
 }
 
 void CommandBuffer::EndWriting()
