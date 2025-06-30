@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 3.13)
-add_subdirectory(ThirdParty)
 include(Utils.cmake)
 
 project(GameFramework C CXX)
@@ -20,6 +19,7 @@ set (CMAKE_C_STANDATD 17)
 cmake_policy(SET CMP0060 NEW)
 
 # ------------------------- Build projects ------------------------------
+add_subdirectory(ThirdParty)
 add_subdirectory(Source)
 if(${BUILD_EXAMPLES})
 	add_subdirectory(Examples)

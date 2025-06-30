@@ -1,10 +1,10 @@
 set(this_target "SimpleGame")
 
-add_executable(${this_target}
-	"main.cpp"
+add_library(${this_target} SHARED
+	"dllmain.cpp"
 )
 
-target_link_libraries(${this_target}
+target_include_directories(${this_target}
 	PRIVATE
-		GameFramework
+		${SOURCE_DIR}
 )
