@@ -10,6 +10,10 @@ namespace GameFramework
 struct IDrawTool
 {
   virtual ~IDrawTool() = default;
+  virtual void SetClearColor(const std::array<float, 4> & color) = 0;
+  virtual void Flush() = 0;
+  //virtual void DrawCube(/*transform*/) = 0;
+  //virtual void DrawSphere(/*transform*/) = 0;
 };
 
 struct IGame

@@ -22,8 +22,12 @@ DrawTool_SDL::~DrawTool_SDL()
   SDL_DestroyGPUDevice(m_gpu);
 }
 
-
 void DrawTool_SDL::Flush()
+{
+}
+
+
+void DrawTool_SDL::Finish()
 {
   //acquire the command buffer
   SDL_GPUCommandBuffer * commandBuffer = SDL_AcquireGPUCommandBuffer(m_gpu);
@@ -44,7 +48,8 @@ void DrawTool_SDL::Flush()
 
   // create the color target
   SDL_GPUColorTargetInfo colorTargetInfo{};
-  colorTargetInfo.clear_color = {240 / 255.0f, 240 / 255.0f, 240 / 255.0f, 255 / 255.0f};
+  colorTargetInfo.clear_color = {m_clearColor[0], m_clearColor[1], m_clearColor[2],
+                                 m_clearColor[3]};
   colorTargetInfo.load_op = SDL_GPU_LOADOP_CLEAR;
   colorTargetInfo.store_op = SDL_GPU_STOREOP_STORE;
   colorTargetInfo.texture = swapchainTexture;
@@ -60,5 +65,9 @@ void DrawTool_SDL::Flush()
 
   // submit the command buffer
   SDL_SubmitGPUCommandBuffer(commandBuffer);
+}
+void DrawTool_SDL::SetClearColor(const std::array<float, 4> & color)
+{
+  m_clearColor = color;
 }
 } // namespace GameFramework

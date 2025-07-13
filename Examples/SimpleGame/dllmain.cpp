@@ -5,16 +5,22 @@
 
 class SimpleGame : public GameFramework::IGame
 {
+  float t = 0.0;
+
 public:
   virtual ~SimpleGame() = default;
   ///
   virtual void Tick(float deltaTime) override
   {
+    t += deltaTime;
     std::cout << "Tick: " << deltaTime << " FPS: " << 1000.0f / deltaTime << std::endl;
   }
 
   /// Loop over game object and choose the way to render it
-  virtual void Render(GameFramework::IDrawTool & drawTool) override {}
+  virtual void Render(GameFramework::IDrawTool & drawTool) override
+  {
+    drawTool.SetClearColor({0.2, 0.5, std::abs(std::sin(t * 0.05f)), 1.0});
+  }
 };
 
 static std::unique_ptr<SimpleGame> s_simpleGame;

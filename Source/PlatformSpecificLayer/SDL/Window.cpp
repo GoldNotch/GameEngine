@@ -28,7 +28,7 @@ void Window_SDL::RenderFrame()
   if (m_boundGame)
   {
     m_boundGame->GetGame().Render(*m_drawTool);
-    m_drawTool->Flush();
+    m_drawTool->Finish();
   }
 }
 
