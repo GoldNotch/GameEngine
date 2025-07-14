@@ -13,14 +13,13 @@ public:
   virtual void Tick(float deltaTime) override
   {
     t += deltaTime;
-    //std::cout << "Tick: " << deltaTime << " FPS: " << 1000.0f / deltaTime << std::endl;
-    GameFramework::Log(GameFramework::Info, L"Tick: %f, FPS: %f", deltaTime, 1000.0f / deltaTime);
+    GameFramework::Log(GameFramework::Info, L"Tick: ", deltaTime, " FPS: ", 1000.0f / deltaTime);
   }
 
   /// Loop over game object and choose the way to render it
   virtual void Render(GameFramework::IDrawTool & drawTool) override
   {
-    drawTool.SetClearColor({0.2f, 0.5f, std::abs(std::sin(t * 0.05f)), 1.0f});
+    drawTool.SetClearColor({0.2f, 0.5f, (std::sin(t*0.005f) + 1.0f) / 2.0f, 1.0f});
   }
 };
 

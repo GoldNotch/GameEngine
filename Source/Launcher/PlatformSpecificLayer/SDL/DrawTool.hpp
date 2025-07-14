@@ -17,6 +17,7 @@ struct DrawTool_SDL : public IDrawTool
   virtual void Flush() override;
   virtual void SetClearColor(const std::array<float, 4> & color) override;
 
+
 private:
   SDL_GPUDevice * m_gpu = nullptr;
   SDL_Window * m_window = nullptr; ///< doesn't own

@@ -2,10 +2,10 @@
 
 #include <iostream>
 
-namespace GameFramework
+namespace GameFramework::detail
 {
 
-GAME_FRAMEWORK_API void LogImpl(LogMessageType type, const std::wstring & message)
+GAME_FRAMEWORK_API void LogImpl(LogMessageType type, std::wstring && message)
 {
   const wchar_t * prefix = nullptr;
   switch (type)
@@ -26,4 +26,4 @@ GAME_FRAMEWORK_API void LogImpl(LogMessageType type, const std::wstring & messag
   std::wcout << prefix << message << std::endl;
 }
 
-} // namespace GameFramework
+} // namespace GameFramework::detail
