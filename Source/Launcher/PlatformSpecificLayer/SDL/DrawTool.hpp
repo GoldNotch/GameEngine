@@ -1,4 +1,6 @@
 #pragma once
+#include <array>
+
 #include <GameFramework.hpp>
 #include <SDL3/SDL.h>
 

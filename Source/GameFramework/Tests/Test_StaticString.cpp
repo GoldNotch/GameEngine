@@ -1,7 +1,7 @@
 #include <iostream>
 
 #include <catch2/catch_test_macros.hpp>
-#include <StaticString.hpp>
+#include <Core/StaticString.hpp>
 using namespace Core;
 
 TEST_CASE("Construct & Output", "[static_string]")

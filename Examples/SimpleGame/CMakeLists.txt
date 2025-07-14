@@ -4,7 +4,7 @@ add_library(${this_target} SHARED
 	"dllmain.cpp"
 )
 
-target_include_directories(${this_target}
-	PRIVATE
-		${SOURCE_DIR}
+target_link_libraries(${this_target}
+PUBLIC
+	GameFramework
 )
