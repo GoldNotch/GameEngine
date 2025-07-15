@@ -13,11 +13,14 @@ DrawTool_SDL::DrawTool_SDL(SDL_Window * wnd)
     throw std::runtime_error("Failed to connect to GPU");
 
   SDL_ClaimWindowForGPUDevice(m_gpu, m_window);
+
+  m_quadRenderer = std::make_unique<QuadRenderer>(m_gpu);
 }
 
 
 DrawTool_SDL::~DrawTool_SDL()
 {
+  m_quadRenderer.reset();
   // destroy the GPU device
   SDL_DestroyGPUDevice(m_gpu);
 }
@@ -54,16 +57,15 @@ void DrawTool_SDL::Finish()
   colorTargetInfo.store_op = SDL_GPU_STOREOP_STORE;
   colorTargetInfo.texture = swapchainTexture;
 
-  SDL_BeginGPUCopyPass();
-  m_quadRenderer.UploadToGpu(copyCommands);
-  SDL_EndGPUCopyPass();
-  Submit(copyCommands);
+  SDL_GPUCopyPass * copyPass = SDL_BeginGPUCopyPass(commandBuffer);
+  m_quadRenderer->UploadToGPU(copyPass);
+  SDL_EndGPUCopyPass(copyPass);
 
   // begin a render pass
   SDL_GPURenderPass * renderPass = SDL_BeginGPURenderPass(commandBuffer, &colorTargetInfo, 1, NULL);
 
   // draw something
-  m_quadRenderer.RenderCache();
+  m_quadRenderer->RenderCache();
 
   // end the render pass
   SDL_EndGPURenderPass(renderPass);
@@ -77,10 +79,12 @@ void DrawTool_SDL::SetClearColor(const std::array<float, 4> & color)
   m_clearColor = color;
 }
 
-
+/*
+* left, top, right, bottom - in NDC
+*/
 void DrawTool_SDL::DrawRect(float left, float top, float right, float bottom)
 {
-  m_quadRenderer.PushObjectToDraw();
+  m_quadRenderer->PushObjectToDraw(Rect(left, top, right, bottom));
 }
 
 } // namespace GameFramework
