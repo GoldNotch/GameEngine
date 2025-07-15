@@ -61,13 +61,9 @@ void DrawTool_SDL::Finish()
   m_quadRenderer->UploadToGPU(copyPass);
   SDL_EndGPUCopyPass(copyPass);
 
-  // begin a render pass
   SDL_GPURenderPass * renderPass = SDL_BeginGPURenderPass(commandBuffer, &colorTargetInfo, 1, NULL);
-
-  // draw something
-  m_quadRenderer->RenderCache();
-
-  // end the render pass
+  SDL_GPUTextureFormat format = SDL_GetGPUSwapchainTextureFormat(m_gpu, m_window);
+  m_quadRenderer->RenderCache(renderPass, format);
   SDL_EndGPURenderPass(renderPass);
 
   // submit the command buffer

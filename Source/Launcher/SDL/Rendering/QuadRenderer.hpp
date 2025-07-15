@@ -25,7 +25,7 @@ struct QuadRenderer final
   void PushObjectToDraw(const Rect & rect);
 
   /// submits commands
-  void RenderCache();
+  void RenderCache(SDL_GPURenderPass * renderPass, SDL_GPUTextureFormat format);
 
   void UploadToGPU(SDL_GPUCopyPass * copyPass);
 
@@ -37,6 +37,9 @@ private:
   SDL_GPUGraphicsPipeline * m_pipeline;
   SDL_GPUBuffer * m_gpuData; // GPU cache
   SDL_GPUCommandBuffer * m_commands;
+
+  SDL_GPUShader * m_vertexShader;
+  SDL_GPUShader * m_fragmentShader;
 
 };
 } // namespace GameFramework

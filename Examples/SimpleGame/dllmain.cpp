@@ -20,7 +20,10 @@ public:
   virtual void Render(GameFramework::IDrawTool & drawTool) override
   {
     drawTool.SetClearColor({0.2f, 0.5f, (std::sin(t * 0.005f) + 1.0f) / 2.0f, 1.0f});
-    drawTool.DrawRect(0.0f, 0.5f, std::sin(t), 0.0f);
+
+    float right = 0.5f + (std::sin(t * 0.002) + 1.0f) / 4.0f;
+    float top = 0.5f + (std::sin(t * 0.002) + 1.0f) / 8.0f;
+    drawTool.DrawRect(0.0f, top, right, 0.0f);
   }
 };
 
