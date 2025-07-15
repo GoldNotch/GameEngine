@@ -14,7 +14,7 @@ DrawTool_SDL::DrawTool_SDL(SDL_Window * wnd)
 
   SDL_ClaimWindowForGPUDevice(m_gpu, m_window);
 
-  m_quadRenderer = std::make_unique<QuadRenderer>(m_gpu);
+  m_quadRenderer = std::make_unique<QuadRenderer>(m_gpu, m_window);
 }
 
 
@@ -62,8 +62,7 @@ void DrawTool_SDL::Finish()
   SDL_EndGPUCopyPass(copyPass);
 
   SDL_GPURenderPass * renderPass = SDL_BeginGPURenderPass(commandBuffer, &colorTargetInfo, 1, NULL);
-  SDL_GPUTextureFormat format = SDL_GetGPUSwapchainTextureFormat(m_gpu, m_window);
-  m_quadRenderer->RenderCache(renderPass, format);
+  m_quadRenderer->RenderCache(renderPass);
   SDL_EndGPURenderPass(renderPass);
 
   // submit the command buffer

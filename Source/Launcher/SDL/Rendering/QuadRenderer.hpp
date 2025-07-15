@@ -18,14 +18,14 @@ struct Rect
 
 struct QuadRenderer final
 {
-  QuadRenderer(SDL_GPUDevice * gpu);
+  QuadRenderer(SDL_GPUDevice * gpu, SDL_Window * wnd);
   ~QuadRenderer();
 
   /// add object to draw cache
   void PushObjectToDraw(const Rect & rect);
 
   /// submits commands
-  void RenderCache(SDL_GPURenderPass * renderPass, SDL_GPUTextureFormat format);
+  void RenderCache(SDL_GPURenderPass * renderPass);
 
   void UploadToGPU(SDL_GPUCopyPass * copyPass);
 
@@ -36,10 +36,12 @@ private:
 
   SDL_GPUGraphicsPipeline * m_pipeline;
   SDL_GPUBuffer * m_gpuData; // GPU cache
-  SDL_GPUCommandBuffer * m_commands;
 
   SDL_GPUShader * m_vertexShader;
   SDL_GPUShader * m_fragmentShader;
 
+private:
+  void CreateShaders();
+  void CreatePipeline(SDL_GPUTextureFormat format);
 };
 } // namespace GameFramework
