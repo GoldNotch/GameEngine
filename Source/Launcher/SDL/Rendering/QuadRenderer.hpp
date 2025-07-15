@@ -12,6 +12,8 @@ struct QuadRenderer final
 
   /// add object to draw cache
   void PushObjectToDraw(float x, float y, float scale_x, float scale_y);
+
+  void UploadToGpu();
   /// submits commands
   void RenderCache();
 
@@ -24,13 +26,12 @@ private:
     float scale_y;
   };
 
-  std::vector<Rect> m_rectsToDraw;
-  bool m_cacheValid = false;
+  std::vector<Rect> m_rectsToDraw; // CPU cache
 
   SDL_GPUGraphicsPipeline * m_pipeline;
-  SDL_GPUBuffer * m_gpuData;
+  SDL_GPUBuffer * m_gpuData; // GPU cache
   SDL_GPUCommandBuffer * m_commands;
-  
+
 private:
   void UploadToGPU();
 };

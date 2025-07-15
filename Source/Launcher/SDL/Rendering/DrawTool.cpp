@@ -24,7 +24,6 @@ DrawTool_SDL::~DrawTool_SDL()
 
 void DrawTool_SDL::Flush()
 {
-  m_quadRenderer.RenderCache();
 }
 
 
@@ -55,6 +54,11 @@ void DrawTool_SDL::Finish()
   colorTargetInfo.store_op = SDL_GPU_STOREOP_STORE;
   colorTargetInfo.texture = swapchainTexture;
 
+  SDL_BeginGPUCopyPass();
+  m_quadRenderer.UploadToGpu(copyCommands);
+  SDL_EndGPUCopyPass();
+  Submit(copyCommands);
+
   // begin a render pass
   SDL_GPURenderPass * renderPass = SDL_BeginGPURenderPass(commandBuffer, &colorTargetInfo, 1, NULL);
 
@@ -76,7 +80,7 @@ void DrawTool_SDL::SetClearColor(const std::array<float, 4> & color)
 
 void DrawTool_SDL::DrawRect(float left, float top, float right, float bottom)
 {
-  //m_quadRenderer.PushObjectToDraw();
+  m_quadRenderer.PushObjectToDraw();
 }
 
 } // namespace GameFramework

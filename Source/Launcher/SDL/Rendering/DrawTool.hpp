@@ -27,5 +27,6 @@ private:
   std::array<float, 4> m_clearColor;
 
   QuadRenderer m_quadRenderer;
+  GPUUploader m_uploader;
 };
 } // namespace GameFramework
