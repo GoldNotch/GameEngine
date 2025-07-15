@@ -24,6 +24,7 @@ DrawTool_SDL::~DrawTool_SDL()
 
 void DrawTool_SDL::Flush()
 {
+  m_quadRenderer.RenderCache();
 }
 
 
@@ -58,7 +59,7 @@ void DrawTool_SDL::Finish()
   SDL_GPURenderPass * renderPass = SDL_BeginGPURenderPass(commandBuffer, &colorTargetInfo, 1, NULL);
 
   // draw something
-
+  m_quadRenderer.RenderCache();
 
   // end the render pass
   SDL_EndGPURenderPass(renderPass);
@@ -66,8 +67,16 @@ void DrawTool_SDL::Finish()
   // submit the command buffer
   SDL_SubmitGPUCommandBuffer(commandBuffer);
 }
+
 void DrawTool_SDL::SetClearColor(const std::array<float, 4> & color)
 {
   m_clearColor = color;
 }
+
+
+void DrawTool_SDL::DrawRect(float left, float top, float right, float bottom)
+{
+  //m_quadRenderer.PushObjectToDraw();
+}
+
 } // namespace GameFramework

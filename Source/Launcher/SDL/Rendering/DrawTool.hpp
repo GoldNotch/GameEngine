@@ -4,6 +4,8 @@
 #include <GameFramework.hpp>
 #include <SDL3/SDL.h>
 
+#include "QuadRenderer.hpp"
+
 namespace GameFramework
 {
 struct DrawTool_SDL : public IDrawTool
@@ -16,12 +18,14 @@ struct DrawTool_SDL : public IDrawTool
   //------------- IDrawTool Interface -------------
   virtual void Flush() override;
   virtual void SetClearColor(const std::array<float, 4> & color) override;
-
+  virtual void DrawRect(float left, float top, float right, float bottom) override;
 
 private:
   SDL_GPUDevice * m_gpu = nullptr;
   SDL_Window * m_window = nullptr; ///< doesn't own
 
   std::array<float, 4> m_clearColor;
+
+  QuadRenderer m_quadRenderer;
 };
 } // namespace GameFramework

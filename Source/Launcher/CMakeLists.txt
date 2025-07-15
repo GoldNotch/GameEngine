@@ -1,5 +1,4 @@
 set(this_target "Launcher")
-set(ImplFolder "SDL")
 
 add_executable(${this_target})
 
@@ -13,11 +12,13 @@ PRIVATE
 	"Games/GameLibrary.hpp"
 	"Games/GameInstance.cpp"
 	"Games/GameInstance.hpp"
-	"PlatformSpecificLayer/${ImplFolder}/Application.cpp"
-	"PlatformSpecificLayer/${ImplFolder}/Window.cpp"
-	"PlatformSpecificLayer/${ImplFolder}/Window.hpp"
-	"PlatformSpecificLayer/${ImplFolder}/DrawTool.cpp"
-	"PlatformSpecificLayer/${ImplFolder}/DrawTool.hpp"
+	
+	"SDL/Window.cpp"
+	"SDL/Window.hpp"
+	"SDL/Rendering/DrawTool.cpp"
+	"SDL/Rendering/DrawTool.hpp"
+	"SDL/Rendering/QuadRenderer.cpp"
+	"SDL/Rendering/QuadRenderer.hpp"
 )
 
 target_link_libraries(${this_target}
