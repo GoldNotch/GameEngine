@@ -5,6 +5,7 @@
 #include <SDL3/SDL.h>
 
 #include "QuadRenderer.hpp"
+#include "Uploader.hpp"
 
 namespace GameFramework
 {
@@ -14,6 +15,8 @@ struct DrawTool_SDL : public IDrawTool
   virtual ~DrawTool_SDL() override;
 
   void Finish();
+  SDL_GPUDevice * GetDevice() const noexcept;
+  Uploader & GetUploader() & noexcept;
 
   //------------- IDrawTool Interface -------------
   virtual void Flush() override;
@@ -27,6 +30,6 @@ private:
   std::array<float, 4> m_clearColor;
 
   std::unique_ptr<QuadRenderer> m_quadRenderer;
-  //GPUUploader m_uploader;
+  std::unique_ptr<Uploader> m_uploader;
 };
 } // namespace GameFramework

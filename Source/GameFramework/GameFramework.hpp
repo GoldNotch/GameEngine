@@ -9,7 +9,7 @@
 
 namespace GameFramework
 {
-/// public functions, which
+
 enum GAME_FRAMEWORK_API LogMessageType
 {
   Info,
