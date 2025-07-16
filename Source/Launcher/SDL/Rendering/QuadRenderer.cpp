@@ -55,7 +55,7 @@ void QuadRenderer::RenderCache(SDL_GPURenderPass * renderPass)
   m_rectsToDraw.clear();
 }
 
-void QuadRenderer::UploadToGPU(SDL_GPUCopyPass * copyPass)
+void QuadRenderer::UploadToGPU()
 {
   const Uint32 bufferSize = sizeof(Vertex) * 3 * 2 * m_rectsToDraw.size();
   std::vector<Vertex> vertices;

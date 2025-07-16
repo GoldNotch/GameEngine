@@ -36,6 +36,7 @@ void DrawTool_SDL::Flush()
 
 void DrawTool_SDL::Finish()
 {
+  m_quadRenderer->UploadToGPU();
   m_uploader->SubmitAndUpload();
 
   //acquire the command buffer

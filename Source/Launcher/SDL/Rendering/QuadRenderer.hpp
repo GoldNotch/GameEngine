@@ -31,7 +31,7 @@ struct QuadRenderer final : public OwnedBy<DrawTool_SDL>
   /// submits commands
   void RenderCache(SDL_GPURenderPass * renderPass);
 
-  void UploadToGPU(SDL_GPUCopyPass * copyPass);
+  void UploadToGPU();
 
 private:
   std::vector<Rect> m_rectsToDraw; // CPU cache
