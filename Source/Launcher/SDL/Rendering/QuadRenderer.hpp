@@ -5,34 +5,43 @@
 
 namespace GameFramework
 {
+
+struct Vertex
+{
+  float x, y;
+};
+
+struct Rect
+{
+  float left, top, right, bottom;
+};
+
 struct QuadRenderer final
 {
-  QuadRenderer();
+  QuadRenderer(SDL_GPUDevice * gpu, SDL_Window * wnd);
   ~QuadRenderer();
 
   /// add object to draw cache
-  void PushObjectToDraw(float x, float y, float scale_x, float scale_y);
+  void PushObjectToDraw(const Rect & rect);
 
-  void UploadToGpu();
   /// submits commands
-  void RenderCache();
+  void RenderCache(SDL_GPURenderPass * renderPass);
+
+  void UploadToGPU(SDL_GPUCopyPass * copyPass);
 
 private:
-  struct Rect
-  {
-    float x;
-    float y;
-    float scale_x;
-    float scale_y;
-  };
-
   std::vector<Rect> m_rectsToDraw; // CPU cache
+
+  SDL_GPUDevice * m_gpu;
 
   SDL_GPUGraphicsPipeline * m_pipeline;
   SDL_GPUBuffer * m_gpuData; // GPU cache
-  SDL_GPUCommandBuffer * m_commands;
+
+  SDL_GPUShader * m_vertexShader;
+  SDL_GPUShader * m_fragmentShader;
 
 private:
-  void UploadToGPU();
+  void CreateShaders();
+  void CreatePipeline(SDL_GPUTextureFormat format);
 };
 } // namespace GameFramework
