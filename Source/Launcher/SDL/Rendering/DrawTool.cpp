@@ -2,6 +2,8 @@
 
 #include <stdexcept>
 
+#include <Core/Formatter.hpp>
+
 namespace GameFramework
 {
 
@@ -80,6 +82,48 @@ SDL_GPUDevice * DrawTool_SDL::GetDevice() const noexcept
 Uploader & DrawTool_SDL::GetUploader() & noexcept
 {
   return *m_uploader;
+}
+
+SDL_GPUShader * DrawTool_SDL::BuildSpirVShader(const std::filesystem::path & path,
+                                               SDL_GPUShaderStage stage, uint32_t numSamplers,
+                                               uint32_t numUniforms, uint32_t numSSBO,
+                                               uint32_t numSSTO) const
+{
+  // load the vertex shader code
+  size_t codeSize = 0;
+  std::filesystem::path shaderPath{".shaders"};
+  shaderPath /= path;
+  if (shaderPath.extension() == ".vert")
+    shaderPath.replace_extension("_vert.spv");
+  if (shaderPath.extension() == ".frag")
+    shaderPath.replace_extension("_frag.spv");
+  if (shaderPath.extension() == ".geom")
+    shaderPath.replace_extension("_geom.spv");
+
+  void * code = SDL_LoadFile(shaderPath.string().c_str(), &codeSize);
+  if (!code)
+  {
+    throw std::runtime_error(Formatter() << "Failed to load a shader file - " << SDL_GetError());
+  }
+  // create the vertex shader
+  SDL_GPUShaderCreateInfo info{};
+  info.code = (Uint8 *)code; //convert to an array of bytes
+  info.code_size = codeSize;
+  info.entrypoint = "main";
+  info.format = SDL_GPU_SHADERFORMAT_SPIRV; // loading .spv shaders
+  info.stage = stage;
+  info.num_samplers = numSamplers;
+  info.num_storage_buffers = numSSBO;
+  info.num_storage_textures = numSSTO;
+  info.num_uniform_buffers = numUniforms;
+  SDL_GPUShader * result = SDL_CreateGPUShader(m_gpu, &info);
+  if (!code)
+  {
+    throw std::runtime_error(Formatter() << "Failed to build a shader - " << SDL_GetError());
+  }
+  // free the file
+  SDL_free(code);
+  return result;
 }
 
 void DrawTool_SDL::SetClearColor(const std::array<float, 4> & color)

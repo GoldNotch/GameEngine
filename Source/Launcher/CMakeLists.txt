@@ -1,4 +1,5 @@
 set(this_target "Launcher")
+include (ShaderCompile.cmake)
 
 add_executable(${this_target})
 
@@ -8,6 +9,7 @@ PUBLIC
 PRIVATE
 	"Launcher_def.h"
 	"Launcher.cpp"
+	"OwnedBy.hpp"
 	"Games/GameLibrary.cpp"
 	"Games/GameLibrary.hpp"
 	"Games/GameInstance.cpp"
@@ -40,4 +42,12 @@ target_compile_definitions(${this_target}
 target_include_directories(${this_target} 
 PUBLIC
 	"${SOURCE_DIR}/Launcher"
+)
+
+TARGET_PRECOMPILE_SHADERS(
+	TARGET ${this_target}
+	SHADERS_DIRECTORY "SDL/Rendering/Shaders"
+	SHADERS
+		"quad.vert"
+		"quad.frag"
 )
