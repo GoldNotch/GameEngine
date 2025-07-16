@@ -1,5 +1,7 @@
 #include "QuadRenderer.hpp"
 
+#include "DrawTool.hpp"
+
 namespace
 {
 constexpr Uint32 c_bufferSize = 1024;
@@ -8,27 +10,27 @@ constexpr Uint32 c_bufferSize = 1024;
 namespace GameFramework
 {
 
-QuadRenderer::QuadRenderer(SDL_GPUDevice * gpu, SDL_Window * wnd)
-  : m_gpu(gpu)
+QuadRenderer::QuadRenderer(DrawTool_SDL & drawTool, SDL_GPUTextureFormat format)
+  : OwnedBy<DrawTool_SDL>(drawTool)
 {
+  auto * device = drawTool.GetDevice();
   // create the vertex buffer
   SDL_GPUBufferCreateInfo bufferInfo{};
   bufferInfo.size = c_bufferSize;
   bufferInfo.usage = SDL_GPU_BUFFERUSAGE_VERTEX;
-  m_gpuData = SDL_CreateGPUBuffer(m_gpu, &bufferInfo);
+  m_gpuData = SDL_CreateGPUBuffer(drawTool.GetDevice(), &bufferInfo);
 
   CreateShaders();
-
-  SDL_GPUTextureFormat format = SDL_GetGPUSwapchainTextureFormat(m_gpu, wnd);
   CreatePipeline(format);
 }
 
 QuadRenderer::~QuadRenderer()
 {
-  SDL_ReleaseGPUGraphicsPipeline(m_gpu, m_pipeline);
-  SDL_ReleaseGPUShader(m_gpu, m_fragmentShader);
-  SDL_ReleaseGPUShader(m_gpu, m_vertexShader);
-  SDL_ReleaseGPUBuffer(m_gpu, m_gpuData);
+  auto * device = GetDrawTool().GetDevice();
+  SDL_ReleaseGPUGraphicsPipeline(device, m_pipeline);
+  SDL_ReleaseGPUShader(device, m_fragmentShader);
+  SDL_ReleaseGPUShader(device, m_vertexShader);
+  SDL_ReleaseGPUBuffer(device, m_gpuData);
 }
 
 void QuadRenderer::PushObjectToDraw(const Rect & rect)
@@ -44,7 +46,8 @@ void QuadRenderer::RenderCache(SDL_GPURenderPass * renderPass)
   SDL_GPUBufferBinding bufferBindings[1];
   bufferBindings[0].buffer = m_gpuData; // index 0 is slot 0 in this example
   bufferBindings[0].offset = 0;         // start from the first byte
-  SDL_BindGPUVertexBuffers(renderPass, 0, bufferBindings, 1); // bind one buffer starting from slot 0
+  SDL_BindGPUVertexBuffers(renderPass, 0, bufferBindings,
+                           1); // bind one buffer starting from slot 0
 
   // issue a draw call
   SDL_DrawGPUPrimitives(renderPass, m_rectsToDraw.size() * 2 * 3, 1, 0, 0);
@@ -55,44 +58,24 @@ void QuadRenderer::RenderCache(SDL_GPURenderPass * renderPass)
 void QuadRenderer::UploadToGPU(SDL_GPUCopyPass * copyPass)
 {
   const Uint32 bufferSize = sizeof(Vertex) * 3 * 2 * m_rectsToDraw.size();
-
-  // create a transfer buffer to upload to the vertex buffer
-  SDL_GPUTransferBufferCreateInfo transferInfo{};
-  transferInfo.size = bufferSize;
-  transferInfo.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
-  SDL_GPUTransferBuffer * transferBuffer = SDL_CreateGPUTransferBuffer(m_gpu, &transferInfo);
-
-  // map the transfer buffer to a pointer
-  Vertex * data =
-    reinterpret_cast<Vertex *>(SDL_MapGPUTransferBuffer(m_gpu, transferBuffer, false));
-  for (const auto& rect : m_rectsToDraw)
+  std::vector<Vertex> vertices;
+  vertices.reserve(3 * 2 * m_rectsToDraw.size());
+  for (auto && rect : m_rectsToDraw)
   {
-    *(data++) = {rect.left, rect.top};
-    *(data++) = {rect.left, rect.bottom};
-    *(data++) = {rect.right, rect.top};
+    vertices.push_back({rect.left, rect.top});
+    vertices.push_back({rect.left, rect.bottom});
+    vertices.push_back({rect.right, rect.top});
 
-    *(data++) = {rect.right, rect.top};
-    *(data++) = {rect.left, rect.bottom};
-    *(data++) = {rect.right, rect.bottom};
+    vertices.push_back({rect.right, rect.top});
+    vertices.push_back({rect.left, rect.bottom});
+    vertices.push_back({rect.right, rect.bottom});
   }
-  // unmap the pointer when you are done updating the transfer buffer
-  SDL_UnmapGPUTransferBuffer(m_gpu, transferBuffer);
 
-  // where is the data
-  SDL_GPUTransferBufferLocation location{};
-  location.transfer_buffer = transferBuffer;
-  location.offset = 0; // start from the beginning
-  // where to upload the data
-  SDL_GPUBufferRegion region{};
-  region.buffer = m_gpuData;
-  region.size = bufferSize; // size of the data in bytes
-  region.offset = 0;        // begin writing from the first vertex
-  // upload the data
-  SDL_UploadToGPUBuffer(copyPass, &location, &region, true);
-
-  SDL_ReleaseGPUTransferBuffer(m_gpu, transferBuffer);
+  GetDrawTool().GetUploader().UploadBuffer(m_gpuData, 0, vertices.data(),
+                                           vertices.size() * sizeof(Vertex));
 }
-
+
+
 void QuadRenderer::CreateShaders()
 {
   // load the vertex shader code
@@ -109,7 +92,7 @@ void QuadRenderer::CreateShaders()
   vertexInfo.num_storage_buffers = 0;
   vertexInfo.num_storage_textures = 0;
   vertexInfo.num_uniform_buffers = 0;
-  m_vertexShader = SDL_CreateGPUShader(m_gpu, &vertexInfo);
+  m_vertexShader = SDL_CreateGPUShader(GetDrawTool().GetDevice(), &vertexInfo);
   // free the file
   SDL_free(vertexCode);
 
@@ -127,7 +110,7 @@ void QuadRenderer::CreateShaders()
   fragmentInfo.num_storage_buffers = 0;
   fragmentInfo.num_storage_textures = 0;
   fragmentInfo.num_uniform_buffers = 0;
-  m_fragmentShader = SDL_CreateGPUShader(m_gpu, &fragmentInfo);
+  m_fragmentShader = SDL_CreateGPUShader(GetDrawTool().GetDevice(), &fragmentInfo);
   // free the file
   SDL_free(fragmentCode);
 }
@@ -167,7 +150,7 @@ void GameFramework::QuadRenderer::CreatePipeline(SDL_GPUTextureFormat format)
   pipelineInfo.target_info.num_color_targets = 1;
   pipelineInfo.target_info.color_target_descriptions = colorTargetDescriptions;
 
-  m_pipeline = SDL_CreateGPUGraphicsPipeline(m_gpu, &pipelineInfo);
+  m_pipeline = SDL_CreateGPUGraphicsPipeline(GetDrawTool().GetDevice(), &pipelineInfo);
 }
 
 } // namespace GameFramework

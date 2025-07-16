@@ -14,13 +14,17 @@ DrawTool_SDL::DrawTool_SDL(SDL_Window * wnd)
 
   SDL_ClaimWindowForGPUDevice(m_gpu, m_window);
 
-  m_quadRenderer = std::make_unique<QuadRenderer>(m_gpu, m_window);
+
+  SDL_GPUTextureFormat format = SDL_GetGPUSwapchainTextureFormat(m_gpu, m_window);
+  m_uploader = std::make_unique<Uploader>(*this);
+  m_quadRenderer = std::make_unique<QuadRenderer>(*this, format);
 }
 
 
 DrawTool_SDL::~DrawTool_SDL()
 {
   m_quadRenderer.reset();
+  m_uploader.reset();
   // destroy the GPU device
   SDL_DestroyGPUDevice(m_gpu);
 }
@@ -32,6 +36,8 @@ void DrawTool_SDL::Flush()
 
 void DrawTool_SDL::Finish()
 {
+  m_uploader->SubmitAndUpload();
+
   //acquire the command buffer
   SDL_GPUCommandBuffer * commandBuffer = SDL_AcquireGPUCommandBuffer(m_gpu);
 
@@ -57,16 +63,22 @@ void DrawTool_SDL::Finish()
   colorTargetInfo.store_op = SDL_GPU_STOREOP_STORE;
   colorTargetInfo.texture = swapchainTexture;
 
-  SDL_GPUCopyPass * copyPass = SDL_BeginGPUCopyPass(commandBuffer);
-  m_quadRenderer->UploadToGPU(copyPass);
-  SDL_EndGPUCopyPass(copyPass);
-
   SDL_GPURenderPass * renderPass = SDL_BeginGPURenderPass(commandBuffer, &colorTargetInfo, 1, NULL);
   m_quadRenderer->RenderCache(renderPass);
   SDL_EndGPURenderPass(renderPass);
 
   // submit the command buffer
   SDL_SubmitGPUCommandBuffer(commandBuffer);
+}
+
+SDL_GPUDevice * DrawTool_SDL::GetDevice() const noexcept
+{
+  return m_gpu;
+}
+
+Uploader & DrawTool_SDL::GetUploader() & noexcept
+{
+  return *m_uploader;
 }
 
 void DrawTool_SDL::SetClearColor(const std::array<float, 4> & color)

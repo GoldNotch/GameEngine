@@ -1,10 +1,13 @@
 #pragma once
 #include <vector>
 
+#include <OwnedBy.hpp>
 #include <SDL3/SDL.h>
+
 
 namespace GameFramework
 {
+struct DrawTool_SDL;
 
 struct Vertex
 {
@@ -16,10 +19,11 @@ struct Rect
   float left, top, right, bottom;
 };
 
-struct QuadRenderer final
+struct QuadRenderer final : public OwnedBy<DrawTool_SDL>
 {
-  QuadRenderer(SDL_GPUDevice * gpu, SDL_Window * wnd);
+  explicit QuadRenderer(DrawTool_SDL & drawTool, SDL_GPUTextureFormat format);
   ~QuadRenderer();
+  MAKE_ALIAS_FOR_GET_OWNER(DrawTool_SDL, GetDrawTool);
 
   /// add object to draw cache
   void PushObjectToDraw(const Rect & rect);
@@ -31,8 +35,6 @@ struct QuadRenderer final
 
 private:
   std::vector<Rect> m_rectsToDraw; // CPU cache
-
-  SDL_GPUDevice * m_gpu;
 
   SDL_GPUGraphicsPipeline * m_pipeline;
   SDL_GPUBuffer * m_gpuData; // GPU cache
