@@ -19,6 +19,8 @@ PRIVATE
 	"SDL/Rendering/DrawTool.hpp"
 	"SDL/Rendering/QuadRenderer.cpp"
 	"SDL/Rendering/QuadRenderer.hpp"
+	"SDL/Rendering/Uploader.cpp"
+	"SDL/Rendering/Uploader.hpp"
 )
 
 target_link_libraries(${this_target}
