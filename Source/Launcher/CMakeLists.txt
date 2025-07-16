@@ -23,7 +23,8 @@ PRIVATE
 
 target_link_libraries(${this_target}
 PRIVATE
-	SDL3-static
+	SDL3::SDL3
+	SDL3_image::SDL3_image
 	dylib
 PRIVATE
 	GameFramework

@@ -92,7 +92,8 @@ void QuadRenderer::UploadToGPU(SDL_GPUCopyPass * copyPass)
 
   SDL_ReleaseGPUTransferBuffer(m_gpu, transferBuffer);
 }
-
+
+
 void QuadRenderer::CreateShaders()
 {
   // load the vertex shader code
