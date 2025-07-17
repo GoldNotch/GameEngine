@@ -20,7 +20,8 @@ QuadRenderer::QuadRenderer(DrawTool_SDL & drawTool, SDL_GPUTextureFormat format)
   bufferInfo.usage = SDL_GPU_BUFFERUSAGE_VERTEX;
   m_gpuData = SDL_CreateGPUBuffer(drawTool.GetDevice(), &bufferInfo);
 
-  CreateShaders();
+  m_vertexShader = GetDrawTool().BuildSpirVShader("quad_vert.spv", SDL_GPU_SHADERSTAGE_VERTEX);
+  m_fragmentShader = GetDrawTool().BuildSpirVShader("quad_frag.spv", SDL_GPU_SHADERSTAGE_FRAGMENT);
   CreatePipeline(format);
 }
 
@@ -73,46 +74,6 @@ void QuadRenderer::UploadToGPU()
 
   GetDrawTool().GetUploader().UploadBuffer(m_gpuData, 0, vertices.data(),
                                            vertices.size() * sizeof(Vertex));
-}
-
-
-void QuadRenderer::CreateShaders()
-{
-  // load the vertex shader code
-  size_t vertexCodeSize;
-  void * vertexCode = SDL_LoadFile("quad.vert.spv", &vertexCodeSize);
-  // create the vertex shader
-  SDL_GPUShaderCreateInfo vertexInfo{};
-  vertexInfo.code = (Uint8 *)vertexCode; //convert to an array of bytes
-  vertexInfo.code_size = vertexCodeSize;
-  vertexInfo.entrypoint = "main";
-  vertexInfo.format = SDL_GPU_SHADERFORMAT_SPIRV; // loading .spv shaders
-  vertexInfo.stage = SDL_GPU_SHADERSTAGE_VERTEX;  // vertex shader
-  vertexInfo.num_samplers = 0;
-  vertexInfo.num_storage_buffers = 0;
-  vertexInfo.num_storage_textures = 0;
-  vertexInfo.num_uniform_buffers = 0;
-  m_vertexShader = SDL_CreateGPUShader(GetDrawTool().GetDevice(), &vertexInfo);
-  // free the file
-  SDL_free(vertexCode);
-
-  // create the fragment shader
-  size_t fragmentCodeSize;
-  void * fragmentCode = SDL_LoadFile("quad.frag.spv", &fragmentCodeSize);
-  // create the fragment shader
-  SDL_GPUShaderCreateInfo fragmentInfo{};
-  fragmentInfo.code = (Uint8 *)fragmentCode;
-  fragmentInfo.code_size = fragmentCodeSize;
-  fragmentInfo.entrypoint = "main";
-  fragmentInfo.format = SDL_GPU_SHADERFORMAT_SPIRV;
-  fragmentInfo.stage = SDL_GPU_SHADERSTAGE_FRAGMENT; // fragment shader
-  fragmentInfo.num_samplers = 0;
-  fragmentInfo.num_storage_buffers = 0;
-  fragmentInfo.num_storage_textures = 0;
-  fragmentInfo.num_uniform_buffers = 0;
-  m_fragmentShader = SDL_CreateGPUShader(GetDrawTool().GetDevice(), &fragmentInfo);
-  // free the file
-  SDL_free(fragmentCode);
 }
 
 void GameFramework::QuadRenderer::CreatePipeline(SDL_GPUTextureFormat format)

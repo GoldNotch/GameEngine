@@ -1,5 +1,6 @@
 #pragma once
 #include <array>
+#include <filesystem>
 
 #include <GameFramework.hpp>
 #include <SDL3/SDL.h>
@@ -17,6 +18,10 @@ struct DrawTool_SDL : public IDrawTool
   void Finish();
   SDL_GPUDevice * GetDevice() const noexcept;
   Uploader & GetUploader() & noexcept;
+
+  SDL_GPUShader * BuildSpirVShader(const std::filesystem::path & path, SDL_GPUShaderStage stage,
+                                   uint32_t numSamplers = 0, uint32_t numUniforms = 0,
+                                   uint32_t numSSBO = 0, uint32_t numSSTO = 0) const;
 
   //------------- IDrawTool Interface -------------
   virtual void Flush() override;

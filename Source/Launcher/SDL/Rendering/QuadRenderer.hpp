@@ -43,7 +43,6 @@ private:
   SDL_GPUShader * m_fragmentShader;
 
 private:
-  void CreateShaders();
   void CreatePipeline(SDL_GPUTextureFormat format);
 };
 } // namespace GameFramework
