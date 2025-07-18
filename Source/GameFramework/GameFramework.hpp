@@ -34,6 +34,17 @@ inline void Log(LogMessageType type, Args &&... args)
   detail::LogImpl(type, stream.str());
 }
 
+using ResourceHandle = void *;
+
+struct vec3
+{
+  float x;
+  float y;
+  float z;
+};
+
+GAME_FRAMEWORK_API ResourceHandle LoadStaticMesh(const char * path);
+
 struct GAME_FRAMEWORK_API IDrawFuncs2D
 {
   virtual ~IDrawFuncs2D() = default;

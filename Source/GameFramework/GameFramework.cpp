@@ -2,7 +2,12 @@
 
 #include <iostream>
 
-namespace GameFramework::detail
+#include "Resources/ResourceLoader.hpp"
+#include "Resources/StaticMesh.hpp"
+namespace GameFramework
+{
+
+namespace detail
 {
 
 GAME_FRAMEWORK_API void LogImpl(LogMessageType type, std::wstring && message)
@@ -25,5 +30,13 @@ GAME_FRAMEWORK_API void LogImpl(LogMessageType type, std::wstring && message)
   }
   std::wcout << prefix << message << std::endl;
 }
+} // namespace detail
 
-} // namespace GameFramework::detail
+static ResourceLoader g_resourceLoader;
+
+GAME_FRAMEWORK_API ResourceHandle LoadStaticMesh(const char * path)
+{
+  return g_resourceLoader.GetResource<StaticMeshResource>(path);
+}
+
+} // namespace GameFramework

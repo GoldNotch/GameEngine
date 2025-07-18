@@ -1,4 +1,7 @@
 set(SDL_STATIC 1)
+set(BUILD_SHARED_LIBS 0)
+set(ASSIMP_BUILD_TESTS 0)
 add_subdirectory(SDL)
 add_subdirectory(dylib)
 add_subdirectory(Catch2)
+add_subdirectory(Assimp)

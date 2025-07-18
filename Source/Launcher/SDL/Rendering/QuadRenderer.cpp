@@ -76,7 +76,7 @@ void QuadRenderer::UploadToGPU()
                                            vertices.size() * sizeof(Vertex));
 }
 
-void GameFramework::QuadRenderer::CreatePipeline(SDL_GPUTextureFormat format)
+void QuadRenderer::CreatePipeline(SDL_GPUTextureFormat format)
 {
   SDL_GPUGraphicsPipelineCreateInfo pipelineInfo{};
   // bind shaders

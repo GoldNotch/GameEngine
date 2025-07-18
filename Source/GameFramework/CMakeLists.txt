@@ -11,6 +11,11 @@ PRIVATE
 	"Core/Formatter.hpp"
 	"Core/Storage.hpp"
 	"Core/TypeMapping.hpp"
+	"Resources/Resource.hpp"
+	"Resources/StaticMesh.cpp" 
+	"Resources/StaticMesh.hpp" 
+	"Resources/ResourceLoader.cpp"
+	"Resources/ResourceLoader.hpp"
 )
 
 if (MSVC)
@@ -20,6 +25,11 @@ endif()
 target_compile_definitions(${this_target}
 PRIVATE
 	-DGAME_FRAMEWORK_BUILD
+)
+
+target_link_libraries(${this_target}
+PRIVATE
+	assimp
 )
 
 target_include_directories(${this_target}
