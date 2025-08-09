@@ -1,55 +1,72 @@
 #include "StaticMesh.hpp"
 
+#include <chrono>
 #include <filesystem>
 
 #include <assimp/Importer.hpp>  // C++ importer interface
 #include <assimp/postprocess.h> // Post processing flags
 #include <assimp/scene.h>       // Output data structure
 
+#include "StaticMesh.hpp"
+
 // StaticMesh - is a not animated mesh object. It can contain many meshes but all of the meshes are not animated
 namespace GameFramework
 {
 
-struct StaticMeshResource::StaticMeshTopology
+struct StaticMeshResource::PrivateData
 {
-  explicit StaticMeshTopology(const aiMesh & mesh);
+  const aiScene * scene = nullptr;
 
-  std::vector<vec3> m_vertices;
-  std::vector<vec3> m_normals;
-  std::vector<vec3> m_tangets;
-  std::vector<uint32_t> m_indices;
+  explicit PrivateData(const std::filesystem::path & path)
+  {
+    scene = m_importer.ReadFile(path.string(), aiProcess_Triangulate | aiProcess_FlipUVs);
+  }
+
+private:
+  Assimp::Importer m_importer;
 };
-
-StaticMeshResource::StaticMeshTopology::StaticMeshTopology(const aiMesh & mesh)
-{
-}
 
 StaticMeshResource::StaticMeshResource(const std::filesystem::path & path)
   : IResource(path)
 {
 }
 
+StaticMeshResource::~StaticMeshResource() = default;
+
 bool StaticMeshResource::IsUploaded() const
 {
-  return !m_topologies.empty();
+  return !m_privateData;
 }
 
-void StaticMeshResource::Upload()
+size_t StaticMeshResource::Upload()
 {
-  Assimp::Importer importer;
+  if (IsUploaded())
+    return m_lastUploadHash;
 
-  const aiScene * scene =
-    importer.ReadFile(GetPath().string(), aiProcess_Triangulate | aiProcess_FlipUVs);
-
+  m_privateData = std::make_unique<PrivateData>(GetPath());
+  m_lastUploadHash = CalcResourceTimestamp();
   {
     Log(LogMessageType::Error, "Failed to upload StaticMeshResource - ", GetPath());
-    return;
+    return 0;
   }
+
+  return m_lastUploadHash;
 }
 
 void StaticMeshResource::Free()
 {
-  m_topologies.clear();
+  m_privateData.reset();
+  m_lastUploadHash = 0;
+}
+
+size_t StaticMeshResource::GetVerticesCount() const
+{
+  return size_t();
+}
+
+size_t StaticMeshResource::GetIndicesCount() const
+{
+  return size_t();
 }
 
 

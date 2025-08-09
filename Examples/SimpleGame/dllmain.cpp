@@ -6,8 +6,10 @@
 class SimpleGame : public GameFramework::IGame
 {
   float t = 0.0;
+  GameFramework::IResource * m_meshResource = nullptr;
 
 public:
+  SimpleGame() { m_meshResource = GameFramework::LoadStaticMesh("Data/Mesh.fbx"); }
   virtual ~SimpleGame() = default;
   ///
   virtual void Tick(float deltaTime) override
@@ -25,6 +27,7 @@ public:
     float top = 0.5f + (std::sin(t * 0.002) + 1.0f) / 8.0f;
     drawTool.DrawRect(0.0f, top, right, 0.0f);
     drawTool.DrawRect(-0.5f, 0.0f, 0.0f, -0.2f);
+    drawTool.DrawMesh(m_meshResource);
   }
 };
 

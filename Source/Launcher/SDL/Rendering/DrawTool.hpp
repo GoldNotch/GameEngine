@@ -5,6 +5,7 @@
 #include <GameFramework.hpp>
 #include <SDL3/SDL.h>
 
+#include "MeshRenderer.hpp"
 #include "QuadRenderer.hpp"
 #include "Uploader.hpp"
 
@@ -27,6 +28,7 @@ struct DrawTool_SDL : public IDrawTool
   virtual void Flush() override;
   virtual void SetClearColor(const std::array<float, 4> & color) override;
   virtual void DrawRect(float left, float top, float right, float bottom) override;
+  virtual void DrawMesh(IResource * mesh) override;
 
 private:
   SDL_GPUDevice * m_gpu = nullptr;
@@ -35,6 +37,7 @@ private:
   std::array<float, 4> m_clearColor;
 
   std::unique_ptr<QuadRenderer> m_quadRenderer;
+  std::unique_ptr<MeshRenderer> m_meshRenderer;
   std::unique_ptr<Uploader> m_uploader;
 };
 } // namespace GameFramework

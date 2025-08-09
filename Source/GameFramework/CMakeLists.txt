@@ -5,13 +5,13 @@ add_library(${this_target} SHARED)
 target_sources(${this_target}
 PUBLIC
 	"GameFramework.hpp"
+	"Resources/Resource.hpp"
 PRIVATE
 	"GameFramework_def.h"
 	"GameFramework.cpp"
 	"Core/Formatter.hpp"
 	"Core/Storage.hpp"
 	"Core/TypeMapping.hpp"
-	"Resources/Resource.hpp"
 	"Resources/StaticMesh.cpp" 
 	"Resources/StaticMesh.hpp" 
 	"Resources/ResourceLoader.cpp"

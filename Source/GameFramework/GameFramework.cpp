@@ -34,7 +34,7 @@ GAME_FRAMEWORK_API void LogImpl(LogMessageType type, std::wstring && message)
 
 static ResourceLoader g_resourceLoader;
 
-GAME_FRAMEWORK_API ResourceHandle LoadStaticMesh(const char * path)
+GAME_FRAMEWORK_API IResource * LoadStaticMesh(const char * path)
 {
   return g_resourceLoader.GetResource<StaticMeshResource>(path);
 }

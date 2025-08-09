@@ -1,6 +1,7 @@
 #pragma once
 #include <future>
 #include <queue>
+#include <span>
 
 #include <OwnedBy.hpp>
 #include <SDL3/SDL.h>
@@ -18,6 +19,8 @@ struct Uploader : public OwnedBy<DrawTool_SDL>
   void SubmitAndUpload();
 
   void UploadBuffer(SDL_GPUBuffer * dstBuffer, size_t offset, const void * srcData, size_t size);
+  using FillFunc = std::function<void(void *, size_t)>;
+  void UploadBuffer(SDL_GPUBuffer * dstBuffer, size_t offset, size_t size, FillFunc && func);
   //std::future<std::vector<uint8_t>> Download(SDL_GPUBuffer * srcBuffer, size_t offset, size_t size);
 
 private:

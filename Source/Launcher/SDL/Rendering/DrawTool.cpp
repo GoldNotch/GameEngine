@@ -139,4 +139,9 @@ void DrawTool_SDL::DrawRect(float left, float top, float right, float bottom)
   m_quadRenderer->PushObjectToDraw(Rect(left, top, right, bottom));
 }
 
+void DrawTool_SDL::DrawMesh(IResource * mesh)
+{
+  m_meshRenderer->PushObjectToDraw(mesh);
+}
+
 } // namespace GameFramework
