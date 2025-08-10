@@ -41,7 +41,7 @@ void Uploader::UploadBuffer(SDL_GPUBuffer * dstBuffer, size_t offset, const void
 
   // create a transfer buffer to upload to the buffer
   SDL_GPUTransferBufferCreateInfo transferInfo{};
-  transferInfo.size = size;
+  transferInfo.size = static_cast<uint32_t>(size);
   transferInfo.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
   SDL_GPUTransferBuffer * transferBuffer = SDL_CreateGPUTransferBuffer(device, &transferInfo);
   //TODO: make a pool of TransferBuffers
@@ -55,8 +55,8 @@ void Uploader::UploadBuffer(SDL_GPUBuffer * dstBuffer, size_t offset, const void
 
   SDL_GPUBufferRegion dstRegion{};
   dstRegion.buffer = dstBuffer;
-  dstRegion.offset = offset; // start from the beginning
-  dstRegion.size = size;
+  dstRegion.offset = static_cast<uint32_t>(offset); // start from the beginning
+  dstRegion.size = static_cast<uint32_t>(size);
 
   SDL_GPUTransferBufferLocation location{};
   location.transfer_buffer = transferBuffer;
@@ -71,7 +71,7 @@ void Uploader::UploadBuffer(SDL_GPUBuffer * dstBuffer, size_t offset, size_t siz
 
   // create a transfer buffer to upload to the buffer
   SDL_GPUTransferBufferCreateInfo transferInfo{};
-  transferInfo.size = size;
+  transferInfo.size = static_cast<uint32_t>(size);
   transferInfo.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
   SDL_GPUTransferBuffer * transferBuffer = SDL_CreateGPUTransferBuffer(device, &transferInfo);
   //TODO: make a pool of TransferBuffers
@@ -84,8 +84,8 @@ void Uploader::UploadBuffer(SDL_GPUBuffer * dstBuffer, size_t offset, size_t siz
 
   SDL_GPUBufferRegion dstRegion{};
   dstRegion.buffer = dstBuffer;
-  dstRegion.offset = offset; // start from the beginning
-  dstRegion.size = size;
+  dstRegion.offset = static_cast<uint32_t>(offset); // start from the beginning
+  dstRegion.size = static_cast<uint32_t>(size);
 
   SDL_GPUTransferBufferLocation location{};
   location.transfer_buffer = transferBuffer;

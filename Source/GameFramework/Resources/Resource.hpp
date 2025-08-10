@@ -1,29 +1,26 @@
 #pragma once
+#include <GameFramework_def.h>
+
+#include <chrono>
 #include <filesystem>
 
 namespace GameFramework
 {
-struct IResource
+struct GAME_FRAMEWORK_API IResource
 {
-  explicit IResource(const std::filesystem::path & path)
-    : m_path(path)
-  {
-  }
-
   virtual ~IResource() = default;
-  const std::filesystem::path & GetPath() const & noexcept { return m_path; }
+  /// Get path to the resource on disk
+  virtual const std::filesystem::path & GetPath() const & noexcept = 0;
   /// Check that data is uploaded to RAM
   virtual bool IsUploaded() const = 0;
   /// Upload resource to RAM. return 0 if data is not uploaded yet, otherwise returns hash of uploaded data
   virtual size_t Upload() = 0;
   /// Free resource from RAM
   virtual void Free() = 0;
-
-private:
-  std::filesystem::path m_path;
 };
 
-inline size_t CalcResourceTimestamp()
+
+GAME_FRAMEWORK_API inline size_t CalcResourceTimestamp()
 {
   // Get current time since epoch in seconds
   auto now = std::chrono::system_clock::now();

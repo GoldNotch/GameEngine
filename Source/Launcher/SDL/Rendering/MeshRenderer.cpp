@@ -24,15 +24,9 @@ MeshRenderer::~MeshRenderer()
   SDL_ReleaseGPUShader(device, m_vertexShader);
 }
 
-void MeshRenderer::PushObjectToDraw(IResource * mesh)
+void MeshRenderer::PushObjectToDraw(IStaticMeshObject * mesh)
 {
-  auto meshPtr = dynamic_cast<StaticMeshResource *>(mesh);
-  if (!meshPtr)
-  {
-    Log(LogMessageType::Error, "Resource is not StaticMesh");
-    return;
-  }
-  m_drawCommands.push_back(meshPtr);
+  m_drawCommands.push_back(mesh);
 }
 
 void MeshRenderer::RenderCache(SDL_GPURenderPass * renderPass)
@@ -58,14 +52,15 @@ void MeshRenderer::RenderCache(SDL_GPURenderPass * renderPass)
 
 void MeshRenderer::UploadToGPU()
 {
-  for (auto && meshResource : m_drawCommands)
+  for (auto && mesh : m_drawCommands)
   {
+    auto * meshResource = dynamic_cast<IResource *>(mesh);
     auto [it, inserted] =
       m_gpuCache.insert({meshResource->GetPath(), StaticMeshGpuCache(*this, nullptr)});
-    bool resourceDataHash = meshResource->Upload();
+    size_t resourceDataHash = meshResource->Upload();
     if (inserted || resourceDataHash != it->second.dataHash)
     {
-      it->second = StaticMeshGpuCache(*this, meshResource);
+      it->second = StaticMeshGpuCache(*this, mesh);
     }
   }
 }
@@ -110,7 +105,7 @@ void MeshRenderer::CreatePipeline(SDL_GPUTextureFormat format)
 
 
 MeshRenderer::StaticMeshGpuCache::StaticMeshGpuCache(MeshRenderer & renderer,
-                                                     StaticMeshResource * mesh)
+                                                     IStaticMeshObject * mesh)
   : OwnedBy<MeshRenderer>(renderer)
 {
   if (!mesh)
@@ -120,7 +115,7 @@ MeshRenderer::StaticMeshGpuCache::StaticMeshGpuCache(MeshRenderer & renderer,
   {
     const size_t verticesSize = mesh->GetVerticesCount() * sizeof(Vertex);
     auto copyVertices = [mesh](void * dst, size_t size) {
-        
+
     };
     SDL_GPUBufferCreateInfo bufferInfo{};
     bufferInfo.size = verticesSize;

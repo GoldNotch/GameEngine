@@ -28,7 +28,7 @@ struct DrawTool_SDL : public IDrawTool
   virtual void Flush() override;
   virtual void SetClearColor(const std::array<float, 4> & color) override;
   virtual void DrawRect(float left, float top, float right, float bottom) override;
-  virtual void DrawMesh(IResource * mesh) override;
+  virtual void DrawMesh(IStaticMeshObject * mesh) override;
 
 private:
   SDL_GPUDevice * m_gpu = nullptr;

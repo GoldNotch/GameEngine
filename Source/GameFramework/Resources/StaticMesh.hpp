@@ -1,34 +1,19 @@
 #pragma once
-#include <vector>
-
-#include <GameFramework.hpp>
+#include <filesystem>
+#include <memory>
 
 #include "Resource.hpp"
 
 namespace GameFramework
 {
 
-struct StaticMeshResource final : public IResource
+struct GAME_FRAMEWORK_API IStaticMeshObject : public IResource
 {
-  explicit StaticMeshResource(const std::filesystem::path & path);
-  ~StaticMeshResource();
-
-  /// Check that data is uploaded to RAM
-  virtual bool IsUploaded() const override;
-  /// Upload resource to RAM
-  virtual size_t Upload() override;
-  /// Free resource from RAM
-  virtual void Free() override;
-
-public:
-  size_t GetVerticesCount() const;
-  size_t GetIndicesCount() const;
-
-
-private:
-  struct PrivateData;
-  std::unique_ptr<PrivateData> m_privateData = nullptr;
-  size_t m_lastUploadHash = 0;
+  virtual ~IStaticMeshObject() = default;
+  virtual size_t GetVerticesCount() const noexcept = 0;
+  virtual size_t GetIndicesCount() const noexcept = 0;
 };
+
+std::unique_ptr<IStaticMeshObject> CreateStaticMeshObject(const std::filesystem::path & path);
 
 } // namespace GameFramework

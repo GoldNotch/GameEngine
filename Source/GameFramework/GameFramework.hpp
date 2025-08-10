@@ -7,8 +7,6 @@
 #include <stdexcept>
 #include <string>
 
-#include "Resources/Resource.hpp"
-
 namespace GameFramework
 {
 
@@ -43,7 +41,7 @@ struct vec3
   float z;
 };
 
-GAME_FRAMEWORK_API IResource * LoadStaticMesh(const char * path);
+GAME_FRAMEWORK_API IStaticMeshObject * LoadStaticMesh(const char * path);
 
 struct GAME_FRAMEWORK_API IDrawFuncs2D
 {
@@ -54,7 +52,7 @@ struct GAME_FRAMEWORK_API IDrawFuncs2D
 struct GAME_FRAMEWORK_API IDrawFuncs3D
 {
   virtual ~IDrawFuncs3D() = default;
-  virtual void DrawMesh(IResource * mesh) = 0;
+  virtual void DrawMesh(IStaticMeshObject * mesh) = 0;
 };
 
 /// Инструмент для рисования. Предоставляет высокоуровневые операции для рисования
