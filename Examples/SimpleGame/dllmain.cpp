@@ -6,7 +6,7 @@
 class SimpleGame : public GameFramework::IGame
 {
   float t = 0.0;
-  GameFramework::IResource * m_meshResource = nullptr;
+  GameFramework::IStaticMeshResouce * m_meshResource = nullptr;
 
 public:
   SimpleGame() { m_meshResource = GameFramework::LoadStaticMesh("Data/Mesh.fbx"); }

@@ -3,7 +3,7 @@
 #include <vector>
 
 #include <OwnedBy.hpp>
-#include <Resources/Resource.hpp>
+#include <Resources/StaticMesh.hpp>
 #include <SDL3/SDL.h>
 
 namespace GameFramework
@@ -18,7 +18,7 @@ struct MeshRenderer final : public OwnedBy<DrawTool_SDL>
   MAKE_ALIAS_FOR_GET_OWNER(DrawTool_SDL, GetDrawTool);
 
   /// add object to draw cache
-  void PushObjectToDraw(IStaticMeshObject * resource);
+  void PushObjectToDraw(IStaticMeshResouce * resource);
 
   /// submits commands
   void RenderCache(SDL_GPURenderPass * renderPass);
@@ -35,13 +35,13 @@ private:
     size_t num_vertices = 0;
     MAKE_ALIAS_FOR_GET_OWNER(MeshRenderer, GetRenderer);
 
-    explicit StaticMeshGpuCache(MeshRenderer & renderer, IStaticMeshObject * mesh);
+    explicit StaticMeshGpuCache(MeshRenderer & renderer, IStaticMeshResouce * mesh);
     ~StaticMeshGpuCache();
     StaticMeshGpuCache(StaticMeshGpuCache && rhs) noexcept;
     StaticMeshGpuCache & operator=(StaticMeshGpuCache && rhs) noexcept;
   };
 
-  std::vector<IStaticMeshObject *> m_drawCommands;
+  std::vector<IStaticMeshResouce *> m_drawCommands;
   std::unordered_map<std::filesystem::path, StaticMeshGpuCache> m_gpuCache; // GPU cache
 
   SDL_GPUGraphicsPipeline * m_pipeline;

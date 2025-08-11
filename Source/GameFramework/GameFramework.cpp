@@ -3,7 +3,7 @@
 #include <iostream>
 
 #include "Resources/ResourceLoader.hpp"
-#include "Resources/StaticMesh.hpp"
+
 namespace GameFramework
 {
 
@@ -34,9 +34,16 @@ GAME_FRAMEWORK_API void LogImpl(LogMessageType type, std::wstring && message)
 
 static ResourceLoader g_resourceLoader;
 
-GAME_FRAMEWORK_API IResource * LoadStaticMesh(const char * path)
+template<>
+std::unique_ptr<IStaticMeshResouce> ConstructResource<IStaticMeshResouce>(
+  const std::filesystem::path & path)
 {
-  return g_resourceLoader.GetResource<StaticMeshResource>(path);
+  return CreateStaticMeshResource(path);
+}
+
+GAME_FRAMEWORK_API IStaticMeshResouce * LoadStaticMesh(const char * path)
+{
+  return g_resourceLoader.GetResource<IStaticMeshResouce>(path);
 }
 
 } // namespace GameFramework

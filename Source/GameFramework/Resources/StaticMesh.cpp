@@ -12,8 +12,7 @@
 namespace GameFramework
 {
 
-struct StaticMeshResource final : public IStaticMeshObject,
-                                  public IResource
+struct StaticMeshResource final : public IStaticMeshResouce
 {
   explicit StaticMeshResource(const std::filesystem::path & path);
 
@@ -35,6 +34,8 @@ private:
   size_t m_lastUploadHash = 0;
   std::unique_ptr<Assimp::Importer> m_importer = nullptr;
   const aiScene * m_importedScene = nullptr;
+  size_t m_verticesCount = 0;
+  size_t m_indicesCount = 0;
 };
 
 StaticMeshResource::StaticMeshResource(const std::filesystem::path & path)
@@ -58,7 +59,7 @@ size_t StaticMeshResource::Upload()
     return m_lastUploadHash;
 
   Free();
-  m_importer = std::make_unique<Assimp::Importer>(GetPath());
+  m_importer = std::make_unique<Assimp::Importer>();
   m_importedScene =
     m_importer->ReadFile(m_path.string(), aiProcess_Triangulate | aiProcess_FlipUVs);
 
@@ -69,6 +70,13 @@ size_t StaticMeshResource::Upload()
   }
   m_lastUploadHash = CalcResourceTimestamp();
 
+  for (size_t i = 0; i < m_importedScene->mNumMeshes; ++i)
+  {
+    m_verticesCount += m_importedScene->mMeshes[i]->mNumVertices;
+    for (size_t j = 0; j < m_importedScene->mMeshes[i]->mNumFaces; ++j)
+      m_indicesCount += m_importedScene->mMeshes[i]->mFaces[j].mNumIndices;
+  }
+
   return m_lastUploadHash;
 }
 
@@ -77,20 +85,22 @@ void StaticMeshResource::Free()
   m_importer.reset();
   m_importedScene = nullptr;
   m_lastUploadHash = 0;
+  m_verticesCount = 0;
+  m_indicesCount = 0;
 }
 
-size_t StaticMeshResource::GetVerticesCount() const
+size_t StaticMeshResource::GetVerticesCount() const noexcept
 {
-  return size_t();
+  return m_verticesCount;
 }
 
-size_t StaticMeshResource::GetIndicesCount() const
+size_t StaticMeshResource::GetIndicesCount() const noexcept
 {
-  return size_t();
+  return m_indicesCount;
 }
 
 
-std::unique_ptr<IStaticMeshObject> CreateStaticMeshObject(const std::filesystem::path & path)
+std::unique_ptr<IStaticMeshResouce> CreateStaticMeshResource(const std::filesystem::path & path)
 {
   return std::make_unique<StaticMeshResource>(path);
 }

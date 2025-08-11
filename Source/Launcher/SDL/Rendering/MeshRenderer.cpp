@@ -24,7 +24,7 @@ MeshRenderer::~MeshRenderer()
   SDL_ReleaseGPUShader(device, m_vertexShader);
 }
 
-void MeshRenderer::PushObjectToDraw(IStaticMeshObject * mesh)
+void MeshRenderer::PushObjectToDraw(IStaticMeshResouce * mesh)
 {
   m_drawCommands.push_back(mesh);
 }
@@ -105,7 +105,7 @@ void MeshRenderer::CreatePipeline(SDL_GPUTextureFormat format)
 
 
 MeshRenderer::StaticMeshGpuCache::StaticMeshGpuCache(MeshRenderer & renderer,
-                                                     IStaticMeshObject * mesh)
+                                                     IStaticMeshResouce * mesh)
   : OwnedBy<MeshRenderer>(renderer)
 {
   if (!mesh)

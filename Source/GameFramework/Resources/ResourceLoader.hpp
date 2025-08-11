@@ -13,12 +13,12 @@ struct ResourceLoader final
   ~ResourceLoader() = default;
 
   template<typename ResourceT>
-  IResource * GetResource(const std::filesystem::path & path)
+  ResourceT * GetResource(const std::filesystem::path & path)
   {
     auto [it, inserted] = m_resources.insert({path, nullptr});
     if (inserted)
-      it->second = std::make_unique<ResourceT>(path);
-    return it->second.get();
+      it->second = ConstructResource<ResourceT>(path);
+    return static_cast<ResourceT *>(it->second.get());
   }
 
 private:

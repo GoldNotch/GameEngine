@@ -29,4 +29,7 @@ GAME_FRAMEWORK_API inline size_t CalcResourceTimestamp()
   return static_cast<size_t>(seconds);
 }
 
+template<typename ResourceT, typename... Args>
+std::unique_ptr<ResourceT> ConstructResource(Args &&... args);
+
 } // namespace GameFramework
