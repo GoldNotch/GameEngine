@@ -1,7 +1,9 @@
 #pragma once
 #include <filesystem>
-#include <functional>
 #include <memory>
+#include <vector>
+
+#include <glm/glm.hpp>
 
 #include "Resource.hpp"
 
@@ -10,14 +12,19 @@ namespace GameFramework
 
 struct GAME_FRAMEWORK_API IStaticMeshResouce : public IResource
 {
-  virtual ~IStaticMeshResouce() = default;
-  virtual size_t GetVerticesCount() const noexcept = 0;
-  virtual size_t GetIndicesCount() const noexcept = 0;
-  using MeshNodesTraverseFunc = std::function<void(size_t, size_t, size_t, size_t)>;
+  struct StaticMeshPartDescription
+  {
+    glm::mat4x4 transform;
+    size_t verticesCount = 0;
+    size_t verticesOffset = 0;
+    size_t indicesCount = 0;
+    size_t indicesOffset = 0;
+  };
 
-  virtual void ForEachMeshNode(MeshNodesTraverseFunc && processNode) = 0;
-  virtual void ForEachVertex(std::function<void(float (*)[3])>) = 0;
-  virtual void ForEachIndex(std::function<void(int)>) = 0;
+  virtual ~IStaticMeshResouce() = default;
+  virtual const std::vector<glm::vec3> & GetVertices() const & noexcept = 0;
+  virtual const std::vector<uint32_t> & GetIndices() const & noexcept = 0;
+  virtual const std::vector<StaticMeshPartDescription> & GetPartsDescription() const & noexcept = 0;
 };
 
 std::unique_ptr<IStaticMeshResouce> CreateStaticMeshResource(const std::filesystem::path & path);

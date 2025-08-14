@@ -9,7 +9,7 @@ class SimpleGame : public GameFramework::IGame
   GameFramework::IStaticMeshResouce * m_meshResource = nullptr;
 
 public:
-  SimpleGame() { m_meshResource = GameFramework::LoadStaticMesh("Data/Mesh.fbx"); }
+  SimpleGame() { m_meshResource = GameFramework::LoadStaticMesh("Data/mesh.obj"); }
   virtual ~SimpleGame() = default;
   ///
   virtual void Tick(float deltaTime) override

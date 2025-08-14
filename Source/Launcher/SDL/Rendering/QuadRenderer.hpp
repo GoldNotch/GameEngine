@@ -9,11 +9,6 @@ namespace GameFramework
 {
 struct DrawTool_SDL;
 
-struct Vertex
-{
-  float x, y;
-};
-
 struct Rect
 {
   float left, top, right, bottom;

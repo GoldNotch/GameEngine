@@ -31,11 +31,10 @@ private:
     size_t dataHash = 0;
     SDL_GPUBuffer * vertices = nullptr;
     SDL_GPUBuffer * indices = nullptr;
-    size_t num_indices = 0;
-    size_t num_vertices = 0;
+    std::vector<IStaticMeshResouce::StaticMeshPartDescription> commands;
     MAKE_ALIAS_FOR_GET_OWNER(MeshRenderer, GetRenderer);
 
-    explicit StaticMeshGpuCache(MeshRenderer & renderer, IStaticMeshResouce * mesh);
+    explicit StaticMeshGpuCache(MeshRenderer & renderer, IStaticMeshResouce * mesh, size_t dataHash);
     ~StaticMeshGpuCache();
     StaticMeshGpuCache(StaticMeshGpuCache && rhs) noexcept;
     StaticMeshGpuCache & operator=(StaticMeshGpuCache && rhs) noexcept;

@@ -30,6 +30,8 @@ PRIVATE
 target_link_libraries(${this_target}
 PRIVATE
 	assimp
+PUBLIC
+	glm
 )
 
 target_include_directories(${this_target}

@@ -11,8 +11,8 @@ MeshRenderer::MeshRenderer(DrawTool_SDL & drawTool, SDL_GPUTextureFormat format)
   : OwnedBy<DrawTool_SDL>(drawTool)
 {
   auto * device = drawTool.GetDevice();
-  m_vertexShader = GetDrawTool().BuildSpirVShader("quad_vert.spv", SDL_GPU_SHADERSTAGE_VERTEX);
-  m_fragmentShader = GetDrawTool().BuildSpirVShader("quad_frag.spv", SDL_GPU_SHADERSTAGE_FRAGMENT);
+  m_vertexShader = GetDrawTool().BuildSpirVShader("mesh_vert.spv", SDL_GPU_SHADERSTAGE_VERTEX);
+  m_fragmentShader = GetDrawTool().BuildSpirVShader("mesh_frag.spv", SDL_GPU_SHADERSTAGE_FRAGMENT);
   CreatePipeline(format);
 }
 
@@ -45,8 +45,11 @@ void MeshRenderer::RenderCache(SDL_GPURenderPass * renderPass)
                              1); // bind one buffer starting from slot 0
     SDL_BindGPUIndexBuffer(renderPass, &indexBufferBinding, SDL_GPU_INDEXELEMENTSIZE_32BIT);
 
-    // issue a draw call
-    SDL_DrawGPUIndexedPrimitives(renderPass, drawData.num_indices, 1, 0, 0, 0);
+    for (auto && cmd : drawData.commands)
+    {
+      SDL_DrawGPUIndexedPrimitives(renderPass, cmd.indicesCount, 1, cmd.indicesOffset,
+                                   cmd.verticesOffset, 0);
+    }
   }
 }
 
@@ -56,11 +59,11 @@ void MeshRenderer::UploadToGPU()
   {
     auto * meshResource = dynamic_cast<IResource *>(mesh);
     auto [it, inserted] =
-      m_gpuCache.insert({meshResource->GetPath(), StaticMeshGpuCache(*this, nullptr)});
+      m_gpuCache.insert({meshResource->GetPath(), StaticMeshGpuCache(*this, nullptr, 0)});
     size_t resourceDataHash = meshResource->Upload();
     if (inserted || resourceDataHash != it->second.dataHash)
     {
-      it->second = StaticMeshGpuCache(*this, mesh);
+      it->second = StaticMeshGpuCache(*this, mesh, resourceDataHash);
     }
   }
 }
@@ -79,7 +82,7 @@ void MeshRenderer::CreatePipeline(SDL_GPUTextureFormat format)
   vertexBufferDesctiptions[0].slot = 0;
   vertexBufferDesctiptions[0].input_rate = SDL_GPU_VERTEXINPUTRATE_VERTEX;
   vertexBufferDesctiptions[0].instance_step_rate = 0;
-  vertexBufferDesctiptions[0].pitch = sizeof(Vertex);
+  vertexBufferDesctiptions[0].pitch = sizeof(glm::vec3);
   pipelineInfo.vertex_input_state.num_vertex_buffers = 1;
   pipelineInfo.vertex_input_state.vertex_buffer_descriptions = vertexBufferDesctiptions;
 
@@ -88,7 +91,7 @@ void MeshRenderer::CreatePipeline(SDL_GPUTextureFormat format)
   // a_position
   vertexAttributes[0].buffer_slot = 0; // fetch data from the buffer at slot 0
   vertexAttributes[0].location = 0;    // layout (location = 0) in shader
-  vertexAttributes[0].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2; //vec2
+  vertexAttributes[0].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3; //vec3
   vertexAttributes[0].offset = 0; // start from the first byte from current buffer position
   pipelineInfo.vertex_input_state.num_vertex_attributes = 1;
   pipelineInfo.vertex_input_state.vertex_attributes = vertexAttributes;
@@ -105,36 +108,37 @@ void MeshRenderer::CreatePipeline(SDL_GPUTextureFormat format)
 
 
 MeshRenderer::StaticMeshGpuCache::StaticMeshGpuCache(MeshRenderer & renderer,
-                                                     IStaticMeshResouce * mesh)
+                                                     IStaticMeshResouce * mesh, size_t dataHash)
   : OwnedBy<MeshRenderer>(renderer)
+  , dataHash(dataHash)
 {
   if (!mesh)
     return;
   auto * device = GetRenderer().GetDrawTool().GetDevice();
+
+  commands = mesh->GetPartsDescription();
   // create the vertex buffer
   {
-    const size_t verticesSize = mesh->GetVerticesCount() * sizeof(Vertex);
-    auto copyVertices = [mesh](void * dst, size_t size) {
-
-    };
+    auto && meshVertices = mesh->GetVertices();
+    const size_t verticesSize = meshVertices.size() * sizeof(glm::vec3);
     SDL_GPUBufferCreateInfo bufferInfo{};
     bufferInfo.size = verticesSize;
     bufferInfo.usage = SDL_GPU_BUFFERUSAGE_VERTEX;
     vertices = SDL_CreateGPUBuffer(device, &bufferInfo);
-    GetRenderer().GetDrawTool().GetUploader().UploadBuffer(vertices, 0, verticesSize, copyVertices);
+    GetRenderer().GetDrawTool().GetUploader().UploadBuffer(vertices, 0, meshVertices.data(),
+                                                           verticesSize);
   }
 
   // create the index buffer
   {
-    const size_t indicesSize = mesh->GetIndicesCount() * sizeof(uint32_t);
-    auto copyIndices = [mesh](void * dst, size_t size) {
-
-    };
+    auto && meshIndices = mesh->GetIndices();
+    const size_t indicesSize = meshIndices.size() * sizeof(uint32_t);
     SDL_GPUBufferCreateInfo bufferInfo{};
-    bufferInfo.size = mesh->GetIndicesCount() * sizeof(uint32_t);
+    bufferInfo.size = indicesSize;
     bufferInfo.usage = SDL_GPU_BUFFERUSAGE_INDEX;
     indices = SDL_CreateGPUBuffer(device, &bufferInfo);
-    GetRenderer().GetDrawTool().GetUploader().UploadBuffer(indices, 0, indicesSize, copyIndices);
+    GetRenderer().GetDrawTool().GetUploader().UploadBuffer(indices, 0, meshIndices.data(),
+                                                           indicesSize);
   }
 }
 
@@ -149,8 +153,7 @@ MeshRenderer::StaticMeshGpuCache::StaticMeshGpuCache(StaticMeshGpuCache && rhs) 
   : OwnedBy<MeshRenderer>(std::forward<StaticMeshGpuCache>(rhs))
 {
   std::swap(rhs.dataHash, dataHash);
-  std::swap(rhs.num_indices, num_indices);
-  std::swap(rhs.num_vertices, num_vertices);
+  std::swap(rhs.commands, commands);
   std::swap(rhs.indices, indices);
   std::swap(rhs.vertices, vertices);
 }
@@ -161,8 +164,7 @@ MeshRenderer::StaticMeshGpuCache & MeshRenderer::StaticMeshGpuCache::operator=(
   if (this != &rhs)
   {
     std::swap(rhs.dataHash, dataHash);
-    std::swap(rhs.num_indices, num_indices);
-    std::swap(rhs.num_vertices, num_vertices);
+    std::swap(rhs.commands, commands);
     std::swap(rhs.indices, indices);
     std::swap(rhs.vertices, vertices);
     OwnedBy<MeshRenderer>::operator=(std::move(rhs));

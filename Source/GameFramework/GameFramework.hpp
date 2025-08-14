@@ -7,6 +7,8 @@
 #include <stdexcept>
 #include <string>
 
+#include <glm/glm.hpp>
+
 #include "Resources/StaticMesh.hpp"
 
 namespace GameFramework
@@ -35,13 +37,6 @@ inline void Log(LogMessageType type, Args &&... args)
   (stream << ... << std::forward<Args>(args));
   detail::LogImpl(type, stream.str());
 }
-
-struct vec3
-{
-  float x;
-  float y;
-  float z;
-};
 
 GAME_FRAMEWORK_API IStaticMeshResouce * LoadStaticMesh(const char * path);
 

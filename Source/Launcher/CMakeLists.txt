@@ -52,4 +52,6 @@ TARGET_PRECOMPILE_SHADERS(
 	SHADERS
 		"quad.vert"
 		"quad.frag"
+		"mesh.vert"
+		"mesh.frag"
 )

@@ -58,8 +58,8 @@ void QuadRenderer::RenderCache(SDL_GPURenderPass * renderPass)
 
 void QuadRenderer::UploadToGPU()
 {
-  const Uint32 bufferSize = sizeof(Vertex) * 3 * 2 * m_rectsToDraw.size();
-  std::vector<Vertex> vertices;
+  const Uint32 bufferSize = sizeof(glm::vec2) * 3 * 2 * m_rectsToDraw.size();
+  std::vector<glm::vec2> vertices;
   vertices.reserve(3 * 2 * m_rectsToDraw.size());
   for (auto && rect : m_rectsToDraw)
   {
@@ -73,7 +73,7 @@ void QuadRenderer::UploadToGPU()
   }
 
   GetDrawTool().GetUploader().UploadBuffer(m_gpuData, 0, vertices.data(),
-                                           vertices.size() * sizeof(Vertex));
+                                           vertices.size() * sizeof(glm::vec2));
 }
 
 void QuadRenderer::CreatePipeline(SDL_GPUTextureFormat format)
@@ -90,7 +90,7 @@ void QuadRenderer::CreatePipeline(SDL_GPUTextureFormat format)
   vertexBufferDesctiptions[0].slot = 0;
   vertexBufferDesctiptions[0].input_rate = SDL_GPU_VERTEXINPUTRATE_VERTEX;
   vertexBufferDesctiptions[0].instance_step_rate = 0;
-  vertexBufferDesctiptions[0].pitch = sizeof(Vertex);
+  vertexBufferDesctiptions[0].pitch = sizeof(glm::vec2);
   pipelineInfo.vertex_input_state.num_vertex_buffers = 1;
   pipelineInfo.vertex_input_state.vertex_buffer_descriptions = vertexBufferDesctiptions;
 

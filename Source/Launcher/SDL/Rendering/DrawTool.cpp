@@ -20,11 +20,13 @@ DrawTool_SDL::DrawTool_SDL(SDL_Window * wnd)
   SDL_GPUTextureFormat format = SDL_GetGPUSwapchainTextureFormat(m_gpu, m_window);
   m_uploader = std::make_unique<Uploader>(*this);
   m_quadRenderer = std::make_unique<QuadRenderer>(*this, format);
+  m_meshRenderer = std::make_unique<MeshRenderer>(*this, format);
 }
 
 
 DrawTool_SDL::~DrawTool_SDL()
 {
+  m_meshRenderer.reset();
   m_quadRenderer.reset();
   m_uploader.reset();
   // destroy the GPU device
@@ -38,6 +40,7 @@ void DrawTool_SDL::Flush()
 
 void DrawTool_SDL::Finish()
 {
+  m_meshRenderer->UploadToGPU();
   m_quadRenderer->UploadToGPU();
   m_uploader->SubmitAndUpload();
 
@@ -68,6 +71,7 @@ void DrawTool_SDL::Finish()
 
   SDL_GPURenderPass * renderPass = SDL_BeginGPURenderPass(commandBuffer, &colorTargetInfo, 1, NULL);
   m_quadRenderer->RenderCache(renderPass);
+  //m_meshRenderer->RenderCache(renderPass);
   SDL_EndGPURenderPass(renderPass);
 
   // submit the command buffer
