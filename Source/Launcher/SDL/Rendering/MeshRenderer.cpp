@@ -1,6 +1,7 @@
 #include "MeshRenderer.hpp"
 
 #include <Resources/StaticMesh.hpp>
+#include <SDL/Rendering/ConnectionGPU.hpp>
 
 #include "DrawTool.hpp"
 
@@ -10,21 +11,22 @@ namespace GameFramework
 MeshRenderer::MeshRenderer(DrawTool_SDL & drawTool, SDL_GPUTextureFormat format)
   : OwnedBy<DrawTool_SDL>(drawTool)
 {
-  auto * device = drawTool.GetDevice();
-  m_vertexShader = GetDrawTool().BuildSpirVShader("mesh_vert.spv", SDL_GPU_SHADERSTAGE_VERTEX);
-  m_fragmentShader = GetDrawTool().BuildSpirVShader("mesh_frag.spv", SDL_GPU_SHADERSTAGE_FRAGMENT);
+  m_vertexShader =
+    GetDrawTool().GetGPU().BuildSpirVShader("mesh_vert.spv", SDL_GPU_SHADERSTAGE_VERTEX);
+  m_fragmentShader =
+    GetDrawTool().GetGPU().BuildSpirVShader("mesh_frag.spv", SDL_GPU_SHADERSTAGE_FRAGMENT);
   CreatePipeline(format);
 }
 
 MeshRenderer::~MeshRenderer()
 {
-  auto * device = GetDrawTool().GetDevice();
+  auto * device = GetDrawTool().GetGPU().GetDevice();
   SDL_ReleaseGPUGraphicsPipeline(device, m_pipeline);
   SDL_ReleaseGPUShader(device, m_fragmentShader);
   SDL_ReleaseGPUShader(device, m_vertexShader);
 }
 
-void MeshRenderer::PushObjectToDraw(IStaticMeshResouce * mesh)
+void MeshRenderer::PushObjectToDraw(IStaticMeshResource * mesh)
 {
   m_drawCommands.push_back(mesh);
 }
@@ -47,8 +49,9 @@ void MeshRenderer::RenderCache(SDL_GPURenderPass * renderPass)
 
     for (auto && cmd : drawData.commands)
     {
-      SDL_DrawGPUIndexedPrimitives(renderPass, cmd.indicesCount, 1, cmd.indicesOffset,
-                                   cmd.verticesOffset, 0);
+      SDL_DrawGPUIndexedPrimitives(renderPass, static_cast<uint32_t>(cmd.indicesCount), 1,
+                                   static_cast<uint32_t>(cmd.indicesOffset),
+                                   static_cast<uint32_t>(cmd.verticesOffset), 0);
     }
   }
 }
@@ -103,18 +106,18 @@ void MeshRenderer::CreatePipeline(SDL_GPUTextureFormat format)
   pipelineInfo.target_info.num_color_targets = 1;
   pipelineInfo.target_info.color_target_descriptions = colorTargetDescriptions;
 
-  m_pipeline = SDL_CreateGPUGraphicsPipeline(GetDrawTool().GetDevice(), &pipelineInfo);
+  m_pipeline = SDL_CreateGPUGraphicsPipeline(GetDrawTool().GetGPU().GetDevice(), &pipelineInfo);
 }
 
 
 MeshRenderer::StaticMeshGpuCache::StaticMeshGpuCache(MeshRenderer & renderer,
-                                                     IStaticMeshResouce * mesh, size_t dataHash)
+                                                     IStaticMeshResource * mesh, size_t dataHash)
   : OwnedBy<MeshRenderer>(renderer)
   , dataHash(dataHash)
 {
   if (!mesh)
     return;
-  auto * device = GetRenderer().GetDrawTool().GetDevice();
+  auto * device = GetRenderer().GetDrawTool().GetGPU().GetDevice();
 
   commands = mesh->GetPartsDescription();
   // create the vertex buffer
@@ -125,8 +128,9 @@ MeshRenderer::StaticMeshGpuCache::StaticMeshGpuCache(MeshRenderer & renderer,
     bufferInfo.size = verticesSize;
     bufferInfo.usage = SDL_GPU_BUFFERUSAGE_VERTEX;
     vertices = SDL_CreateGPUBuffer(device, &bufferInfo);
-    GetRenderer().GetDrawTool().GetUploader().UploadBuffer(vertices, 0, meshVertices.data(),
-                                                           verticesSize);
+    GetRenderer().GetDrawTool().GetGPU().GetUploader().UploadBuffer(vertices, 0,
+                                                                    meshVertices.data(),
+                                                                    verticesSize);
   }
 
   // create the index buffer
@@ -137,14 +141,14 @@ MeshRenderer::StaticMeshGpuCache::StaticMeshGpuCache(MeshRenderer & renderer,
     bufferInfo.size = indicesSize;
     bufferInfo.usage = SDL_GPU_BUFFERUSAGE_INDEX;
     indices = SDL_CreateGPUBuffer(device, &bufferInfo);
-    GetRenderer().GetDrawTool().GetUploader().UploadBuffer(indices, 0, meshIndices.data(),
-                                                           indicesSize);
+    GetRenderer().GetDrawTool().GetGPU().GetUploader().UploadBuffer(indices, 0, meshIndices.data(),
+                                                                    indicesSize);
   }
 }
 
 MeshRenderer::StaticMeshGpuCache::~StaticMeshGpuCache()
 {
-  auto * device = GetRenderer().GetDrawTool().GetDevice();
+  auto * device = GetRenderer().GetDrawTool().GetGPU().GetDevice();
   SDL_ReleaseGPUBuffer(device, vertices);
   SDL_ReleaseGPUBuffer(device, indices);
 }

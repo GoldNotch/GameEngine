@@ -10,8 +10,6 @@
 #include <assimp/scene.h>       // Output data structure
 #include <GameFramework.hpp>
 
-#include "StaticMesh.hpp"
-
 namespace
 {
 glm::vec3 FromAssimpVector(const aiVector3f & v) noexcept
@@ -30,7 +28,7 @@ glm::mat4 FromAssimpMatrix(const aiMatrix4x4 & m) noexcept
 namespace GameFramework
 {
 
-struct StaticMeshResource final : public IStaticMeshResouce
+struct StaticMeshResource final : public IStaticMeshResource
 {
   friend struct StaticMeshIndexIterator;
 
@@ -164,7 +162,7 @@ void StaticMeshResource::ProcessMeshParts(
     ProcessMeshParts(root->mChildren[i], meshesDescription);
 }
 
-std::unique_ptr<IStaticMeshResouce> CreateStaticMeshResource(const std::filesystem::path & path)
+std::unique_ptr<IStaticMeshResource> CreateStaticMeshResource(const std::filesystem::path & path)
 {
   return std::make_unique<StaticMeshResource>(path);
 }

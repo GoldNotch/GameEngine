@@ -3,6 +3,8 @@
 #include <memory>
 #include <stdexcept>
 
+#include <SDL/Rendering/ConnectionGPU.hpp>
+
 namespace GameFramework
 {
 
@@ -13,7 +15,7 @@ Window_SDL::Window_SDL(const char * title, int width, int height)
   if (!m_window)
     throw std::runtime_error("Failed to create window");
 
-  m_drawTool = std::make_unique<DrawTool_SDL>(m_window);
+  m_drawTool = std::make_unique<DrawTool_SDL>(GpuConnection(), m_window);
 }
 
 Window_SDL::~Window_SDL()
@@ -27,7 +29,9 @@ void Window_SDL::RenderFrame()
 {
   if (m_boundGame)
   {
-    m_boundGame->GetGame().Render(*m_drawTool);
+    int w, h;
+    SDL_GetWindowSize(m_window, &w, &h);
+    m_boundGame->GetGame().Render({w, h}, *m_drawTool);
     m_drawTool->Finish();
   }
 }

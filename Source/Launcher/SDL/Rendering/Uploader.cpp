@@ -1,11 +1,11 @@
 #include "Uploader.hpp"
 
-#include "DrawTool.hpp"
+#include "ConnectionGPU.hpp"
 
 namespace GameFramework
 {
-Uploader::Uploader(DrawTool_SDL & drawTool)
-  : OwnedBy<DrawTool_SDL>(drawTool)
+Uploader::Uploader(ConnectionGPU & connection)
+  : OwnedBy<ConnectionGPU>(connection)
 {
 }
 
@@ -16,7 +16,7 @@ Uploader::~Uploader()
 
 void Uploader::SubmitAndUpload()
 {
-  auto * device = GetDrawTool().GetDevice();
+  auto * device = GetGPU().GetDevice();
 
   SDL_GPUCommandBuffer * commandBuffer = SDL_AcquireGPUCommandBuffer(device);
   SDL_GPUCopyPass * copyPass = SDL_BeginGPUCopyPass(commandBuffer);
@@ -37,13 +37,15 @@ void Uploader::SubmitAndUpload()
 void Uploader::UploadBuffer(SDL_GPUBuffer * dstBuffer, size_t offset, const void * srcData,
                             size_t size)
 {
-  auto * device = GetDrawTool().GetDevice();
+  auto * device = GetGPU().GetDevice();
 
   // create a transfer buffer to upload to the buffer
   SDL_GPUTransferBufferCreateInfo transferInfo{};
   transferInfo.size = static_cast<uint32_t>(size);
   transferInfo.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
   SDL_GPUTransferBuffer * transferBuffer = SDL_CreateGPUTransferBuffer(device, &transferInfo);
+  if (!transferBuffer)
+    throw std::runtime_error("Failed to create a transfer buffer");
   //TODO: make a pool of TransferBuffers
 
   // map the transfer buffer to a pointer
@@ -67,7 +69,7 @@ void Uploader::UploadBuffer(SDL_GPUBuffer * dstBuffer, size_t offset, const void
 
 void Uploader::UploadBuffer(SDL_GPUBuffer * dstBuffer, size_t offset, size_t size, FillFunc && fill)
 {
-  auto * device = GetDrawTool().GetDevice();
+  auto * device = GetGPU().GetDevice();
 
   // create a transfer buffer to upload to the buffer
   SDL_GPUTransferBufferCreateInfo transferInfo{};
@@ -96,7 +98,7 @@ void Uploader::UploadBuffer(SDL_GPUBuffer * dstBuffer, size_t offset, size_t siz
 
 void Uploader::FreeTransferBuffers()
 {
-  auto * device = GetDrawTool().GetDevice();
+  auto * device = GetGPU().GetDevice();
   //TODO: make a pool of TransferBuffers
   for (auto && [location, region] : m_uploadTasks)
   {

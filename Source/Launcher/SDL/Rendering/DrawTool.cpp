@@ -3,22 +3,19 @@
 #include <stdexcept>
 
 #include <Core/Formatter.hpp>
+#include <SDL/Rendering/ConnectionGPU.hpp>
 
 namespace GameFramework
 {
 
-DrawTool_SDL::DrawTool_SDL(SDL_Window * wnd)
-  : m_window(wnd)
+DrawTool_SDL::DrawTool_SDL(ConnectionGPU & gpu, SDL_Window * wnd)
+  : OwnedBy<ConnectionGPU>(gpu)
+  , m_window(wnd)
 {
-  m_gpu = SDL_CreateGPUDevice(SDL_GPU_SHADERFORMAT_SPIRV | SDL_GPU_SHADERFORMAT_MSL, true, NULL);
-  if (!m_gpu)
-    throw std::runtime_error("Failed to connect to GPU");
-
-  SDL_ClaimWindowForGPUDevice(m_gpu, m_window);
+  SDL_ClaimWindowForGPUDevice(GetGPU().GetDevice(), m_window);
 
 
-  SDL_GPUTextureFormat format = SDL_GetGPUSwapchainTextureFormat(m_gpu, m_window);
-  m_uploader = std::make_unique<Uploader>(*this);
+  SDL_GPUTextureFormat format = SDL_GetGPUSwapchainTextureFormat(GetGPU().GetDevice(), m_window);
   m_quadRenderer = std::make_unique<QuadRenderer>(*this, format);
   m_meshRenderer = std::make_unique<MeshRenderer>(*this, format);
 }
@@ -28,13 +25,8 @@ DrawTool_SDL::~DrawTool_SDL()
 {
   m_meshRenderer.reset();
   m_quadRenderer.reset();
-  m_uploader.reset();
   // destroy the GPU device
-  SDL_DestroyGPUDevice(m_gpu);
-}
-
-void DrawTool_SDL::Flush()
-{
+  SDL_DestroyGPUDevice(GetGPU().GetDevice());
 }
 
 
@@ -42,10 +34,10 @@ void DrawTool_SDL::Finish()
 {
   m_meshRenderer->UploadToGPU();
   m_quadRenderer->UploadToGPU();
-  m_uploader->SubmitAndUpload();
+  GetGPU().GetUploader().SubmitAndUpload();
 
   //acquire the command buffer
-  SDL_GPUCommandBuffer * commandBuffer = SDL_AcquireGPUCommandBuffer(m_gpu);
+  SDL_GPUCommandBuffer * commandBuffer = SDL_AcquireGPUCommandBuffer(GetGPU().GetDevice());
 
   // get the swapchain texture
   SDL_GPUTexture * swapchainTexture;
@@ -78,59 +70,8 @@ void DrawTool_SDL::Finish()
   SDL_SubmitGPUCommandBuffer(commandBuffer);
 }
 
-SDL_GPUDevice * DrawTool_SDL::GetDevice() const noexcept
-{
-  return m_gpu;
-}
 
-Uploader & DrawTool_SDL::GetUploader() & noexcept
-{
-  return *m_uploader;
-}
-
-SDL_GPUShader * DrawTool_SDL::BuildSpirVShader(const std::filesystem::path & path,
-                                               SDL_GPUShaderStage stage, uint32_t numSamplers,
-                                               uint32_t numUniforms, uint32_t numSSBO,
-                                               uint32_t numSSTO) const
-{
-  // load the vertex shader code
-  size_t codeSize = 0;
-  std::filesystem::path shaderPath{".shaders"};
-  shaderPath /= path;
-  if (shaderPath.extension() == ".vert")
-    shaderPath.replace_extension("_vert.spv");
-  if (shaderPath.extension() == ".frag")
-    shaderPath.replace_extension("_frag.spv");
-  if (shaderPath.extension() == ".geom")
-    shaderPath.replace_extension("_geom.spv");
-
-  void * code = SDL_LoadFile(shaderPath.string().c_str(), &codeSize);
-  if (!code)
-  {
-    throw std::runtime_error(Formatter() << "Failed to load a shader file - " << SDL_GetError());
-  }
-  // create the vertex shader
-  SDL_GPUShaderCreateInfo info{};
-  info.code = (Uint8 *)code; //convert to an array of bytes
-  info.code_size = codeSize;
-  info.entrypoint = "main";
-  info.format = SDL_GPU_SHADERFORMAT_SPIRV; // loading .spv shaders
-  info.stage = stage;
-  info.num_samplers = numSamplers;
-  info.num_storage_buffers = numSSBO;
-  info.num_storage_textures = numSSTO;
-  info.num_uniform_buffers = numUniforms;
-  SDL_GPUShader * result = SDL_CreateGPUShader(m_gpu, &info);
-  if (!code)
-  {
-    throw std::runtime_error(Formatter() << "Failed to build a shader - " << SDL_GetError());
-  }
-  // free the file
-  SDL_free(code);
-  return result;
-}
-
-void DrawTool_SDL::SetClearColor(const std::array<float, 4> & color)
+void DrawTool_SDL::SetClearColor(const glm::vec4 & color)
 {
   m_clearColor = color;
 }
@@ -143,7 +84,7 @@ void DrawTool_SDL::DrawRect(float left, float top, float right, float bottom)
   m_quadRenderer->PushObjectToDraw(Rect(left, top, right, bottom));
 }
 
-void DrawTool_SDL::DrawMesh(IStaticMeshResouce * mesh)
+void DrawTool_SDL::DrawMesh(IStaticMeshResource * mesh)
 {
   m_meshRenderer->PushObjectToDraw(mesh);
 }

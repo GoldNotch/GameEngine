@@ -4,6 +4,7 @@
 #include <chrono>
 #include <filesystem>
 
+
 namespace GameFramework
 {
 struct GAME_FRAMEWORK_API IResource
@@ -18,7 +19,6 @@ struct GAME_FRAMEWORK_API IResource
   /// Free resource from RAM
   virtual void Free() = 0;
 };
-
 
 GAME_FRAMEWORK_API inline size_t CalcResourceTimestamp()
 {

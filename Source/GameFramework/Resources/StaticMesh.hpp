@@ -4,13 +4,12 @@
 #include <vector>
 
 #include <glm/glm.hpp>
-
-#include "Resource.hpp"
+#include <Resources/Resource.hpp>
 
 namespace GameFramework
 {
 
-struct GAME_FRAMEWORK_API IStaticMeshResouce : public IResource
+struct GAME_FRAMEWORK_API IStaticMeshResource : public IResource
 {
   struct StaticMeshPartDescription
   {
@@ -21,12 +20,12 @@ struct GAME_FRAMEWORK_API IStaticMeshResouce : public IResource
     size_t indicesOffset = 0;
   };
 
-  virtual ~IStaticMeshResouce() = default;
+  virtual ~IStaticMeshResource() = default;
   virtual const std::vector<glm::vec3> & GetVertices() const & noexcept = 0;
   virtual const std::vector<uint32_t> & GetIndices() const & noexcept = 0;
   virtual const std::vector<StaticMeshPartDescription> & GetPartsDescription() const & noexcept = 0;
 };
 
-std::unique_ptr<IStaticMeshResouce> CreateStaticMeshResource(const std::filesystem::path & path);
+std::unique_ptr<IStaticMeshResource> CreateStaticMeshResource(const std::filesystem::path & path);
 
 } // namespace GameFramework

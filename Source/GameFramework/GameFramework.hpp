@@ -7,9 +7,8 @@
 #include <stdexcept>
 #include <string>
 
-#include <glm/glm.hpp>
-
-#include "Resources/StaticMesh.hpp"
+#include <Rendering.hpp>
+#include <Resources.hpp>
 
 namespace GameFramework
 {
@@ -38,29 +37,6 @@ inline void Log(LogMessageType type, Args &&... args)
   detail::LogImpl(type, stream.str());
 }
 
-GAME_FRAMEWORK_API IStaticMeshResouce * LoadStaticMesh(const char * path);
-
-struct GAME_FRAMEWORK_API IDrawFuncs2D
-{
-  virtual ~IDrawFuncs2D() = default;
-  virtual void DrawRect(float left, float top, float right, float bottom) = 0;
-};
-
-struct GAME_FRAMEWORK_API IDrawFuncs3D
-{
-  virtual ~IDrawFuncs3D() = default;
-  virtual void DrawMesh(IStaticMeshResouce * mesh) = 0;
-};
-
-/// Инструмент для рисования. Предоставляет высокоуровневые операции для рисования
-struct GAME_FRAMEWORK_API IDrawTool : public IDrawFuncs2D,
-                                      public IDrawFuncs3D
-{
-  virtual ~IDrawTool() = default;
-  virtual void SetClearColor(const std::array<float, 4> & color) = 0;
-  //virtual void SetViewport(float left, float top, uint32_t width, uint32_t height) = 0;
-  virtual void Flush() = 0;
-};
 
 struct GAME_FRAMEWORK_API IGame
 {
@@ -68,7 +44,7 @@ struct GAME_FRAMEWORK_API IGame
   /// process one tick of the game
   virtual void Tick(float deltaTime) = 0;
   /// Loop over game object and choose the way to render it
-  virtual void Render(IDrawTool & drawTool) = 0;
+  virtual void Render(const std::pair<int ,int> & windowSize, IDrawTool & drawTool) = 0;
 };
 
 } // namespace GameFramework

@@ -8,13 +8,13 @@
 
 namespace GameFramework
 {
-struct DrawTool_SDL;
+struct ConnectionGPU;
 
-struct Uploader : public OwnedBy<DrawTool_SDL>
+struct Uploader : public OwnedBy<ConnectionGPU>
 {
-  explicit Uploader(DrawTool_SDL & drawTool);
+  explicit Uploader(ConnectionGPU & connection);
   virtual ~Uploader() override;
-  MAKE_ALIAS_FOR_GET_OWNER(DrawTool_SDL, GetDrawTool);
+  MAKE_ALIAS_FOR_GET_OWNER(ConnectionGPU, GetGPU);
 
   void SubmitAndUpload();
 

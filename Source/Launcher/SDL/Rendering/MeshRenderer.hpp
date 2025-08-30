@@ -18,7 +18,7 @@ struct MeshRenderer final : public OwnedBy<DrawTool_SDL>
   MAKE_ALIAS_FOR_GET_OWNER(DrawTool_SDL, GetDrawTool);
 
   /// add object to draw cache
-  void PushObjectToDraw(IStaticMeshResouce * resource);
+  void PushObjectToDraw(IStaticMeshResource * resource);
 
   /// submits commands
   void RenderCache(SDL_GPURenderPass * renderPass);
@@ -31,16 +31,16 @@ private:
     size_t dataHash = 0;
     SDL_GPUBuffer * vertices = nullptr;
     SDL_GPUBuffer * indices = nullptr;
-    std::vector<IStaticMeshResouce::StaticMeshPartDescription> commands;
+    std::vector<IStaticMeshResource::StaticMeshPartDescription> commands;
     MAKE_ALIAS_FOR_GET_OWNER(MeshRenderer, GetRenderer);
 
-    explicit StaticMeshGpuCache(MeshRenderer & renderer, IStaticMeshResouce * mesh, size_t dataHash);
+    explicit StaticMeshGpuCache(MeshRenderer & renderer, IStaticMeshResource * mesh, size_t dataHash);
     ~StaticMeshGpuCache();
     StaticMeshGpuCache(StaticMeshGpuCache && rhs) noexcept;
     StaticMeshGpuCache & operator=(StaticMeshGpuCache && rhs) noexcept;
   };
 
-  std::vector<IStaticMeshResouce *> m_drawCommands;
+  std::vector<IStaticMeshResource *> m_drawCommands;
   std::unordered_map<std::filesystem::path, StaticMeshGpuCache> m_gpuCache; // GPU cache
 
   SDL_GPUGraphicsPipeline * m_pipeline;

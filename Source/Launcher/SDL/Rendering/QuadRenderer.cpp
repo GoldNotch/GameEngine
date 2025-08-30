@@ -1,5 +1,7 @@
 #include "QuadRenderer.hpp"
 
+#include <SDL/Rendering/ConnectionGPU.hpp>
+
 #include "DrawTool.hpp"
 
 namespace
@@ -13,21 +15,22 @@ namespace GameFramework
 QuadRenderer::QuadRenderer(DrawTool_SDL & drawTool, SDL_GPUTextureFormat format)
   : OwnedBy<DrawTool_SDL>(drawTool)
 {
-  auto * device = drawTool.GetDevice();
   // create the vertex buffer
   SDL_GPUBufferCreateInfo bufferInfo{};
   bufferInfo.size = c_bufferSize;
   bufferInfo.usage = SDL_GPU_BUFFERUSAGE_VERTEX;
-  m_gpuData = SDL_CreateGPUBuffer(drawTool.GetDevice(), &bufferInfo);
+  m_gpuData = SDL_CreateGPUBuffer(GetDrawTool().GetGPU().GetDevice(), &bufferInfo);
 
-  m_vertexShader = GetDrawTool().BuildSpirVShader("quad_vert.spv", SDL_GPU_SHADERSTAGE_VERTEX);
-  m_fragmentShader = GetDrawTool().BuildSpirVShader("quad_frag.spv", SDL_GPU_SHADERSTAGE_FRAGMENT);
+  m_vertexShader =
+    GetDrawTool().GetGPU().BuildSpirVShader("quad_vert.spv", SDL_GPU_SHADERSTAGE_VERTEX);
+  m_fragmentShader =
+    GetDrawTool().GetGPU().BuildSpirVShader("quad_frag.spv", SDL_GPU_SHADERSTAGE_FRAGMENT);
   CreatePipeline(format);
 }
 
 QuadRenderer::~QuadRenderer()
 {
-  auto * device = GetDrawTool().GetDevice();
+  auto * device = GetDrawTool().GetGPU().GetDevice();
   SDL_ReleaseGPUGraphicsPipeline(device, m_pipeline);
   SDL_ReleaseGPUShader(device, m_fragmentShader);
   SDL_ReleaseGPUShader(device, m_vertexShader);
@@ -72,8 +75,8 @@ void QuadRenderer::UploadToGPU()
     vertices.push_back({rect.right, rect.bottom});
   }
 
-  GetDrawTool().GetUploader().UploadBuffer(m_gpuData, 0, vertices.data(),
-                                           vertices.size() * sizeof(glm::vec2));
+  GetDrawTool().GetGPU().GetUploader().UploadBuffer(m_gpuData, 0, vertices.data(),
+                                                    vertices.size() * sizeof(glm::vec2));
 }
 
 void QuadRenderer::CreatePipeline(SDL_GPUTextureFormat format)
@@ -111,7 +114,7 @@ void QuadRenderer::CreatePipeline(SDL_GPUTextureFormat format)
   pipelineInfo.target_info.num_color_targets = 1;
   pipelineInfo.target_info.color_target_descriptions = colorTargetDescriptions;
 
-  m_pipeline = SDL_CreateGPUGraphicsPipeline(GetDrawTool().GetDevice(), &pipelineInfo);
+  m_pipeline = SDL_CreateGPUGraphicsPipeline(GetDrawTool().GetGPU().GetDevice(), &pipelineInfo);
 }
 
 } // namespace GameFramework
