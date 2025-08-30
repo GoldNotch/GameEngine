@@ -19,6 +19,8 @@ PRIVATE
 	"SDL/Window.hpp"
 	"SDL/Rendering/ConnectionGPU.hpp"
 	"SDL/Rendering/ConnectionGPU.cpp"
+	"SDL/Rendering/RenderTarget.hpp"
+	"SDL/Rendering/RenderTarget.cpp"
 	"SDL/Rendering/DrawTool.cpp"
 	"SDL/Rendering/DrawTool.hpp"
 	"SDL/Rendering/QuadRenderer.cpp"
@@ -27,7 +29,7 @@ PRIVATE
 	"SDL/Rendering/MeshRenderer.hpp"
 	"SDL/Rendering/Uploader.cpp"
 	"SDL/Rendering/Uploader.hpp"
-)
+ )
 
 target_link_libraries(${this_target}
 PRIVATE

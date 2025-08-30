@@ -7,6 +7,7 @@
 
 #include "MeshRenderer.hpp"
 #include "QuadRenderer.hpp"
+#include "RenderTarget.hpp"
 #include "Uploader.hpp"
 
 namespace GameFramework
@@ -22,6 +23,8 @@ struct DrawTool_SDL : public OwnedBy<ConnectionGPU>,
 
   void Finish();
 
+  const RenderTarget & GetRenderTarget() const & noexcept { return m_renderTarget; }
+
   //------------- IDrawTool Interface -------------
   virtual void SetClearColor(const glm::vec4 & color) override;
   virtual void SetViewport(int x, int y, int width, int height) override {};
@@ -31,6 +34,7 @@ struct DrawTool_SDL : public OwnedBy<ConnectionGPU>,
 
 private:
   SDL_Window * m_window = nullptr; ///< doesn't own
+  RenderTarget m_renderTarget;
 
   glm::vec4 m_clearColor;
 

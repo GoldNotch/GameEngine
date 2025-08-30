@@ -15,9 +15,8 @@ DrawTool_SDL::DrawTool_SDL(ConnectionGPU & gpu, SDL_Window * wnd)
   SDL_ClaimWindowForGPUDevice(GetGPU().GetDevice(), m_window);
 
 
-  SDL_GPUTextureFormat format = SDL_GetGPUSwapchainTextureFormat(GetGPU().GetDevice(), m_window);
-  m_quadRenderer = std::make_unique<QuadRenderer>(*this, format);
-  m_meshRenderer = std::make_unique<MeshRenderer>(*this, format);
+  m_quadRenderer = std::make_unique<QuadRenderer>(*this);
+  m_meshRenderer = std::make_unique<MeshRenderer>(*this);
 }
 
 
@@ -61,10 +60,12 @@ void DrawTool_SDL::Finish()
   colorTargetInfo.store_op = SDL_GPU_STOREOP_STORE;
   colorTargetInfo.texture = swapchainTexture;
 
-  SDL_GPURenderPass * renderPass = SDL_BeginGPURenderPass(commandBuffer, &colorTargetInfo, 1, NULL);
-  m_quadRenderer->RenderCache(renderPass);
-  //m_meshRenderer->RenderCache(renderPass);
-  SDL_EndGPURenderPass(renderPass);
+  SDL_GPUColorTargetDescription description{};
+  description.format = SDL_GetGPUSwapchainTextureFormat(GetGPU().GetDevice(), m_window);
+  m_renderTarget.SetColorAttachment(0, colorTargetInfo, description);
+
+  m_quadRenderer->RenderCache(commandBuffer);
+  //m_meshRenderer->RenderCache(commandBuffer);
 
   // submit the command buffer
   SDL_SubmitGPUCommandBuffer(commandBuffer);

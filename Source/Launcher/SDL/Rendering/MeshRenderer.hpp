@@ -13,7 +13,7 @@ class StaticMeshResource;
 
 struct MeshRenderer final : public OwnedBy<DrawTool_SDL>
 {
-  explicit MeshRenderer(DrawTool_SDL & drawTool, SDL_GPUTextureFormat format);
+  explicit MeshRenderer(DrawTool_SDL & drawTool);
   ~MeshRenderer();
   MAKE_ALIAS_FOR_GET_OWNER(DrawTool_SDL, GetDrawTool);
 
@@ -21,7 +21,7 @@ struct MeshRenderer final : public OwnedBy<DrawTool_SDL>
   void PushObjectToDraw(IStaticMeshResource * resource);
 
   /// submits commands
-  void RenderCache(SDL_GPURenderPass * renderPass);
+  void RenderCache(SDL_GPUCommandBuffer * cmdBuf);
 
   void UploadToGPU();
 
@@ -34,7 +34,8 @@ private:
     std::vector<IStaticMeshResource::StaticMeshPartDescription> commands;
     MAKE_ALIAS_FOR_GET_OWNER(MeshRenderer, GetRenderer);
 
-    explicit StaticMeshGpuCache(MeshRenderer & renderer, IStaticMeshResource * mesh, size_t dataHash);
+    explicit StaticMeshGpuCache(MeshRenderer & renderer, IStaticMeshResource * mesh,
+                                size_t dataHash);
     ~StaticMeshGpuCache();
     StaticMeshGpuCache(StaticMeshGpuCache && rhs) noexcept;
     StaticMeshGpuCache & operator=(StaticMeshGpuCache && rhs) noexcept;
@@ -43,11 +44,11 @@ private:
   std::vector<IStaticMeshResource *> m_drawCommands;
   std::unordered_map<std::filesystem::path, StaticMeshGpuCache> m_gpuCache; // GPU cache
 
-  SDL_GPUGraphicsPipeline * m_pipeline;
+  SDL_GPUGraphicsPipeline * m_pipeline = nullptr;
   SDL_GPUShader * m_vertexShader;
   SDL_GPUShader * m_fragmentShader;
 
 private:
-  void CreatePipeline(SDL_GPUTextureFormat format);
+  void InvalidatePipeline();
 };
 } // namespace GameFramework

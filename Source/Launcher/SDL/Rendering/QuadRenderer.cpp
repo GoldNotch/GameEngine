@@ -1,6 +1,7 @@
 #include "QuadRenderer.hpp"
 
 #include <SDL/Rendering/ConnectionGPU.hpp>
+#include <SDL/Rendering/RenderTarget.hpp>
 
 #include "DrawTool.hpp"
 
@@ -12,7 +13,7 @@ constexpr Uint32 c_bufferSize = 1024;
 namespace GameFramework
 {
 
-QuadRenderer::QuadRenderer(DrawTool_SDL & drawTool, SDL_GPUTextureFormat format)
+QuadRenderer::QuadRenderer(DrawTool_SDL & drawTool)
   : OwnedBy<DrawTool_SDL>(drawTool)
 {
   // create the vertex buffer
@@ -25,7 +26,6 @@ QuadRenderer::QuadRenderer(DrawTool_SDL & drawTool, SDL_GPUTextureFormat format)
     GetDrawTool().GetGPU().BuildSpirVShader("quad_vert.spv", SDL_GPU_SHADERSTAGE_VERTEX);
   m_fragmentShader =
     GetDrawTool().GetGPU().BuildSpirVShader("quad_frag.spv", SDL_GPU_SHADERSTAGE_FRAGMENT);
-  CreatePipeline(format);
 }
 
 QuadRenderer::~QuadRenderer()
@@ -42,20 +42,22 @@ void QuadRenderer::PushObjectToDraw(const Rect & rect)
   m_rectsToDraw.push_back(rect);
 }
 
-void QuadRenderer::RenderCache(SDL_GPURenderPass * renderPass)
+void QuadRenderer::RenderCache(SDL_GPUCommandBuffer * cmdBuf)
 {
-  SDL_BindGPUGraphicsPipeline(renderPass, m_pipeline);
+  InvalidatePipeline();
+  auto && renderTarget = GetDrawTool().GetRenderTarget();
+  auto renderPass = renderTarget.CreateRenderPass(cmdBuf);
+  SDL_BindGPUGraphicsPipeline(renderPass.get(), m_pipeline);
 
   // bind the vertex buffer
   SDL_GPUBufferBinding bufferBindings[1];
   bufferBindings[0].buffer = m_gpuData; // index 0 is slot 0 in this example
   bufferBindings[0].offset = 0;         // start from the first byte
-  SDL_BindGPUVertexBuffers(renderPass, 0, bufferBindings,
+  SDL_BindGPUVertexBuffers(renderPass.get(), 0, bufferBindings,
                            1); // bind one buffer starting from slot 0
 
   // issue a draw call
-  SDL_DrawGPUPrimitives(renderPass, m_rectsToDraw.size() * 2 * 3, 1, 0, 0);
-
+  SDL_DrawGPUPrimitives(renderPass.get(), m_rectsToDraw.size() * 2 * 3, 1, 0, 0);
   m_rectsToDraw.clear();
 }
 
@@ -79,42 +81,47 @@ void QuadRenderer::UploadToGPU()
                                                     vertices.size() * sizeof(glm::vec2));
 }
 
-void QuadRenderer::CreatePipeline(SDL_GPUTextureFormat format)
+void QuadRenderer::InvalidatePipeline()
 {
-  SDL_GPUGraphicsPipelineCreateInfo pipelineInfo{};
-  // bind shaders
-  pipelineInfo.vertex_shader = m_vertexShader;
-  pipelineInfo.fragment_shader = m_fragmentShader;
-  // draw triangles
-  pipelineInfo.primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST;
+  auto && renderTarget = GetDrawTool().GetRenderTarget();
+  if (!m_pipeline || renderTarget.ShouldRebuildPipelines())
+  {
+    if (m_pipeline)
+    {
+      auto * device = GetDrawTool().GetGPU().GetDevice();
+      SDL_ReleaseGPUGraphicsPipeline(device, m_pipeline);
+    }
+    SDL_GPUGraphicsPipelineCreateInfo pipelineInfo{};
+    // bind shaders
+    pipelineInfo.vertex_shader = m_vertexShader;
+    pipelineInfo.fragment_shader = m_fragmentShader;
+    // draw triangles
+    pipelineInfo.primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST;
 
-  // describe the vertex buffers
-  SDL_GPUVertexBufferDescription vertexBufferDesctiptions[1];
-  vertexBufferDesctiptions[0].slot = 0;
-  vertexBufferDesctiptions[0].input_rate = SDL_GPU_VERTEXINPUTRATE_VERTEX;
-  vertexBufferDesctiptions[0].instance_step_rate = 0;
-  vertexBufferDesctiptions[0].pitch = sizeof(glm::vec2);
-  pipelineInfo.vertex_input_state.num_vertex_buffers = 1;
-  pipelineInfo.vertex_input_state.vertex_buffer_descriptions = vertexBufferDesctiptions;
+    // describe the vertex buffers
+    SDL_GPUVertexBufferDescription vertexBufferDesctiptions[1];
+    vertexBufferDesctiptions[0].slot = 0;
+    vertexBufferDesctiptions[0].input_rate = SDL_GPU_VERTEXINPUTRATE_VERTEX;
+    vertexBufferDesctiptions[0].instance_step_rate = 0;
+    vertexBufferDesctiptions[0].pitch = sizeof(glm::vec2);
+    pipelineInfo.vertex_input_state.num_vertex_buffers = 1;
+    pipelineInfo.vertex_input_state.vertex_buffer_descriptions = vertexBufferDesctiptions;
 
-  // describe the vertex attribute
-  SDL_GPUVertexAttribute vertexAttributes[1];
-  // a_position
-  vertexAttributes[0].buffer_slot = 0; // fetch data from the buffer at slot 0
-  vertexAttributes[0].location = 0;    // layout (location = 0) in shader
-  vertexAttributes[0].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2; //vec2
-  vertexAttributes[0].offset = 0; // start from the first byte from current buffer position
-  pipelineInfo.vertex_input_state.num_vertex_attributes = 1;
-  pipelineInfo.vertex_input_state.vertex_attributes = vertexAttributes;
+    // describe the vertex attribute
+    SDL_GPUVertexAttribute vertexAttributes[1];
+    // a_position
+    vertexAttributes[0].buffer_slot = 0; // fetch data from the buffer at slot 0
+    vertexAttributes[0].location = 0;    // layout (location = 0) in shader
+    vertexAttributes[0].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2; //vec2
+    vertexAttributes[0].offset = 0; // start from the first byte from current buffer position
+    pipelineInfo.vertex_input_state.num_vertex_attributes = 1;
+    pipelineInfo.vertex_input_state.vertex_attributes = vertexAttributes;
 
-  // describe the color target
-  SDL_GPUColorTargetDescription colorTargetDescriptions[1];
-  colorTargetDescriptions[0] = {};
-  colorTargetDescriptions[0].format = format;
-  pipelineInfo.target_info.num_color_targets = 1;
-  pipelineInfo.target_info.color_target_descriptions = colorTargetDescriptions;
+    // describe the color targets
+    pipelineInfo.target_info = renderTarget.GetTargetsInfo();
 
-  m_pipeline = SDL_CreateGPUGraphicsPipeline(GetDrawTool().GetGPU().GetDevice(), &pipelineInfo);
+    m_pipeline = SDL_CreateGPUGraphicsPipeline(GetDrawTool().GetGPU().GetDevice(), &pipelineInfo);
+  }
 }
 
 } // namespace GameFramework
