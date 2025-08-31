@@ -8,13 +8,9 @@
 namespace GameFramework
 {
 
-DrawTool_SDL::DrawTool_SDL(ConnectionGPU & gpu, SDL_Window * wnd)
+DrawTool_SDL::DrawTool_SDL(ConnectionGPU & gpu)
   : OwnedBy<ConnectionGPU>(gpu)
-  , m_window(wnd)
 {
-  SDL_ClaimWindowForGPUDevice(GetGPU().GetDevice(), m_window);
-
-
   m_quadRenderer = std::make_unique<QuadRenderer>(*this);
   m_meshRenderer = std::make_unique<MeshRenderer>(*this);
 }
@@ -31,46 +27,22 @@ DrawTool_SDL::~DrawTool_SDL()
 
 void DrawTool_SDL::Finish()
 {
-  m_meshRenderer->UploadToGPU();
-  m_quadRenderer->UploadToGPU();
-  GetGPU().GetUploader().SubmitAndUpload();
-
-  //acquire the command buffer
-  SDL_GPUCommandBuffer * commandBuffer = SDL_AcquireGPUCommandBuffer(GetGPU().GetDevice());
-
-  // get the swapchain texture
-  SDL_GPUTexture * swapchainTexture;
-  Uint32 width, height;
-  SDL_WaitAndAcquireGPUSwapchainTexture(commandBuffer, m_window, &swapchainTexture, &width,
-                                        &height);
-
-  // end the frame early if a swapchain texture is not available
-  if (swapchainTexture == NULL)
+  if (m_renderTarget.GetCommandBuffer())
   {
-    // you must always submit the command buffer
-    SDL_SubmitGPUCommandBuffer(commandBuffer);
-    return;
+    m_meshRenderer->UploadToGPU();
+    m_quadRenderer->UploadToGPU();
+    GetGPU().GetUploader().SubmitAndUpload();
+
+    m_quadRenderer->RenderCache(m_renderTarget.GetCommandBuffer());
+    //m_meshRenderer->RenderCache(commandBuffer);
   }
-
-  // create the color target
-  SDL_GPUColorTargetInfo colorTargetInfo{};
-  colorTargetInfo.clear_color = {m_clearColor[0], m_clearColor[1], m_clearColor[2],
-                                 m_clearColor[3]};
-  colorTargetInfo.load_op = SDL_GPU_LOADOP_CLEAR;
-  colorTargetInfo.store_op = SDL_GPU_STOREOP_STORE;
-  colorTargetInfo.texture = swapchainTexture;
-
-  SDL_GPUColorTargetDescription description{};
-  description.format = SDL_GetGPUSwapchainTextureFormat(GetGPU().GetDevice(), m_window);
-  m_renderTarget.SetColorAttachment(0, colorTargetInfo, description);
-
-  m_quadRenderer->RenderCache(commandBuffer);
-  //m_meshRenderer->RenderCache(commandBuffer);
-
-  // submit the command buffer
-  SDL_SubmitGPUCommandBuffer(commandBuffer);
 }
 
+
+RenderTarget DrawTool_SDL::ExchangeRenderTarget(RenderTarget && rt) noexcept
+{
+  return std::exchange(m_renderTarget, std::move(rt));
+}
 
 void DrawTool_SDL::SetClearColor(const glm::vec4 & color)
 {
@@ -88,6 +60,51 @@ void DrawTool_SDL::DrawRect(float left, float top, float right, float bottom)
 void DrawTool_SDL::DrawMesh(IStaticMeshResource * mesh)
 {
   m_meshRenderer->PushObjectToDraw(mesh);
+}
+
+WindowDC_SDL::WindowDC_SDL(DrawTool_SDL & drawTool, SDL_Window * window)
+  : OwnedBy<DrawTool_SDL>(drawTool)
+  , m_window(window)
+{
+  SDL_ClaimWindowForGPUDevice(GetDrawTool().GetGPU().GetDevice(), m_window);
+}
+
+WindowDC_SDL::~WindowDC_SDL() = default;
+
+bool WindowDC_SDL::AcquireBuffer()
+{
+  RenderTarget rt(GetDrawTool().GetGPU().GetDevice());
+
+  // get the swapchain texture
+  SDL_GPUTexture * swapchainTexture;
+  Uint32 width, height;
+  SDL_WaitAndAcquireGPUSwapchainTexture(rt.GetCommandBuffer(), m_window, &swapchainTexture, &width,
+                                        &height);
+
+  // end the frame early if a swapchain texture is not available
+  if (swapchainTexture == NULL)
+  {
+    return false;
+  }
+
+  // create the color target
+  SDL_GPUColorTargetInfo colorTargetInfo{};
+  auto clearColor = GetDrawTool().GetClearColor();
+  colorTargetInfo.clear_color = {clearColor.r, clearColor.g, clearColor.b, clearColor.a};
+  colorTargetInfo.load_op = SDL_GPU_LOADOP_CLEAR;
+  colorTargetInfo.store_op = SDL_GPU_STOREOP_STORE;
+  colorTargetInfo.texture = swapchainTexture;
+
+  SDL_GPUColorTargetDescription description{};
+  description.format =
+    SDL_GetGPUSwapchainTextureFormat(GetDrawTool().GetGPU().GetDevice(), m_window);
+  rt.SetColorAttachment(0, colorTargetInfo, description);
+  m_oldRt = GetDrawTool().ExchangeRenderTarget(std::move(rt));
+}
+
+void WindowDC_SDL::SubmitBuffer()
+{
+  RenderTarget rt = GetDrawTool().ExchangeRenderTarget(std::move(m_oldRt));
 }
 
 } // namespace GameFramework

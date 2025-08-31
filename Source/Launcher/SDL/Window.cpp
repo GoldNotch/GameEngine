@@ -15,7 +15,8 @@ Window_SDL::Window_SDL(const char * title, int width, int height)
   if (!m_window)
     throw std::runtime_error("Failed to create window");
 
-  m_drawTool = std::make_unique<DrawTool_SDL>(GpuConnection(), m_window);
+  m_drawTool = std::make_unique<DrawTool_SDL>(GpuConnection());
+  m_dc = std::make_unique<WindowDC_SDL>(*m_drawTool, m_window);
 }
 
 Window_SDL::~Window_SDL()
@@ -31,8 +32,12 @@ void Window_SDL::RenderFrame()
   {
     int w, h;
     SDL_GetWindowSize(m_window, &w, &h);
-    m_boundGame->GetGame().Render({w, h}, *m_drawTool);
-    m_drawTool->Finish();
+    if (m_dc->AcquireBuffer())
+    {
+      m_boundGame->GetGame().Render({w, h}, *m_drawTool);
+      m_drawTool->Finish();
+      m_dc->SubmitBuffer();
+    }
   }
 }
 

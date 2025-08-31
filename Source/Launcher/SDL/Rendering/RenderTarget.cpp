@@ -1,7 +1,45 @@
 #include "RenderTarget.hpp"
 
+#include <SDL/Rendering/ConnectionGPU.hpp>
+#include <SDL/Rendering/DrawTool.hpp>
+
 namespace GameFramework
 {
+
+RenderTarget::RenderTarget(SDL_GPUDevice * device)
+{
+  //acquire the command buffer
+  m_commandBuffer = SDL_AcquireGPUCommandBuffer(device);
+}
+
+RenderTarget::RenderTarget(RenderTarget && rhs) noexcept
+{
+  std::swap(m_commandBuffer, rhs.m_commandBuffer);
+  std::swap(m_colorTargetsInfo, rhs.m_colorTargetsInfo);
+  std::swap(m_colorTargetsDescription, rhs.m_colorTargetsDescription);
+  std::swap(m_depthStencilFormat, rhs.m_depthStencilFormat);
+  std::swap(m_depthStencilTargetInfo, rhs.m_depthStencilTargetInfo);
+}
+
+RenderTarget & RenderTarget::operator=(RenderTarget && rhs) noexcept
+{
+  if (this != &rhs)
+  {
+    std::swap(m_commandBuffer, rhs.m_commandBuffer);
+    std::swap(m_colorTargetsInfo, rhs.m_colorTargetsInfo);
+    std::swap(m_colorTargetsDescription, rhs.m_colorTargetsDescription);
+    std::swap(m_depthStencilFormat, rhs.m_depthStencilFormat);
+    std::swap(m_depthStencilTargetInfo, rhs.m_depthStencilTargetInfo);
+  }
+  return *this;
+}
+
+RenderTarget::~RenderTarget()
+{
+  // you must always submit the command buffer
+  SDL_SubmitGPUCommandBuffer(m_commandBuffer);
+}
+
 void RenderTarget::SetColorAttachment(uint32_t index, const SDL_GPUColorTargetInfo & info,
                                       SDL_GPUColorTargetDescription & description)
 {
@@ -12,7 +50,6 @@ void RenderTarget::SetColorAttachment(uint32_t index, const SDL_GPUColorTargetIn
 
   m_colorTargetsInfo[index] = info;
   m_colorTargetsDescription[index] = description;
-  m_changed = true;
 }
 
 void RenderTarget::SetDepthStencilAttachment(const SDL_GPUDepthStencilTargetInfo * info,
@@ -28,7 +65,6 @@ void RenderTarget::SetDepthStencilAttachment(const SDL_GPUDepthStencilTargetInfo
     m_depthStencilTargetInfo.reset();
     m_depthStencilFormat = SDL_GPUTextureFormat::SDL_GPU_TEXTUREFORMAT_INVALID;
   }
-  m_changed = true;
 }
 
 
@@ -45,17 +81,11 @@ SDL_GPUGraphicsPipelineTargetInfo RenderTarget::GetTargetsInfo() const
 std::unique_ptr<SDL_GPURenderPass, RenderTarget::RenderPassDeleter> RenderTarget::CreateRenderPass(
   SDL_GPUCommandBuffer * cmdBuf) const
 {
-  m_changed = false;
   SDL_GPURenderPass * renderPass =
     SDL_BeginGPURenderPass(cmdBuf, m_colorTargetsInfo.data(), m_colorTargetsInfo.size(),
                            m_depthStencilTargetInfo.has_value() ? &m_depthStencilTargetInfo.value()
                                                                 : nullptr);
   return std::unique_ptr<SDL_GPURenderPass, RenderPassDeleter>(renderPass, SDL_EndGPURenderPass);
-}
-
-bool RenderTarget::ShouldRebuildPipelines() const
-{
-  return m_changed;
 }
 
 } // namespace GameFramework

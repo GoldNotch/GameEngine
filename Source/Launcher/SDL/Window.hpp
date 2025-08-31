@@ -12,6 +12,7 @@ class Window_SDL
 {
   SDL_Window * m_window = nullptr;
   std::unique_ptr<DrawTool_SDL> m_drawTool;
+  std::unique_ptr<WindowDC_SDL> m_dc;
   GameInstance * m_boundGame = nullptr; ///< doesn't own
 
 public:

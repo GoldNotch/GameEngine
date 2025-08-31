@@ -30,3 +30,13 @@ private:
 ConnectionGPU & GpuConnection();
 
 } // namespace GameFramework
+
+inline bool operator==(const SDL_GPUGraphicsPipelineTargetInfo & l,
+                       const SDL_GPUGraphicsPipelineTargetInfo & r) noexcept
+{
+  return l.num_color_targets == r.num_color_targets &&
+         l.depth_stencil_format == r.depth_stencil_format &&
+         l.has_depth_stencil_target == r.has_depth_stencil_target &&
+         std::memcmp(l.color_target_descriptions, r.color_target_descriptions,
+                     l.num_color_targets * sizeof(SDL_GPUColorTargetDescription));
+}

@@ -32,6 +32,7 @@ private:
   std::vector<Rect> m_rectsToDraw; // CPU cache
 
   SDL_GPUGraphicsPipeline * m_pipeline = nullptr;
+  SDL_GPUGraphicsPipelineTargetInfo m_cachedPipelineTargetsInfo;
   SDL_GPUBuffer * m_gpuData; // GPU cache
 
   SDL_GPUShader * m_vertexShader;

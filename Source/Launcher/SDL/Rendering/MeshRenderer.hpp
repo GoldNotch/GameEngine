@@ -45,6 +45,7 @@ private:
   std::unordered_map<std::filesystem::path, StaticMeshGpuCache> m_gpuCache; // GPU cache
 
   SDL_GPUGraphicsPipeline * m_pipeline = nullptr;
+  SDL_GPUGraphicsPipelineTargetInfo m_cachedPipelineTargetsInfo;
   SDL_GPUShader * m_vertexShader;
   SDL_GPUShader * m_fragmentShader;
 

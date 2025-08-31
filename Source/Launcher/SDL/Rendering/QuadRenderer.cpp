@@ -84,7 +84,7 @@ void QuadRenderer::UploadToGPU()
 void QuadRenderer::InvalidatePipeline()
 {
   auto && renderTarget = GetDrawTool().GetRenderTarget();
-  if (!m_pipeline || renderTarget.ShouldRebuildPipelines())
+  if (!m_pipeline || renderTarget.GetTargetsInfo() != m_cachedPipelineTargetsInfo)
   {
     if (m_pipeline)
     {
@@ -118,8 +118,7 @@ void QuadRenderer::InvalidatePipeline()
     pipelineInfo.vertex_input_state.vertex_attributes = vertexAttributes;
 
     // describe the color targets
-    pipelineInfo.target_info = renderTarget.GetTargetsInfo();
-
+    pipelineInfo.target_info = m_cachedPipelineTargetsInfo = renderTarget.GetTargetsInfo();
     m_pipeline = SDL_CreateGPUGraphicsPipeline(GetDrawTool().GetGPU().GetDevice(), &pipelineInfo);
   }
 }
