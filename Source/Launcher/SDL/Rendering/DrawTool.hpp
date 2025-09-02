@@ -23,10 +23,9 @@ struct DrawTool_SDL : public OwnedBy<ConnectionGPU>,
 
   void Finish();
 
-  const RenderTarget & GetRenderTarget() const & noexcept { return m_renderTarget; }
+  const RenderTarget * GetRenderTarget() const noexcept { return m_renderTarget; }
   const glm::vec4 & GetClearColor() const & noexcept { return m_clearColor; }
-
-  RenderTarget ExchangeRenderTarget(RenderTarget && rt) noexcept;
+  const RenderTarget * ExchangeRenderTarget(const RenderTarget * rt) noexcept;
 
   //------------- IDrawTool Interface -------------
   virtual void SetClearColor(const glm::vec4 & color) override;
@@ -36,7 +35,7 @@ struct DrawTool_SDL : public OwnedBy<ConnectionGPU>,
   virtual void DrawMesh(IStaticMeshResource * mesh) override;
 
 private:
-  RenderTarget m_renderTarget;
+  const RenderTarget * m_renderTarget = nullptr;
 
   glm::vec4 m_clearColor;
 
@@ -55,6 +54,7 @@ struct WindowDC_SDL final : public OwnedBy<DrawTool_SDL>
 
 private:
   SDL_Window * m_window = nullptr; ///< doesn't own
-  RenderTarget m_oldRt;
+  RenderTarget m_target;
+  const RenderTarget * m_oldRt = nullptr;
 };
 } // namespace GameFramework

@@ -31,12 +31,22 @@ ConnectionGPU & GpuConnection();
 
 } // namespace GameFramework
 
+inline bool operator==(const SDL_GPUColorTargetDescription & l,
+                       const SDL_GPUColorTargetDescription & r) noexcept
+{
+  return std::memcmp(&l.blend_state, &r.blend_state, sizeof(SDL_GPUColorTargetBlendState)) == 0 &&
+         l.format == r.format;
+}
+
 inline bool operator==(const SDL_GPUGraphicsPipelineTargetInfo & l,
                        const SDL_GPUGraphicsPipelineTargetInfo & r) noexcept
 {
-  return l.num_color_targets == r.num_color_targets &&
-         l.depth_stencil_format == r.depth_stencil_format &&
-         l.has_depth_stencil_target == r.has_depth_stencil_target &&
-         std::memcmp(l.color_target_descriptions, r.color_target_descriptions,
-                     l.num_color_targets * sizeof(SDL_GPUColorTargetDescription));
+  bool res = l.num_color_targets == r.num_color_targets &&
+             l.depth_stencil_format == r.depth_stencil_format &&
+             l.has_depth_stencil_target == r.has_depth_stencil_target;
+  for (size_t i = 0; i < l.num_color_targets && res; ++i)
+  {
+    res = res && l.color_target_descriptions[i] == r.color_target_descriptions[i];
+  }
+  return res;
 }

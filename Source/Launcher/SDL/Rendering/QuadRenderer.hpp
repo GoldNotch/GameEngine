@@ -8,6 +8,7 @@
 namespace GameFramework
 {
 struct DrawTool_SDL;
+struct RenderTarget;
 
 struct Rect
 {
@@ -24,21 +25,17 @@ struct QuadRenderer final : public OwnedBy<DrawTool_SDL>
   void PushObjectToDraw(const Rect & rect);
 
   /// submits commands
-  void RenderCache(SDL_GPUCommandBuffer * cmdBuf);
-
+  void RenderCache(const RenderTarget & renderTarget);
+  void RebuildPipeline(const RenderTarget & renderTarget);
   void UploadToGPU();
 
 private:
   std::vector<Rect> m_rectsToDraw; // CPU cache
 
   SDL_GPUGraphicsPipeline * m_pipeline = nullptr;
-  SDL_GPUGraphicsPipelineTargetInfo m_cachedPipelineTargetsInfo;
   SDL_GPUBuffer * m_gpuData; // GPU cache
 
   SDL_GPUShader * m_vertexShader;
   SDL_GPUShader * m_fragmentShader;
-
-private:
-  void InvalidatePipeline();
 };
 } // namespace GameFramework

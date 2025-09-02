@@ -11,15 +11,10 @@ namespace GameFramework
 {
 struct WindowDC_SDL;
 
-struct RenderTarget final
+struct RenderTargetInfo final
 {
-  RenderTarget() = default;
-  explicit RenderTarget(SDL_GPUDevice * device);
-  RenderTarget(RenderTarget && rhs) noexcept;
-  RenderTarget & operator=(RenderTarget && rhs) noexcept;
-  RenderTarget(const RenderTarget &) = delete;
-  RenderTarget & operator=(const RenderTarget &) = delete;
-  ~RenderTarget();
+  RenderTargetInfo() = default;
+  friend struct RenderTarget;
 
   void SetColorAttachment(uint32_t index, const SDL_GPUColorTargetInfo & info,
                           SDL_GPUColorTargetDescription & description);
@@ -29,20 +24,41 @@ struct RenderTarget final
 
   /// Get TargetsInfo to build pipeline
   SDL_GPUGraphicsPipelineTargetInfo GetTargetsInfo() const;
-  SDL_GPUCommandBuffer * GetCommandBuffer() noexcept { return m_commandBuffer; }
 
-  typedef void (*RenderPassDeleter)(SDL_GPURenderPass * rp);
-  /// create RAII RenderPass
-  std::unique_ptr<SDL_GPURenderPass, RenderPassDeleter> CreateRenderPass(
-    SDL_GPUCommandBuffer * cmdBuf) const;
+  bool ShouldRebuildPipelines() const noexcept { return m_shouldRebuildPipelines; }
+  void NotifyPipelinesRebuilt() const noexcept { m_shouldRebuildPipelines = false; }
 
 private:
-  SDL_GPUCommandBuffer * m_commandBuffer = nullptr;
+  mutable bool m_shouldRebuildPipelines = false;
   std::vector<SDL_GPUColorTargetInfo> m_colorTargetsInfo; ///< info to begin RenderPass
   std::vector<SDL_GPUColorTargetDescription> m_colorTargetsDescription; ///< info to build pipeline
   std::optional<SDL_GPUDepthStencilTargetInfo>
     m_depthStencilTargetInfo; ///< info to begin RenderPass
   SDL_GPUTextureFormat m_depthStencilFormat = SDL_GPUTextureFormat::SDL_GPU_TEXTUREFORMAT_INVALID;
+};
+
+struct RenderTarget final
+{
+  explicit RenderTarget(SDL_GPUDevice * device);
+  RenderTarget(RenderTarget && rhs) noexcept;
+  RenderTarget & operator=(RenderTarget && rhs) noexcept;
+  ~RenderTarget() = default;
+
+  bool BeginPass();
+  void EndPass();
+  SDL_GPUCommandBuffer * GetCommandBuffer() noexcept { return m_commandBuffer; }
+  RenderTargetInfo & GetInfo() & noexcept { return m_info; }
+  const RenderTargetInfo & GetInfo() const & noexcept { return m_info; }
+
+  typedef void (*RenderPassDeleter)(SDL_GPURenderPass * rp);
+  using RaiiRenderPass = std::unique_ptr<SDL_GPURenderPass, RenderPassDeleter>;
+  /// create RAII RenderPass
+  RaiiRenderPass CreateSubPass() const;
+
+private:
+  SDL_GPUDevice * m_device = nullptr;
+  SDL_GPUCommandBuffer * m_commandBuffer = nullptr;
+  RenderTargetInfo m_info;
 };
 
 } // namespace GameFramework

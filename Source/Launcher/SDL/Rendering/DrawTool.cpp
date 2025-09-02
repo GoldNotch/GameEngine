@@ -27,21 +27,28 @@ DrawTool_SDL::~DrawTool_SDL()
 
 void DrawTool_SDL::Finish()
 {
-  if (m_renderTarget.GetCommandBuffer())
-  {
-    m_meshRenderer->UploadToGPU();
-    m_quadRenderer->UploadToGPU();
-    GetGPU().GetUploader().SubmitAndUpload();
+  m_meshRenderer->UploadToGPU();
+  m_quadRenderer->UploadToGPU();
+  GetGPU().GetUploader().SubmitAndUpload();
 
-    m_quadRenderer->RenderCache(m_renderTarget.GetCommandBuffer());
-    //m_meshRenderer->RenderCache(commandBuffer);
+  if (m_renderTarget)
+  {
+    if (m_renderTarget->GetInfo().ShouldRebuildPipelines())
+    {
+      m_quadRenderer->RebuildPipeline(*m_renderTarget);
+      m_meshRenderer->RebuildPipeline(*m_renderTarget);
+      m_renderTarget->GetInfo().NotifyPipelinesRebuilt();
+    }
+
+    m_quadRenderer->RenderCache(*m_renderTarget);
+    //m_meshRenderer->RenderCache(*m_renderTarget);
   }
 }
 
 
-RenderTarget DrawTool_SDL::ExchangeRenderTarget(RenderTarget && rt) noexcept
+const RenderTarget * DrawTool_SDL::ExchangeRenderTarget(const RenderTarget * rt) noexcept
 {
-  return std::exchange(m_renderTarget, std::move(rt));
+  return std::exchange(m_renderTarget, rt);
 }
 
 void DrawTool_SDL::SetClearColor(const glm::vec4 & color)
@@ -64,6 +71,7 @@ void DrawTool_SDL::DrawMesh(IStaticMeshResource * mesh)
 
 WindowDC_SDL::WindowDC_SDL(DrawTool_SDL & drawTool, SDL_Window * window)
   : OwnedBy<DrawTool_SDL>(drawTool)
+  , m_target(drawTool.GetGPU().GetDevice())
   , m_window(window)
 {
   SDL_ClaimWindowForGPUDevice(GetDrawTool().GetGPU().GetDevice(), m_window);
@@ -73,17 +81,19 @@ WindowDC_SDL::~WindowDC_SDL() = default;
 
 bool WindowDC_SDL::AcquireBuffer()
 {
-  RenderTarget rt(GetDrawTool().GetGPU().GetDevice());
+  if (!m_target.BeginPass())
+    return false;
 
   // get the swapchain texture
   SDL_GPUTexture * swapchainTexture;
   Uint32 width, height;
-  SDL_WaitAndAcquireGPUSwapchainTexture(rt.GetCommandBuffer(), m_window, &swapchainTexture, &width,
-                                        &height);
+  SDL_WaitAndAcquireGPUSwapchainTexture(m_target.GetCommandBuffer(), m_window, &swapchainTexture,
+                                        &width, &height);
 
   // end the frame early if a swapchain texture is not available
   if (swapchainTexture == NULL)
   {
+    m_target.EndPass();
     return false;
   }
 
@@ -98,13 +108,15 @@ bool WindowDC_SDL::AcquireBuffer()
   SDL_GPUColorTargetDescription description{};
   description.format =
     SDL_GetGPUSwapchainTextureFormat(GetDrawTool().GetGPU().GetDevice(), m_window);
-  rt.SetColorAttachment(0, colorTargetInfo, description);
-  m_oldRt = GetDrawTool().ExchangeRenderTarget(std::move(rt));
+  m_target.GetInfo().SetColorAttachment(0, colorTargetInfo, description);
+  m_oldRt = GetDrawTool().ExchangeRenderTarget(&m_target);
 }
 
 void WindowDC_SDL::SubmitBuffer()
 {
-  RenderTarget rt = GetDrawTool().ExchangeRenderTarget(std::move(m_oldRt));
+  auto * curDC = GetDrawTool().ExchangeRenderTarget(m_oldRt);
+  assert(curDC == &m_target);
+  m_target.EndPass();
 }
 
 } // namespace GameFramework

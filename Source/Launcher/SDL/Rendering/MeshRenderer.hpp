@@ -10,6 +10,7 @@ namespace GameFramework
 {
 struct DrawTool_SDL;
 class StaticMeshResource;
+struct RenderTarget;
 
 struct MeshRenderer final : public OwnedBy<DrawTool_SDL>
 {
@@ -21,7 +22,8 @@ struct MeshRenderer final : public OwnedBy<DrawTool_SDL>
   void PushObjectToDraw(IStaticMeshResource * resource);
 
   /// submits commands
-  void RenderCache(SDL_GPUCommandBuffer * cmdBuf);
+  void RenderCache(const RenderTarget & renderTarget);
+  void RebuildPipeline(const RenderTarget & renderTarget);
 
   void UploadToGPU();
 
@@ -45,11 +47,7 @@ private:
   std::unordered_map<std::filesystem::path, StaticMeshGpuCache> m_gpuCache; // GPU cache
 
   SDL_GPUGraphicsPipeline * m_pipeline = nullptr;
-  SDL_GPUGraphicsPipelineTargetInfo m_cachedPipelineTargetsInfo;
   SDL_GPUShader * m_vertexShader;
   SDL_GPUShader * m_fragmentShader;
-
-private:
-  void InvalidatePipeline();
 };
 } // namespace GameFramework
