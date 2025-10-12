@@ -17,12 +17,12 @@ public:
   // This signature is taken from GameFramework.hpp
   typedef void (*InitGameFunc)();
   typedef void (*TerminateGameFunc)();
-  typedef IGame * (*GetGameHandleFunc)();
+  typedef void (*TickGameFunc)(float);
   typedef const char * (*GetGameNameFunc)();
 
   const InitGameFunc initGameFunc = nullptr;
   const TerminateGameFunc terminateGameFunc = nullptr;
-  const GetGameHandleFunc getGameHandleFunc = nullptr;
+  const TickGameFunc tickGameFunc = nullptr;
   const GetGameNameFunc getGameNameFunc = nullptr;
 
   explicit GameLibrary(const std::filesystem::path & path);

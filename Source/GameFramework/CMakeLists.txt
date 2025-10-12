@@ -27,3 +27,8 @@ target_include_directories(${this_target}
 		"${SOURCE_DIR}/GameFramework"
 )
 add_subdirectory(Tests)
+
+target_link_libraries(${this_target}
+PRIVATE
+	dylib
+)

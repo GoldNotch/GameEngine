@@ -7,6 +7,8 @@
 #include <stdexcept>
 #include <string>
 
+#include <GameInstance/GameAPI.h>
+
 namespace GameFramework
 {
 
@@ -51,37 +53,4 @@ struct GAME_FRAMEWORK_API IDrawTool : public IDrawFuncs2D
   //virtual void DrawSphere(/*transform*/) = 0;
 };
 
-struct GAME_FRAMEWORK_API IGame
-{
-  virtual ~IGame() = default;
-  /// process one tick of the game
-  virtual void Tick(float deltaTime) = 0;
-  /// Loop over game object and choose the way to render it
-  virtual void Render(IDrawTool & drawTool) = 0;
-};
-
 } // namespace GameFramework
-
-
-/// It's functions which should be implemented in dll for Game Framework detected it as Game
-#ifndef GAME_FRAMEWORK_BUILD
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-  /// creates global game instance
-  GAME_API void InitGame();
-  /// Get name of the game
-  GAME_API void TerminateGame();
-  /// creates global game instance
-  GAME_API GameFramework::IGame * GetGameHandle();
-  /// Get name of the game
-  GAME_API const char * GetGameName();
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif

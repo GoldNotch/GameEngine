@@ -33,11 +33,6 @@ const std::string & GameInstance::GetGameName() const & noexcept
   return m_gameName;
 }
 
-IGame & GameInstance::GetGame() & noexcept
-{
-  return *m_game;
-}
-
 void GameInstance::GameThreadMain()
 {
   std::chrono::steady_clock::time_point end, start{std::chrono::steady_clock::now()};
@@ -46,7 +41,7 @@ void GameInstance::GameThreadMain()
     end = std::chrono::steady_clock::now();
     float delta = std::chrono::duration<float, std::milli>(end - start).count();
     start = end;
-    m_game->Tick(delta);
+    m_lib.tickGameFunc(delta);
   }
 }
 

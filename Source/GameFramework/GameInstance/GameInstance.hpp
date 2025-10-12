@@ -3,7 +3,7 @@
 #include <stdexcept>
 #include <thread>
 
-#include "GameLibrary.hpp"
+#include <GameInstance/GameLibrary.hpp>
 
 namespace GameFramework
 {
@@ -19,12 +19,9 @@ struct GameInstance final
   /// Get name of the game
   const std::string & GetGameName() const & noexcept;
 
-  IGame & GetGame() & noexcept;
-
 private:
   std::atomic_bool m_running = false;
   GameLibrary m_lib;
-  IGame * m_game;
   std::string m_gameName;
   std::thread m_thread;
 

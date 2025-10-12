@@ -10,7 +10,7 @@ GameLibrary::GameLibrary(const std::filesystem::path & path)
   : m_sharedLibrary(std::make_unique<dylib>(path))
   , initGameFunc(m_sharedLibrary->get_function<void()>("InitGame"))
   , terminateGameFunc(m_sharedLibrary->get_function<void()>("TerminateGame"))
-  , getGameHandleFunc(m_sharedLibrary->get_function<IGame *()>("GetGameHandle"))
+  , tickGameFunc(m_sharedLibrary->get_function<void(float)>("TickGame"))
   , getGameNameFunc(m_sharedLibrary->get_function<const char *()>("GetGameName"))
 {
 }

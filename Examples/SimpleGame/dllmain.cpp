@@ -3,21 +3,20 @@
 
 #include <GameFramework.hpp>
 
-class SimpleGame : public GameFramework::IGame
+class SimpleGame
 {
   float t = 0.0;
 
 public:
-  virtual ~SimpleGame() = default;
   ///
-  virtual void Tick(float deltaTime) override
+  void Tick(float deltaTime)
   {
     t += deltaTime;
     GameFramework::Log(GameFramework::Info, L"Tick: ", deltaTime, " FPS: ", 1000.0f / deltaTime);
   }
 
   /// Loop over game object and choose the way to render it
-  virtual void Render(GameFramework::IDrawTool & drawTool) override
+  void Render(GameFramework::IDrawTool & drawTool)
   {
     drawTool.SetClearColor({0.2f, 0.5f, (std::sin(t * 0.005f) + 1.0f) / 2.0f, 1.0f});
 
@@ -42,10 +41,10 @@ GAME_API void TerminateGame()
   s_simpleGame.reset();
 }
 
-/// creates global game instance
-GAME_API GameFramework::IGame * GetGameHandle()
+/// Get name of the game
+GAME_API void TickGame(float deltaTime)
 {
-  return s_simpleGame.get();
+  s_simpleGame->Tick(deltaTime);
 }
 
 /// Get name of the game
