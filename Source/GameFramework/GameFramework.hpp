@@ -36,4 +36,13 @@ inline void Log(LogMessageType type, Args &&... args)
   detail::LogImpl(type, stream.str());
 }
 
+using GetGameNameFunc = decltype(GetGameName);
+using GetInputConfigurationFunc = decltype(GetInputConfiguration);
+using GetOutputConfigurationFunc = decltype(GetOutputConfiguration);
+using InitGameFunc = decltype(InitGame);
+using TickGameFunc = decltype(TickGame);
+using RenderGameFunc = decltype(RenderGame);
+using ProcessInputFunc = decltype(ProcessInput);
+using TerminateGameFunc = decltype(TerminateGame);
+
 } // namespace GameFramework

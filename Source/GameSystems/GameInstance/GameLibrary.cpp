@@ -7,12 +7,18 @@ namespace GameFramework
 {
 
 GameLibrary::GameLibrary(const std::filesystem::path & path)
-  : m_sharedLibrary(std::make_unique<dylib>(path))
-  , initGameFunc(m_sharedLibrary->get_function<void()>("InitGame"))
-  , terminateGameFunc(m_sharedLibrary->get_function<void()>("TerminateGame"))
-  , tickGameFunc(m_sharedLibrary->get_function<void(float)>("TickGame"))
-  , getGameNameFunc(m_sharedLibrary->get_function<const char *()>("GetGameName"))
+  : m_sharedLibrary(std::make_unique<dylib::library>(path))
 {
+  getGameNameFunc = m_sharedLibrary->get_function<GetGameNameFunc>("GetGameName");
+  getInputConfigurationFunc =
+    m_sharedLibrary->get_function<GetInputConfigurationFunc>("GetInputConfiguration");
+  getOutputConfigurationFunc =
+    m_sharedLibrary->get_function<GetOutputConfigurationFunc>("GetOutputConfiguration");
+  renderGameFunc = m_sharedLibrary->get_function<RenderGameFunc>("RenderGame(GameFramework::IDrawTool &)");
+  processInputFunc = m_sharedLibrary->get_function<ProcessInputFunc>("ProcessInput(GameAction const &)");
+  initGameFunc = m_sharedLibrary->get_function<InitGameFunc>("InitGame");
+  terminateGameFunc = m_sharedLibrary->get_function<TerminateGameFunc>("TerminateGame");
+  tickGameFunc = m_sharedLibrary->get_function<TickGameFunc>("TickGame(float)");
 }
 
 GameLibrary::~GameLibrary() = default;

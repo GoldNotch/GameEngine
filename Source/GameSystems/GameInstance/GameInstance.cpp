@@ -7,7 +7,6 @@ GameInstance::GameInstance(const std::filesystem::path & path)
   : m_lib(path)
 {
   m_lib.initGameFunc();
-  m_gameName = m_lib.getGameNameFunc();
 }
 
 GameInstance::~GameInstance()
@@ -27,9 +26,9 @@ void GameInstance::Shutdown()
   m_thread.join();
 }
 
-const std::string & GameInstance::GetGameName() const & noexcept
+std::string GameInstance::GetGameName() const
 {
-  return m_gameName;
+  return m_lib.getGameNameFunc();
 }
 
 void GameInstance::GameThreadMain()

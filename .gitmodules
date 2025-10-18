@@ -1,6 +1,7 @@
 [submodule "ThirdParty/dylib"]
 	path = ThirdParty/dylib
 	url = https://github.com/martin-olivier/dylib.git
+	branch = origin/main
 [submodule "ThirdParty/Catch2"]
 	path = ThirdParty/Catch2
 	url = https://github.com/catchorg/Catch2.git

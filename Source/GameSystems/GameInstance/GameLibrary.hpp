@@ -4,26 +4,27 @@
 
 #include <GameFramework.hpp>
 
-class dylib;
+namespace dylib
+{
+class library;
+}
 
 namespace GameFramework
 {
 
 class GameLibrary final
 {
-  std::unique_ptr<dylib> m_sharedLibrary;
+  std::unique_ptr<dylib::library> m_sharedLibrary;
 
 public:
-  // This signature is taken from GameFramework.hpp
-  typedef void (*InitGameFunc)();
-  typedef void (*TerminateGameFunc)();
-  typedef void (*TickGameFunc)(float);
-  typedef const char * (*GetGameNameFunc)();
-
-  const InitGameFunc initGameFunc = nullptr;
-  const TerminateGameFunc terminateGameFunc = nullptr;
-  const TickGameFunc tickGameFunc = nullptr;
-  const GetGameNameFunc getGameNameFunc = nullptr;
+  GetGameNameFunc * getGameNameFunc = nullptr;
+  GetInputConfigurationFunc * getInputConfigurationFunc = nullptr;
+  GetOutputConfigurationFunc * getOutputConfigurationFunc = nullptr;
+  InitGameFunc * initGameFunc = nullptr;
+  TickGameFunc * tickGameFunc = nullptr;
+  RenderGameFunc * renderGameFunc = nullptr;
+  ProcessInputFunc * processInputFunc = nullptr;
+  TerminateGameFunc * terminateGameFunc = nullptr;
 
   explicit GameLibrary(const std::filesystem::path & path);
   ~GameLibrary();

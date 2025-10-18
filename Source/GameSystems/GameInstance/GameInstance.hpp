@@ -17,12 +17,11 @@ struct GameInstance final
   /// Stops game thread
   void Shutdown();
   /// Get name of the game
-  const std::string & GetGameName() const & noexcept;
+  std::string GetGameName() const;
 
 private:
   std::atomic_bool m_running = false;
   GameLibrary m_lib;
-  std::string m_gameName;
   std::thread m_thread;
 
 private:
