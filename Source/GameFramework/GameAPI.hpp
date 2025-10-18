@@ -1,9 +1,14 @@
 /// It's functions which should be implemented in dll for Game Framework detected it as Game
 #pragma once
+#include <memory>
 #include <string>
 #include <vector>
 
 #include <DrawTool.hpp>
+#include <Plugin/Plugin.hpp>
+
+namespace GameFramework
+{
 
 struct GameAction
 {
@@ -30,20 +35,19 @@ struct ProtoWindow
   int height;
 };
 
-/// Get name of the game
-GAME_API std::string GetGameName();
-/// declares game action in system
-GAME_API std::vector<ProtoGameAction> GetInputConfiguration();
-/// declares game output in system
-GAME_API std::vector<ProtoWindow> GetOutputConfiguration();
+struct BaseGame : public IPluginInstance
+{
+  virtual ~BaseGame() = default;
+  virtual std::string GetGameName() const = 0;
+  virtual std::vector<ProtoGameAction> GetInputConfiguration() const = 0;
+  virtual std::vector<ProtoWindow> GetOutputConfiguration() const = 0;
 
-/// creates global game instance
-GAME_API void InitGame();
-/// tick is a logical frame of game
-GAME_API void TickGame(float deltaTime);
-/// render game
-GAME_API void RenderGame(GameFramework::IDrawTool & drawTool);
-/// process input events
-GAME_API void ProcessInput(const GameAction & action);
-/// Get name of the game
-GAME_API void TerminateGame();
+  virtual void Tick(float deltaTime) = 0;
+  virtual void Render(GameFramework::IDrawTool & drawTool) = 0;
+
+protected:
+  void PushAction(const GameAction & action);
+  GameAction PollAction();
+};
+
+} // namespace GameFramework

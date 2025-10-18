@@ -1,10 +1,13 @@
 #include <cstdio>
 #include <filesystem>
+#include <list>
 #include <memory>
 #include <stdexcept>
 
 #include <GameFramework.hpp>
-#include <GameInstance/GameInstance.hpp>
+
+#include "GlfwInstance.hpp"
+#include "IWindow.hpp"
 
 void RenderThread()
 {
@@ -26,12 +29,28 @@ int main(int argc, const char * argv[])
     return -1;
   }
   std::filesystem::path gamePath = argv[1];
-  GameFramework::GameInstance game(gamePath);
+  auto gamePluginLoader = GameFramework::LoadPlugin(gamePath);
+  GameFramework::BaseGame * gameInstance =
+    dynamic_cast<GameFramework::BaseGame *>(gamePluginLoader->GetInstance());
 
-  while (true)
+  Utils::GlfwInstance instance;
+  std::vector<WindowUPtr> windows;
+  for (auto && wnd : gameInstance->GetOutputConfiguration())
   {
-    //glfwPollEvents();
-    //ProcessInput();
+    windows.emplace_back(Utils::NewWindow(wnd.title, wnd.width, wnd.height));
+    //create context for each window
+  }
+
+  while (std::all_of(windows.begin(), windows.end(),
+                     [](const WindowUPtr & wnd) { return !wnd->ShouldClose(); }))
+  {
+    instance.PollEvents();
+    //std::vector<GameAction> actions;
+    //for (auto && wnd : windows)
+    //  wnd->CollectActions(&actions);
+
+    //for (auto && action : actions)
+    //  game.ProcessInput(action);
   }
 
   return 0;

@@ -13,6 +13,8 @@ PRIVATE
 	"Core/Formatter.hpp"
 	"Core/Storage.hpp"
 	"Core/TypeMapping.hpp"
+	"Plugin/Plugin.cpp"
+	"Plugin/Plugin.hpp"
 )
 
 if (MSVC)
@@ -29,3 +31,8 @@ target_include_directories(${this_target}
 		"${SOURCE_DIR}/GameFramework"
 )
 add_subdirectory(Tests)
+
+target_link_libraries(${this_target}
+PRIVATE
+	dylib
+)

@@ -3,32 +3,7 @@
 #include <vector>
 
 #include <GameFramework.hpp>
-
-class SimpleGame
-{
-  float t = 0.0;
-
-public:
-  ///
-  void Tick(float deltaTime)
-  {
-    t += deltaTime;
-    GameFramework::Log(GameFramework::Info, L"Tick: ", deltaTime, " FPS: ", 1000.0f / deltaTime);
-  }
-
-  /// Loop over game object and choose the way to render it
-  void Render(GameFramework::IDrawTool & drawTool)
-  {
-    drawTool.SetClearColor({0.2f, 0.5f, (std::sin(t * 0.005f) + 1.0f) / 2.0f, 1.0f});
-
-    float right = 0.5f + (std::sin(t * 0.002) + 1.0f) / 4.0f;
-    float top = 0.5f + (std::sin(t * 0.002) + 1.0f) / 8.0f;
-    drawTool.DrawRect(0.0f, top, right, 0.0f);
-    drawTool.DrawRect(-0.5f, 0.0f, 0.0f, -0.2f);
-  }
-};
-
-static std::unique_ptr<SimpleGame> s_simpleGame;
+using namespace GameFramework;
 
 enum ActionCode
 {
@@ -38,13 +13,26 @@ enum ActionCode
   MoveRight,
 };
 
-/// Get name of the game
-GAME_API std::string GetGameName()
+class SimpleGame : public GameFramework::BaseGame
 {
-  return "SimpleGame";
-}
+  float t = 0.0;
 
-GAME_API std::vector<ProtoGameAction> GetInputConfiguration()
+public:
+  SimpleGame() = default;
+  virtual ~SimpleGame() override = default;
+
+  virtual std::string GetGameName() const override { return "SimpleGame"; }
+  virtual std::vector<ProtoGameAction> GetInputConfiguration() const override;
+  virtual std::vector<ProtoWindow> GetOutputConfiguration() const override;
+
+  ///
+  void Tick(float deltaTime) override;
+
+  /// Loop over game object and choose the way to render it
+  void Render(GameFramework::IDrawTool & drawTool) override;
+};
+
+std::vector<ProtoGameAction> SimpleGame::GetInputConfiguration() const
 {
   std::vector<ProtoGameAction> actions{
     {"MoveForward", ActionCode::MoveForward, "KeyW"},
@@ -55,43 +43,30 @@ GAME_API std::vector<ProtoGameAction> GetInputConfiguration()
   return actions;
 }
 
-GAME_API std::vector<ProtoWindow> GetOutputConfiguration()
+std::vector<ProtoWindow> SimpleGame::GetOutputConfiguration() const
 {
   std::vector<ProtoWindow> windows{{"SimpleGame", 800, 600}, {"TestWindow", 500, 500}};
   return windows;
 }
 
+void SimpleGame::Tick(float deltaTime)
+{
+  t += deltaTime;
+  GameFramework::Log(GameFramework::Info, L"Tick: ", deltaTime, " FPS: ", 1000.0f / deltaTime);
+}
+
+void SimpleGame::Render(GameFramework::IDrawTool & drawTool)
+{
+  drawTool.SetClearColor({0.2f, 0.5f, (std::sin(t * 0.005f) + 1.0f) / 2.0f, 1.0f});
+
+  float right = 0.5f + (std::sin(t * 0.002) + 1.0f) / 4.0f;
+  float top = 0.5f + (std::sin(t * 0.002) + 1.0f) / 8.0f;
+  drawTool.DrawRect(0.0f, top, right, 0.0f);
+  drawTool.DrawRect(-0.5f, 0.0f, 0.0f, -0.2f);
+}
+
 /// creates global game instance
-GAME_API void InitGame()
+GAME_API std::unique_ptr<GameFramework::IPluginInstance> CreateInstance()
 {
-  s_simpleGame = std::make_unique<SimpleGame>();
-}
-
-/// Get name of the game
-GAME_API void TerminateGame()
-{
-  s_simpleGame.reset();
-}
-
-/// Get name of the game
-GAME_API void TickGame(float deltaTime)
-{
-  s_simpleGame->Tick(deltaTime);
-}
-
-GAME_API void RenderGame(GameFramework::IDrawTool & drawTool)
-{
-}
-
-GAME_API void ProcessInput(const GameAction & action)
-{
-  //GameFramework::Log(GameFramework::LogMessageType::Info, action.name, L" action is processing");
-  switch (action.code)
-  {
-    case ActionCode::MoveForward:
-    case ActionCode::MoveBackward:
-    case ActionCode::MoveLeft:
-    case ActionCode::MoveRight:
-      break;
-  }
+  return std::make_unique<SimpleGame>();
 }

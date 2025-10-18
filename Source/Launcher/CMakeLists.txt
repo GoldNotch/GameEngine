@@ -6,6 +6,10 @@ add_executable(${this_target})
 target_sources(${this_target}
 PRIVATE
 	"main.cpp"
+	"GlfwInstance.hpp"
+	"GlfwInstance.cpp"
+	"IWindow.hpp"
+	"GlfwWindow.cpp"
 )
 
 target_link_libraries(${this_target}
@@ -23,4 +27,9 @@ target_compile_definitions(${this_target}
 target_include_directories(${this_target} 
 PUBLIC
 	"${SOURCE_DIR}/Launcher"
+)
+
+target_link_libraries(${this_target}
+PRIVATE
+	glfw
 )

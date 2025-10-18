@@ -8,11 +8,6 @@ PUBLIC
 PRIVATE
 	"GameSystems_def.h"
 	"GameSystems.cpp"
-
-	"GameInstance/GameInstance.hpp"
-	"GameInstance/GameInstance.cpp"
-	"GameInstance/GameLibrary.hpp"
-	"GameInstance/GameLibrary.cpp"
 )
 
 if (MSVC)
