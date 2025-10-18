@@ -1,7 +1,10 @@
 /// It's functions which should be implemented in dll for Game Framework detected it as Game
 #pragma once
 #include <memory>
+#include <mutex>
+#include <queue>
 #include <string>
+#include <variant>
 #include <vector>
 
 #include <DrawTool.hpp>
@@ -9,6 +12,14 @@
 
 namespace GameFramework
 {
+
+struct QuitSignal
+{
+};
+
+struct InvalidateRenderCacheSignal
+{
+};
 
 struct GameAction
 {
@@ -35,6 +46,8 @@ struct ProtoWindow
   int height;
 };
 
+using GameSignal = std::variant<QuitSignal, InvalidateRenderCacheSignal>;
+
 struct BaseGame : public IPluginInstance
 {
   virtual ~BaseGame() = default;
@@ -45,9 +58,13 @@ struct BaseGame : public IPluginInstance
   virtual void Tick(float deltaTime) = 0;
   virtual void Render(GameFramework::IDrawTool & drawTool) = 0;
 
-protected:
-  void PushAction(const GameAction & action);
-  GameAction PollAction();
+public:
+  void PushSignal(const GameSignal & signal);
+  GameSignal PollSignal() noexcept;
+
+private:
+  std::mutex m;
+  std::queue<GameSignal> m_signals;
 };
 
 } // namespace GameFramework

@@ -52,6 +52,7 @@ std::vector<ProtoWindow> SimpleGame::GetOutputConfiguration() const
 void SimpleGame::Tick(float deltaTime)
 {
   t += deltaTime;
+  PushSignal(InvalidateRenderCacheSignal{});
   GameFramework::Log(GameFramework::Info, L"Tick: ", deltaTime, " FPS: ", 1000.0f / deltaTime);
 }
 
