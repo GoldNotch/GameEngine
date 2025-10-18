@@ -23,10 +23,19 @@ struct ProtoGameAction
   std::string bindings; ///< string to declare keys that represents this action
 };
 
+struct ProtoWindow
+{
+  std::string title;
+  int width;
+  int height;
+};
+
 /// Get name of the game
 GAME_API std::string GetGameName();
 /// declares game action in system
 GAME_API std::vector<ProtoGameAction> GetInputConfiguration();
+/// declares game output in system
+GAME_API std::vector<ProtoWindow> GetOutputConfiguration();
 
 /// creates global game instance
 GAME_API void InitGame();

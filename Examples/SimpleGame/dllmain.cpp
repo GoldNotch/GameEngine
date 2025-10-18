@@ -55,6 +55,12 @@ GAME_API std::vector<ProtoGameAction> GetInputConfiguration()
   return actions;
 }
 
+GAME_API std::vector<ProtoWindow> GetOutputConfiguration()
+{
+  std::vector<ProtoWindow> windows{{"SimpleGame", 800, 600}, {"TestWindow", 500, 500}};
+  return windows;
+}
+
 /// creates global game instance
 GAME_API void InitGame()
 {
