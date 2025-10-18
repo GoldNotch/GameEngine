@@ -11,6 +11,7 @@ PRIVATE
 target_link_libraries(${this_target}
 PRIVATE
 	GameFramework
+	GameSystems
 )
 
 target_compile_definitions(${this_target} 

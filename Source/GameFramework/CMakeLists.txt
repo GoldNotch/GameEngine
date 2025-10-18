@@ -5,6 +5,8 @@ add_library(${this_target} SHARED)
 target_sources(${this_target}
 PUBLIC
 	"GameFramework.hpp"
+	"GameAPI.hpp"
+	"DrawTool.hpp"
 PRIVATE
 	"GameFramework_def.h"
 	"GameFramework.cpp"
@@ -27,8 +29,3 @@ target_include_directories(${this_target}
 		"${SOURCE_DIR}/GameFramework"
 )
 add_subdirectory(Tests)
-
-target_link_libraries(${this_target}
-PRIVATE
-	dylib
-)

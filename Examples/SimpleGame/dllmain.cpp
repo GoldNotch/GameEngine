@@ -1,5 +1,6 @@
 #include <iostream>
 #include <memory>
+#include <vector>
 
 #include <GameFramework.hpp>
 
@@ -29,6 +30,31 @@ public:
 
 static std::unique_ptr<SimpleGame> s_simpleGame;
 
+enum ActionCode
+{
+  MoveForward,
+  MoveBackward,
+  MoveLeft,
+  MoveRight,
+};
+
+/// Get name of the game
+GAME_API std::string GetGameName()
+{
+  return "SimpleGame";
+}
+
+GAME_API std::vector<ProtoGameAction> GetInputConfiguration()
+{
+  std::vector<ProtoGameAction> actions{
+    {"MoveForward", ActionCode::MoveForward, "KeyW"},
+    {"MoveBackward", ActionCode::MoveBackward, "KeyS"},
+    {"MoveLeft", ActionCode::MoveLeft, "KeyA"},
+    {"MoveRight", ActionCode::MoveRight, "KeyD"},
+  };
+  return actions;
+}
+
 /// creates global game instance
 GAME_API void InitGame()
 {
@@ -47,8 +73,19 @@ GAME_API void TickGame(float deltaTime)
   s_simpleGame->Tick(deltaTime);
 }
 
-/// Get name of the game
-GAME_API const char * GetGameName()
+GAME_API void RenderGame(GameFramework::IDrawTool & drawTool)
 {
-  return "SimpleGame";
+}
+
+GAME_API void ProcessInput(const GameAction & action)
+{
+  //GameFramework::Log(GameFramework::LogMessageType::Info, action.name, L" action is processing");
+  switch (action.code)
+  {
+    case ActionCode::MoveForward:
+    case ActionCode::MoveBackward:
+    case ActionCode::MoveLeft:
+    case ActionCode::MoveRight:
+      break;
+  }
 }

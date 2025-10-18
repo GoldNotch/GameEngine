@@ -7,7 +7,6 @@ GameInstance::GameInstance(const std::filesystem::path & path)
   : m_lib(path)
 {
   m_lib.initGameFunc();
-  m_game = m_lib.getGameHandleFunc();
   m_gameName = m_lib.getGameNameFunc();
 }
 
