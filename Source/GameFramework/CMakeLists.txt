@@ -5,8 +5,11 @@ add_library(${this_target} SHARED)
 target_sources(${this_target}
 PUBLIC
 	"GameFramework.hpp"
-	"GameAPI.hpp"
-	"DrawTool.hpp"
+	"PluginInterfaces/GamePlugin.hpp"
+	"PluginInterfaces/DrawToolPlugin.hpp"
+	"Plugin/Plugin.hpp"
+	"Game/Signal.hpp"
+	"Game/Input.hpp"
 PRIVATE
 	"GameFramework_def.h"
 	"GameFramework.cpp"
@@ -14,7 +17,8 @@ PRIVATE
 	"Core/Storage.hpp"
 	"Core/TypeMapping.hpp"
 	"Plugin/Plugin.cpp"
-	"Plugin/Plugin.hpp"
+	"Game/Signal.cpp" 
+	"Game/Input.cpp"
 )
 
 if (MSVC)
@@ -35,4 +39,5 @@ add_subdirectory(Tests)
 target_link_libraries(${this_target}
 PRIVATE
 	dylib
+	concurrentqueue
 )

@@ -3,12 +3,13 @@
 #include <memory>
 #include <string>
 
+#include <Game/Input.hpp>
 
 namespace Utils
 {
 using SurfaceDescriptor = std::pair<void *, void *>;
 
-struct IWindow
+struct IWindow : public GameFramework::InputProducer
 {
   using ResizeCallback = std::function<void(int, int)>;
 

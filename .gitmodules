@@ -11,3 +11,6 @@
 [submodule "ThirdParty/RHI"]
 	path = ThirdParty/RHI
 	url = https://github.com/GoldNotch/RHI.git
+[submodule "ThirdParty/concurrentqueue"]
+	path = ThirdParty/concurrentqueue
+	url = https://github.com/cameron314/concurrentqueue.git

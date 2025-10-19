@@ -1,17 +1,20 @@
 #pragma once
 #include <array>
 
+#include <Plugin/Plugin.hpp>
+
 namespace GameFramework
 {
 
-struct GAME_FRAMEWORK_API IDrawFuncs2D
+struct IDrawFuncs2D
 {
   virtual ~IDrawFuncs2D() = default;
   virtual void DrawRect(float left, float top, float right, float bottom) = 0;
 };
 
 /// Инструмент для рисования. Предоставляет высокоуровневые операции для рисования
-struct GAME_FRAMEWORK_API IDrawTool : public IDrawFuncs2D
+struct IDrawTool : public IPluginInstance,
+                   public IDrawFuncs2D
 {
   virtual ~IDrawTool() = default;
   virtual void SetClearColor(const std::array<float, 4> & color) = 0;

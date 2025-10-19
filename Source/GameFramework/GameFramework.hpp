@@ -7,7 +7,8 @@
 #include <stdexcept>
 #include <string>
 
-#include <GameAPI.hpp>
+#include <PluginInterfaces/DrawToolPlugin.hpp>
+#include <PluginInterfaces/GamePlugin.hpp>
 
 namespace GameFramework
 {

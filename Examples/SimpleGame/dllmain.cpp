@@ -13,7 +13,7 @@ enum ActionCode
   MoveRight,
 };
 
-class SimpleGame : public GameFramework::BaseGame
+class SimpleGame : public GameFramework::GamePLugin
 {
   float t = 0.0;
 
@@ -30,6 +30,19 @@ public:
 
   /// Loop over game object and choose the way to render it
   void Render(GameFramework::IDrawTool & drawTool) override;
+
+public: // InputConsumer
+  virtual void ListenInputQueue(GameFramework::InputQueue & queue) override;
+  virtual std::optional<GameInputEvent> ConsumeEvent() override;
+
+public: //SignalsProducer
+  virtual void BindSignalsQueue(GameFramework::SignalsQueue & queue) override;
+
+  virtual void GenerateSignal(const GameSignal & signal) override;
+
+private:
+  std::vector<InputQueue *> m_listenedInput;
+  std::vector<SignalsQueue *> m_boundSignalsQueue;
 };
 
 std::vector<ProtoGameAction> SimpleGame::GetInputConfiguration() const
@@ -51,8 +64,9 @@ std::vector<ProtoWindow> SimpleGame::GetOutputConfiguration() const
 
 void SimpleGame::Tick(float deltaTime)
 {
+  auto evt = ConsumeEvent();
   t += deltaTime;
-  PushSignal(InvalidateRenderCacheSignal{});
+  GenerateSignal(GameSignal::InvalidateRenderCache);
   GameFramework::Log(GameFramework::Info, L"Tick: ", deltaTime, " FPS: ", 1000.0f / deltaTime);
 }
 
@@ -64,6 +78,34 @@ void SimpleGame::Render(GameFramework::IDrawTool & drawTool)
   float top = 0.5f + (std::sin(t * 0.002) + 1.0f) / 8.0f;
   drawTool.DrawRect(0.0f, top, right, 0.0f);
   drawTool.DrawRect(-0.5f, 0.0f, 0.0f, -0.2f);
+}
+
+void SimpleGame::ListenInputQueue(GameFramework::InputQueue & queue)
+{
+  m_listenedInput.push_back(&queue);
+}
+
+std::optional<GameInputEvent> SimpleGame::ConsumeEvent()
+{
+  // очень спорно
+  for (auto * queue : m_listenedInput)
+  {
+    auto evt = queue->PopEvent();
+    if (evt.has_value())
+      return evt;
+  }
+  return std::nullopt;
+}
+
+void SimpleGame::BindSignalsQueue(GameFramework::SignalsQueue & queue)
+{
+  m_boundSignalsQueue.push_back(&queue);
+}
+
+void SimpleGame::GenerateSignal(const GameSignal & signal)
+{
+  for (auto * queue : m_boundSignalsQueue)
+    queue->PushSignal(signal);
 }
 
 /// creates global game instance

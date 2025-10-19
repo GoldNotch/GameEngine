@@ -30,27 +30,29 @@ int main(int argc, const char * argv[])
   }
   std::filesystem::path gamePath = argv[1];
   auto gamePluginLoader = GameFramework::LoadPlugin(gamePath);
-  GameFramework::BaseGame * gameInstance =
-    dynamic_cast<GameFramework::BaseGame *>(gamePluginLoader->GetInstance());
+  auto * gameInstance = dynamic_cast<GameFramework::GamePLugin *>(gamePluginLoader->GetInstance());
+
+  GameFramework::InputQueue input;
+  GameFramework::SignalsQueue signalsQueue;
 
   Utils::GlfwInstance instance;
   std::vector<WindowUPtr> windows;
-  for (auto && wnd : gameInstance->GetOutputConfiguration())
+  for (auto && wndInfo : gameInstance->GetOutputConfiguration())
   {
-    windows.emplace_back(Utils::NewWindow(wnd.title, wnd.width, wnd.height));
-    //create context for each window
+    auto && wnd =
+      windows.emplace_back(Utils::NewWindow(wndInfo.title, wndInfo.width, wndInfo.height));
+    wnd->BindInputQueue(input);
   }
+  gameInstance->ListenInputQueue(input);
+  gameInstance->BindSignalsQueue(signalsQueue);
 
   while (std::all_of(windows.begin(), windows.end(),
                      [](const WindowUPtr & wnd) { return !wnd->ShouldClose(); }))
   {
     instance.PollEvents();
-    //std::vector<GameAction> actions;
-    //for (auto && wnd : windows)
-    //  wnd->CollectActions(&actions);
-
-    //for (auto && action : actions)
-    //  game.ProcessInput(action);
+    for (auto && wnd : windows)
+      wnd->GenerateInputEvents();
+    gameInstance->Tick(0.0f);
   }
 
   return 0;

@@ -1,5 +1,6 @@
 add_subdirectory(GLFW)
 add_subdirectory(dylib)
+add_subdirectory(concurrentqueue)
 add_subdirectory(Catch2)
 set(RHI_BUILD_EXAMPLES OFF)
 add_subdirectory(RHI)

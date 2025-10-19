@@ -38,12 +38,17 @@ public:
   bool ShouldClose() const noexcept override;
   void SetResizeCallback(ResizeCallback && callback) override;
 
+public: // InputProducer
+  virtual void BindInputQueue(GameFramework::InputQueue & queue) override;
+  virtual void GenerateInputEvents() override;
+
 public:
 private:
   GLFWwindow * m_window = nullptr;
   std::optional<std::pair<double, double>> m_lastCursorPos;
   bool m_pressedKeys[GLFW_KEY_LAST]{false};
   ResizeCallback onResize = nullptr;
+  std::vector<GameFramework::InputQueue *> m_boundInputs;
 
 private:
   static void OnResizeCallback(GLFWwindow * window, int width, int height);
@@ -123,6 +128,23 @@ bool GlfwWindow::ShouldClose() const noexcept
 void GlfwWindow::SetResizeCallback(ResizeCallback && callback)
 {
   onResize = std::move(callback);
+}
+
+void GlfwWindow::BindInputQueue(GameFramework::InputQueue & queue)
+{
+  m_boundInputs.push_back(&queue);
+}
+
+void GlfwWindow::GenerateInputEvents()
+{
+  auto generateEvent = [this](const GameFramework::GameInputEvent & evt)
+  {
+    for (auto * queue : m_boundInputs)
+      queue->PushEvent(evt);
+  };
+
+  generateEvent(GameFramework::InputAction{1, true});
+  //TODO: iterate over pressed keys and generate inputs
 }
 
 void GlfwWindow::OnResizeCallback(GLFWwindow * window, int width, int height)
