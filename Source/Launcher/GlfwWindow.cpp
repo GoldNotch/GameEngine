@@ -12,17 +12,11 @@
 #endif
 #include <GLFW/glfw3native.h>
 
-namespace
-{
-
-void OnKeyAction(GLFWwindow * window, int key, int scancode, int action, int mods)
-{
-}
-
-} // namespace
+#include "GlfwInputBinding.hpp"
 
 namespace Utils
 {
+
 struct GlfwWindow final : public IWindow
 {
   GlfwWindow(const std::string & title, int width, int height);
@@ -39,8 +33,8 @@ public:
   void SetResizeCallback(ResizeCallback && callback) override;
 
 public: // InputProducer
-  virtual void BindInputQueue(GameFramework::InputQueue & queue) override;
   virtual void GenerateInputEvents() override;
+  virtual void SetInputBindings(const std::span<GameFramework::InputBinding> & bindings) override;
 
 public:
 private:
@@ -49,6 +43,7 @@ private:
   bool m_pressedKeys[GLFW_KEY_LAST]{false};
   ResizeCallback onResize = nullptr;
   std::vector<GameFramework::InputQueue *> m_boundInputs;
+  std::vector<GlfwInputBinding> m_bindings;
 
 private:
   static void OnResizeCallback(GLFWwindow * window, int width, int height);
@@ -130,21 +125,24 @@ void GlfwWindow::SetResizeCallback(ResizeCallback && callback)
   onResize = std::move(callback);
 }
 
-void GlfwWindow::BindInputQueue(GameFramework::InputQueue & queue)
-{
-  m_boundInputs.push_back(&queue);
-}
-
 void GlfwWindow::GenerateInputEvents()
 {
-  auto generateEvent = [this](const GameFramework::GameInputEvent & evt)
+  for (auto && binding : m_bindings)
   {
-    for (auto * queue : m_boundInputs)
-      queue->PushEvent(evt);
-  };
+    //if (binding.IsActive())
+    //   PushInputEvent(GameFramework::InputAction{binding.GetCode(), true});
+  }
+}
 
-  generateEvent(GameFramework::InputAction{1, true});
-  //TODO: iterate over pressed keys and generate inputs
+void GlfwWindow::SetInputBindings(const std::span<GameFramework::InputBinding> & bindings)
+{
+  std::vector<GlfwInputBinding> newBindings;
+  newBindings.reserve(bindings.size());
+
+  for (auto && binding : bindings)
+    newBindings.emplace_back(binding);
+
+  m_bindings = std::move(newBindings);
 }
 
 void GlfwWindow::OnResizeCallback(GLFWwindow * window, int width, int height)

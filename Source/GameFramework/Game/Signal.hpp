@@ -12,7 +12,8 @@ namespace GameFramework
 enum GameSignal
 {
   Quit = 200,
-  InvalidateRenderCache = 100
+  InvalidateRenderCache = 100,
+  UpdateInputConfiguration = 101,
 };
 
 struct GAME_FRAMEWORK_API SignalsQueue final
@@ -24,21 +25,34 @@ struct GAME_FRAMEWORK_API SignalsQueue final
 
 private:
   struct Queue;
-  Queue * m_queue;
+  Queue * m_queue = nullptr;
 };
+
+namespace details
+{
+struct SignalsQueueList;
+}
 
 struct GAME_FRAMEWORK_API SignalsConsumer
 {
-  virtual ~SignalsConsumer() = default;
-  virtual void ListenSignalsQueue(GameFramework::SignalsQueue & queue) = 0;
-  virtual void ProcessSignals() = 0;
+  SignalsConsumer();
+  virtual ~SignalsConsumer();
+  virtual void ListenSignalsQueue(GameFramework::SignalsQueue & queue);
+  virtual std::optional<GameSignal> ConsumeSignal();
+
+private:
+  details::SignalsQueueList * m_listenedQueues = nullptr;
 };
 
 struct GAME_FRAMEWORK_API SignalsProducer
 {
-  virtual ~SignalsProducer() = default;
-  virtual void BindSignalsQueue(GameFramework::SignalsQueue & queue) = 0;
-  virtual void GenerateSignal(const GameSignal & signal) = 0;
+  SignalsProducer();
+  virtual ~SignalsProducer();
+  void BindSignalsQueue(GameFramework::SignalsQueue & queue);
+  void GenerateSignal(const GameSignal & signal);
+
+private:
+  details::SignalsQueueList * m_boundQueues = nullptr;
 };
 
 

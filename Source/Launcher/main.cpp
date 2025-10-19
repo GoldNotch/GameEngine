@@ -21,6 +21,13 @@ void RenderThread()
   }*/
 }
 
+void GameThread()
+{
+  while (true)
+  {
+  }
+}
+
 int main(int argc, const char * argv[])
 {
   if (argc < 2)
@@ -52,7 +59,24 @@ int main(int argc, const char * argv[])
     instance.PollEvents();
     for (auto && wnd : windows)
       wnd->GenerateInputEvents();
-    gameInstance->Tick(0.0f);
+
+    size_t processSignalsCount = 0;
+    while (auto signal = signalsQueue.PopSignal())
+    {
+      //TODO: process signal
+      switch (signal.value())
+      {
+        case GameFramework::GameSignal::UpdateInputConfiguration:
+        {
+          auto conf = gameInstance->GetInputConfiguration();
+          for (auto && wnd : windows)
+            wnd->SetInputBindings(conf);
+        }
+      }
+      processSignalsCount++;
+      if (processSignalsCount >= 100)
+        break;
+    }
   }
 
   return 0;

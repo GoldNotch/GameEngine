@@ -2,19 +2,30 @@
 #include <GameFramework_def.h>
 
 #include <optional>
+#include <span>
+#include <string>
 #include <variant>
+#include <vector>
 
 namespace GameFramework
 {
+
+struct GAME_FRAMEWORK_API InputBinding
+{
+  char name[128];      ///< name of the action, can be "Jump", "MoveForward", etc
+  int code;            ///< code ID of the action, use enum to define it
+  char bindings[1024]; ///< string to declare keys that represents this action
+};
+
 struct GAME_FRAMEWORK_API InputAction
 {
-  int code;               ///< code ID of the action, use enum to define it
+  int code = 0;           ///< code ID of the action, use enum to define it
   bool isPressed = false; ///< true if action is pressed or active
 };
 
 struct GAME_FRAMEWORK_API InputAxis
 {
-  int code; ///< code ID of the action, use enum to define it
+  int code = 0; ///< code ID of the action, use enum to define it
   float xAxisValue = 0.0f;
   float dxAxisValue = 0.0f;
   float yAxisValue = 0.0f;
@@ -32,22 +43,42 @@ struct GAME_FRAMEWORK_API InputQueue final
 
 private:
   struct Queue;
-  Queue * m_queue;
+  Queue * m_queue = nullptr;
 };
 
+namespace details
+{
+struct InputsQueueList;
+}
 
 struct GAME_FRAMEWORK_API InputProducer
 {
-  virtual ~InputProducer() = default;
-  virtual void BindInputQueue(GameFramework::InputQueue & queue) = 0;
+  InputProducer();
+  virtual ~InputProducer();
   virtual void GenerateInputEvents() = 0;
+  virtual void SetInputBindings(const std::span<InputBinding> & bindings) = 0;
+
+public:
+  void BindInputQueue(GameFramework::InputQueue & queue);
+  void PushInputEvent(const GameInputEvent & event);
+
+private:
+  details::InputsQueueList * m_boundInputs = nullptr;
 };
 
 struct GAME_FRAMEWORK_API InputConsumer
 {
-  virtual ~InputConsumer() = default;
-  virtual void ListenInputQueue(GameFramework::InputQueue & queue) = 0;
-  virtual std::optional<GameInputEvent> ConsumeEvent() = 0;
+  InputConsumer();
+  virtual ~InputConsumer();
+  virtual void ProcessInputEvents() = 0;
+  virtual std::vector<InputBinding> GetInputConfiguration() const = 0;
+
+public:
+  std::optional<GameInputEvent> ConsumeInputEvent();
+  void ListenInputQueue(GameFramework::InputQueue & queue);
+
+private:
+  details::InputsQueueList * m_listenedInputs = nullptr;
 };
 
 } // namespace GameFramework

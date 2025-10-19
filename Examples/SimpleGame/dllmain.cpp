@@ -22,8 +22,7 @@ public:
   virtual ~SimpleGame() override = default;
 
   virtual std::string GetGameName() const override { return "SimpleGame"; }
-  virtual std::vector<ProtoGameAction> GetInputConfiguration() const override;
-  virtual std::vector<ProtoWindow> GetOutputConfiguration() const override;
+  virtual std::vector<InputBinding> GetInputConfiguration() const override;
 
   ///
   void Tick(float deltaTime) override;
@@ -31,23 +30,17 @@ public:
   /// Loop over game object and choose the way to render it
   void Render(GameFramework::IDrawTool & drawTool) override;
 
-public: // InputConsumer
-  virtual void ListenInputQueue(GameFramework::InputQueue & queue) override;
-  virtual std::optional<GameInputEvent> ConsumeEvent() override;
-
-public: //SignalsProducer
-  virtual void BindSignalsQueue(GameFramework::SignalsQueue & queue) override;
-
-  virtual void GenerateSignal(const GameSignal & signal) override;
+  void ProcessInputEvents() override;
+  virtual std::vector<ProtoWindow> GetOutputConfiguration() const override;
 
 private:
   std::vector<InputQueue *> m_listenedInput;
   std::vector<SignalsQueue *> m_boundSignalsQueue;
 };
 
-std::vector<ProtoGameAction> SimpleGame::GetInputConfiguration() const
+std::vector<InputBinding> SimpleGame::GetInputConfiguration() const
 {
-  std::vector<ProtoGameAction> actions{
+  std::vector<InputBinding> actions{
     {"MoveForward", ActionCode::MoveForward, "KeyW"},
     {"MoveBackward", ActionCode::MoveBackward, "KeyS"},
     {"MoveLeft", ActionCode::MoveLeft, "KeyA"},
@@ -64,7 +57,7 @@ std::vector<ProtoWindow> SimpleGame::GetOutputConfiguration() const
 
 void SimpleGame::Tick(float deltaTime)
 {
-  auto evt = ConsumeEvent();
+  auto evt = ConsumeInputEvent();
   t += deltaTime;
   GenerateSignal(GameSignal::InvalidateRenderCache);
   GameFramework::Log(GameFramework::Info, L"Tick: ", deltaTime, " FPS: ", 1000.0f / deltaTime);
@@ -80,32 +73,8 @@ void SimpleGame::Render(GameFramework::IDrawTool & drawTool)
   drawTool.DrawRect(-0.5f, 0.0f, 0.0f, -0.2f);
 }
 
-void SimpleGame::ListenInputQueue(GameFramework::InputQueue & queue)
+void SimpleGame::ProcessInputEvents()
 {
-  m_listenedInput.push_back(&queue);
-}
-
-std::optional<GameInputEvent> SimpleGame::ConsumeEvent()
-{
-  // очень спорно
-  for (auto * queue : m_listenedInput)
-  {
-    auto evt = queue->PopEvent();
-    if (evt.has_value())
-      return evt;
-  }
-  return std::nullopt;
-}
-
-void SimpleGame::BindSignalsQueue(GameFramework::SignalsQueue & queue)
-{
-  m_boundSignalsQueue.push_back(&queue);
-}
-
-void SimpleGame::GenerateSignal(const GameSignal & signal)
-{
-  for (auto * queue : m_boundSignalsQueue)
-    queue->PushSignal(signal);
 }
 
 /// creates global game instance

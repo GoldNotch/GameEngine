@@ -10,6 +10,8 @@ PRIVATE
 	"GlfwInstance.cpp"
 	"IWindow.hpp"
 	"GlfwWindow.cpp"
+	"GlfwInputBinding.cpp"
+    "GlfwInputBinding.hpp"
 )
 
 target_link_libraries(${this_target}
