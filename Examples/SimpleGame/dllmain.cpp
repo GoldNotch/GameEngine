@@ -83,7 +83,7 @@ void SimpleGame::Tick(double deltaTime)
   ProcessInput();
   t += deltaTime;
   GenerateSignal(GameSignal::InvalidateRenderCache);
-  //GameFramework::Log(GameFramework::Info, L"Tick: ", deltaTime, " FPS: ", 1000.0f / deltaTime);
+  GameFramework::Log(GameFramework::Info, "Tick: ", deltaTime * 1000.0, " FPS: ", 1.0 / deltaTime);
 }
 
 void SimpleGame::Render(GameFramework::IDrawTool & drawTool)

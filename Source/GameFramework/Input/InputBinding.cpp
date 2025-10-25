@@ -419,8 +419,8 @@ std::optional<GameInputEvent> ActionGenerator::GetAction() const noexcept
       case ActionType::Axis:
         return AxisAction{m_binding.code};
       default:
-        /*Log(LogMessageType::Warning, L"Unknown action type is fired - ", m_binding.name, L"(",
-            m_binding.type, L")");*/
+        Log(LogMessageType::Warning, "Unknown action type is fired - ", m_binding.name, L"(",
+            m_binding.type, ")");
         return std::nullopt;
     }
   }

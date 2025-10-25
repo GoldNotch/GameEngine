@@ -82,7 +82,7 @@ int main(int argc, const char * argv[])
       }
     }
 
-    gameInstance->Tick(0.0);
+    gameInstance->Tick(GameFramework::GetTimeManager().Delta());
   }
 
   return 0;

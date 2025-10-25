@@ -31,9 +31,29 @@ template<typename... Args>
 inline void Log(LogMessageType type, Args &&... args)
 {
   thread_local std::wostringstream stream;
+  auto writeToStream = [](std::wostringstream & stream, auto && value)
+  {
+    using T = decltype(value);
+    if constexpr (std::is_same_v<std::decay_t<T>, std::string>)
+    {
+      // Convert std::string to std::wstring
+      stream << std::wstring(value.begin(), value.end());
+    }
+    else if constexpr (std::is_same_v<std::decay_t<T>, const char *>)
+    {
+      // Convert const char* to std::wstring
+      stream << std::wstring(value, value + std::strlen(value));
+    }
+    else
+    {
+      // Normal case (includes std::wstring, numbers, etc.)
+      stream << std::forward<T>(value);
+    }
+  };
+
   stream.str(L"");
   stream.clear();
-  (stream << ... << std::forward<Args>(args));
+  (writeToStream(stream, std::forward<Args>(args)), ...);
   detail::LogImpl(type, stream.str());
 }
 
