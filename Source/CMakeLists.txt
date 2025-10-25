@@ -1,3 +1,2 @@
 add_subdirectory(GameFramework)
-add_subdirectory(GameSystems)
 add_subdirectory(Launcher)
