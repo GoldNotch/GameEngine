@@ -55,7 +55,7 @@ std::vector<InputBinding> SimpleGame::GetInputConfiguration() const
 
 std::vector<ProtoWindow> SimpleGame::GetOutputConfiguration() const
 {
-  std::vector<ProtoWindow> windows{{"SimpleGame", 800, 600}, {"TestWindow", 500, 500}};
+  std::vector<ProtoWindow> windows{{"SimpleGame", 800, 600}};
   return windows;
 }
 
