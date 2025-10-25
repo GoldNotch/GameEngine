@@ -6,8 +6,8 @@
 #include <string_view>
 #include <vector>
 
-#include <Game/Input.hpp>
-#include <Game/InputDevice.hpp>
+#include <Input/Input.hpp>
+#include <Input/InputDevice.hpp>
 
 namespace GameFramework
 {

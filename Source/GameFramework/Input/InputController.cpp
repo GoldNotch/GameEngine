@@ -1,20 +1,37 @@
 #include "InputController.hpp"
 
 #include <algorithm>
+#include <array>
 #include <ranges>
 
 #include <Game/Time.hpp>
 #include <GameFramework.hpp>
+#include <Input/InputQueue.hpp>
 
 namespace GameFramework
 {
 
-InputController::InputController()
+class InputControllerImpl : public InputController
+{
+public:
+  InputControllerImpl();
+  virtual ~InputControllerImpl() = default;
+
+  virtual void GenerateInputEvents() override;
+  virtual void SetInputBindings(const std::span<InputBinding> & bindings) override;
+  virtual void OnButtonAction(InputButton code, PressState state) override;
+
+private:
+  std::array<PressState, static_cast<size_t>(InputButton::TOTAL)> m_pressedButtons;
+  std::vector<ActionGenerator> m_generators;
+};
+
+InputControllerImpl::InputControllerImpl()
   : m_pressedButtons{PressState::RELEASED}
 {
 }
 
-void InputController::GenerateInputEvents()
+void InputControllerImpl::GenerateInputEvents()
 {
   double time = GetTimeManager().Now();
   for (auto && binding : m_generators)
@@ -26,7 +43,7 @@ void InputController::GenerateInputEvents()
   }
 }
 
-void InputController::SetInputBindings(const std::span<InputBinding> & bindings)
+void InputControllerImpl::SetInputBindings(const std::span<InputBinding> & bindings)
 {
   auto checkState = [this](InputButton btn)
   {
@@ -43,7 +60,7 @@ void InputController::SetInputBindings(const std::span<InputBinding> & bindings)
   m_generators = std::move(newBindings);
 }
 
-void InputController::OnButtonAction(InputButton code, PressState state)
+void InputControllerImpl::OnButtonAction(InputButton code, PressState state)
 {
   auto && keyInfo = m_pressedButtons[static_cast<size_t>(code)];
   keyInfo = state;
@@ -58,5 +75,11 @@ void InputController::OnButtonAction(InputButton code, PressState state)
   //}
 }
 
+
+GAME_FRAMEWORK_API InputControllerUPtr CreateInputController()
+{
+  return std::make_unique<InputControllerImpl>();
+  ;
+}
 
 } // namespace GameFramework

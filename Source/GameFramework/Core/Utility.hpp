@@ -42,4 +42,13 @@ constexpr T bit(T i)
   return static_cast<T>(1) << i;
 }
 
+// A simple visitor using overloaded lambdas
+template<class... Ts>
+struct overloaded : Ts...
+{
+  using Ts::operator()...;
+};
+template<class... Ts>
+overloaded(Ts...) -> overloaded<Ts...>;
+
 } // namespace Core::utils

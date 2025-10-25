@@ -15,7 +15,7 @@
 #include <GLFW/glfw3native.h>
 /// clang-format on
 
-#include <Game/InputController.hpp>
+#include <Input/InputController.hpp>
 
 #include "GlfwInput.hpp"
 
@@ -37,14 +37,14 @@ public:
   void Close() override;
   bool ShouldClose() const noexcept override;
   void SetResizeCallback(ResizeCallback && callback) override;
-  virtual GameFramework::InputProducer & GetInputController() & noexcept override;
+  virtual GameFramework::InputController & GetInputController() & noexcept override;
 
 private:
+  GameFramework::InputControllerUPtr m_inputController;
   GLFWwindow * m_window = nullptr;
   std::optional<std::pair<double, double>> m_lastCursorPos;
   ResizeCallback onResize = nullptr;
 
-  GameFramework::InputController m_inputController;
 
 private:
   static void OnResizeCallback(GLFWwindow * window, int width, int height);
@@ -56,6 +56,7 @@ private:
 };
 
 GlfwWindow::GlfwWindow(const std::string & title, int width, int height)
+  : m_inputController(GameFramework::CreateInputController())
 {
   // Create GLFW window
   GLFWwindow * window = glfwCreateWindow(width, height, title.c_str(), NULL, NULL);
@@ -126,9 +127,9 @@ void GlfwWindow::SetResizeCallback(ResizeCallback && callback)
   onResize = std::move(callback);
 }
 
-GameFramework::InputProducer & GlfwWindow::GetInputController() & noexcept
+GameFramework::InputController & GlfwWindow::GetInputController() & noexcept
 {
-  return m_inputController;
+  return *m_inputController;
 }
 
 void GlfwWindow::OnResizeCallback(GLFWwindow * window, int width, int height)
@@ -171,16 +172,16 @@ void GlfwWindow::OnKeyAction(GLFWwindow * window, int key, int scancode, int act
 {
   auto * wnd = reinterpret_cast<Utils::GlfwWindow *>(glfwGetWindowUserPointer(window));
   if (wnd)
-    wnd->m_inputController.OnButtonAction(ConvertKeyboardButtonCode(key),
-                                          ConvertPressState(action, mods));
+    wnd->m_inputController->OnButtonAction(ConvertKeyboardButtonCode(key),
+                                           ConvertPressState(action, mods));
 }
 
 void GlfwWindow::OnMouseButtonAction(GLFWwindow * window, int key, int action, int mods)
 {
   auto * wnd = reinterpret_cast<Utils::GlfwWindow *>(glfwGetWindowUserPointer(window));
   if (wnd)
-    wnd->m_inputController.OnButtonAction(ConvertMouseButtonCode(key),
-                                          ConvertPressState(action, mods));
+    wnd->m_inputController->OnButtonAction(ConvertMouseButtonCode(key),
+                                           ConvertPressState(action, mods));
 }
 
 void GlfwWindow::OnScroll(GLFWwindow * window, double xoffset, double yoffset)

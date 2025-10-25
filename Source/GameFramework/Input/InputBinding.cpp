@@ -9,8 +9,6 @@
 #include <Core/StringUtils.hpp>
 #include <GameFramework.hpp>
 
-#include "InputBinding.hpp"
-
 namespace GameFramework
 {
 /// all binding are delimited with ;

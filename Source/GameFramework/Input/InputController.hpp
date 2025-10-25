@@ -1,33 +1,27 @@
 #pragma once
 #include <GameFramework_def.h>
 
-#include <array>
+#include <memory>
 
-#include <Game/InputBinding.hpp>
-#include <Game/InputDevice.hpp>
-#include <Game/InputQueue.hpp>
+#include <Input/InputBinding.hpp>
+#include <Input/InputDevice.hpp>
+#include <Input/InputQueue.hpp>
 
 namespace GameFramework
 {
 
 
-class GAME_FRAMEWORK_API InputController : public InputProducer
+struct InputController : public InputProducer
 {
-public:
-  InputController();
-  ~InputController() = default;
-
-public:
-  virtual void GenerateInputEvents() override;
-  virtual void SetInputBindings(const std::span<InputBinding> & bindings) override;
-
-public:
-  void OnButtonAction(InputButton code, PressState state);
-
-private:
-  std::array<PressState, static_cast<size_t>(InputButton::TOTAL)> m_pressedButtons;
-  std::vector<ActionGenerator> m_generators;
+  virtual ~InputController() = default;
+  virtual void GenerateInputEvents() = 0;
+  virtual void SetInputBindings(const std::span<InputBinding> & bindings) = 0;
+  virtual void OnButtonAction(InputButton code, PressState state) = 0;
 };
+
+using InputControllerUPtr = std::unique_ptr<InputController>;
+
+GAME_FRAMEWORK_API InputControllerUPtr CreateInputController();
 
 /*
 * Нажатие характеризуется двумя вещами: кнопка и длительность нажатия. 

@@ -1,5 +1,5 @@
 #pragma once
-#include <Game/InputController.hpp>
+#include <Input/InputController.hpp>
 
 namespace Utils
 {

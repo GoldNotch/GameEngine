@@ -9,7 +9,7 @@ PUBLIC
 	"PluginInterfaces/DrawToolPlugin.hpp"
 	"Plugin/Plugin.hpp"
 	"Game/Signal.hpp"
-	"Game/Input.hpp"
+	"Input/Input.hpp"
 PRIVATE
 	"GameFramework_def.h"
 	"GameFramework.cpp"
@@ -19,12 +19,12 @@ PRIVATE
 	"Core/StringUtils.hpp"
 	"Plugin/Plugin.cpp"
 	"Game/Signal.cpp" 
-	"Game/InputBinding.hpp" 
-	"Game/InputBinding.cpp" 
-	"Game/InputController.hpp"
-	"Game/InputController.cpp" 
-	"Game/InputQueue.cpp"
-	"Game/InputQueue.hpp"
+	"Input/InputBinding.hpp" 
+	"Input/InputBinding.cpp" 
+	"Input/InputController.hpp"
+	"Input/InputController.cpp" 
+	"Input/InputQueue.cpp"
+	"Input/InputQueue.hpp"
  "Game/Time.cpp")
 
 if (MSVC)

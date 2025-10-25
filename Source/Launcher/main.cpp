@@ -57,6 +57,7 @@ int main(int argc, const char * argv[])
   // in the beginning we must read and update input configuration
   signalsQueue.PushSignal(GameFramework::GameSignal::UpdateInputConfiguration);
 
+  bool quitSignal = false;
   while (std::all_of(windows.begin(), windows.end(),
                      [](const WindowUPtr & wnd) { return !wnd->ShouldClose(); }))
   {
@@ -68,7 +69,6 @@ int main(int argc, const char * argv[])
     size_t processSignalsCount = 0;
     while (auto signal = signalsQueue.PopSignal())
     {
-      //TODO: process signal
       switch (signal.value())
       {
         case GameFramework::GameSignal::UpdateInputConfiguration:
@@ -77,6 +77,9 @@ int main(int argc, const char * argv[])
           for (auto && wnd : windows)
             wnd->GetInputController().SetInputBindings(conf);
         }
+        break;
+        case GameFramework::GameSignal::Quit:
+          return 0;
       }
       processSignalsCount++;
       if (processSignalsCount >= 100)

@@ -7,6 +7,7 @@ using namespace GameFramework;
 
 enum ActionCode
 {
+  Quit,
   MoveForward,
   MoveBackward,
   MoveLeft,
@@ -25,13 +26,15 @@ public:
   virtual std::vector<InputBinding> GetInputConfiguration() const override;
 
   ///
-  void Tick(double deltaTime) override;
+  virtual void Tick(double deltaTime) override;
 
   /// Loop over game object and choose the way to render it
-  void Render(GameFramework::IDrawTool & drawTool) override;
+  virtual void Render(GameFramework::IDrawTool & drawTool) override;
 
-  void ProcessInputEvents() override;
   virtual std::vector<ProtoWindow> GetOutputConfiguration() const override;
+
+private:
+  void ProcessInput();
 
 private:
   std::vector<InputQueue *> m_listenedInput;
@@ -41,6 +44,7 @@ private:
 std::vector<InputBinding> SimpleGame::GetInputConfiguration() const
 {
   std::vector<InputBinding> actions{
+    {"Quit", ActionCode::Quit, "KeyEscape", ActionType::Event},
     {"MoveForward", ActionCode::MoveForward, "KeyW", ActionType::Continous},
     {"MoveBackward", ActionCode::MoveBackward, "KeyS", ActionType::Continous},
     {"MoveLeft", ActionCode::MoveLeft, "KeyA", ActionType::Continous},
@@ -55,9 +59,28 @@ std::vector<ProtoWindow> SimpleGame::GetOutputConfiguration() const
   return windows;
 }
 
-void SimpleGame::Tick(double deltaTime)
+void SimpleGame::ProcessInput()
 {
   auto evt = ConsumeInputEvent();
+  if (evt.has_value())
+  {
+    std::visit(Core::utils::overloaded{[this](const EventAction & evt)
+                                       {
+                                         if (evt.code == ActionCode::Quit)
+                                           GenerateSignal(GameSignal::Quit);
+                                       },
+                                       [](const ContinousAction & action) {
+
+                                       },
+                                       [](const AxisAction & action) {
+                                       }},
+               *evt);
+  }
+}
+
+void SimpleGame::Tick(double deltaTime)
+{
+  ProcessInput();
   t += deltaTime;
   GenerateSignal(GameSignal::InvalidateRenderCache);
   //GameFramework::Log(GameFramework::Info, L"Tick: ", deltaTime, " FPS: ", 1000.0f / deltaTime);
@@ -71,10 +94,6 @@ void SimpleGame::Render(GameFramework::IDrawTool & drawTool)
   float top = 0.5f + (std::sin(t * 0.002) + 1.0f) / 8.0f;
   drawTool.DrawRect(0.0f, top, right, 0.0f);
   drawTool.DrawRect(-0.5f, 0.0f, 0.0f, -0.2f);
-}
-
-void SimpleGame::ProcessInputEvents()
-{
 }
 
 /// creates global game instance

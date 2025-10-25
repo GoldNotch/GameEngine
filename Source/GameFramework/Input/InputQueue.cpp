@@ -3,8 +3,8 @@
 #include <vector>
 
 #include <concurrent_queue.h>
+#include <Input/Input.hpp>
 
-#include "Input.hpp"
 namespace GameFramework
 {
 

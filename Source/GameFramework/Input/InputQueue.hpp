@@ -5,8 +5,8 @@
 #include <span>
 #include <vector>
 
-#include <Game/Input.hpp>
-#include <Game/InputBinding.hpp>
+#include <Input/Input.hpp>
+#include <Input/InputBinding.hpp>
 
 namespace GameFramework
 {
@@ -32,10 +32,7 @@ struct GAME_FRAMEWORK_API InputProducer
 {
   InputProducer();
   virtual ~InputProducer();
-  virtual void GenerateInputEvents() = 0;
-  virtual void SetInputBindings(const std::span<InputBinding> & bindings) = 0;
 
-public:
   void BindInputQueue(GameFramework::InputQueue & queue);
   void PushInputEvent(const GameInputEvent & event);
 
@@ -47,10 +44,6 @@ struct GAME_FRAMEWORK_API InputConsumer
 {
   InputConsumer();
   virtual ~InputConsumer();
-  virtual void ProcessInputEvents() = 0;
-  virtual std::vector<InputBinding> GetInputConfiguration() const = 0;
-
-public:
   std::optional<GameInputEvent> ConsumeInputEvent();
   void ListenInputQueue(GameFramework::InputQueue & queue);
 
