@@ -25,7 +25,7 @@ public:
   virtual std::vector<InputBinding> GetInputConfiguration() const override;
 
   ///
-  void Tick(float deltaTime) override;
+  void Tick(double deltaTime) override;
 
   /// Loop over game object and choose the way to render it
   void Render(GameFramework::IDrawTool & drawTool) override;
@@ -41,10 +41,10 @@ private:
 std::vector<InputBinding> SimpleGame::GetInputConfiguration() const
 {
   std::vector<InputBinding> actions{
-    {"MoveForward", ActionCode::MoveForward, "KeyW"},
-    {"MoveBackward", ActionCode::MoveBackward, "KeyS"},
-    {"MoveLeft", ActionCode::MoveLeft, "KeyA"},
-    {"MoveRight", ActionCode::MoveRight, "KeyD"},
+    {"MoveForward", ActionCode::MoveForward, "KeyW", ActionType::Continous},
+    {"MoveBackward", ActionCode::MoveBackward, "KeyS", ActionType::Continous},
+    {"MoveLeft", ActionCode::MoveLeft, "KeyA", ActionType::Continous},
+    {"MoveRight", ActionCode::MoveRight, "KeyD", ActionType::Continous},
   };
   return actions;
 }
@@ -55,12 +55,12 @@ std::vector<ProtoWindow> SimpleGame::GetOutputConfiguration() const
   return windows;
 }
 
-void SimpleGame::Tick(float deltaTime)
+void SimpleGame::Tick(double deltaTime)
 {
   auto evt = ConsumeInputEvent();
   t += deltaTime;
   GenerateSignal(GameSignal::InvalidateRenderCache);
-  GameFramework::Log(GameFramework::Info, L"Tick: ", deltaTime, " FPS: ", 1000.0f / deltaTime);
+  //GameFramework::Log(GameFramework::Info, L"Tick: ", deltaTime, " FPS: ", 1000.0f / deltaTime);
 }
 
 void SimpleGame::Render(GameFramework::IDrawTool & drawTool)

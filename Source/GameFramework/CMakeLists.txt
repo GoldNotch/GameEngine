@@ -16,10 +16,16 @@ PRIVATE
 	"Core/Formatter.hpp"
 	"Core/Storage.hpp"
 	"Core/TypeMapping.hpp"
+	"Core/StringUtils.hpp"
 	"Plugin/Plugin.cpp"
 	"Game/Signal.cpp" 
-	"Game/Input.cpp"
-)
+	"Game/InputBinding.hpp" 
+	"Game/InputBinding.cpp" 
+	"Game/InputController.hpp"
+	"Game/InputController.cpp" 
+	"Game/InputQueue.cpp"
+	"Game/InputQueue.hpp"
+ "Game/Time.cpp")
 
 if (MSVC)
 	add_compile_definitions(_CRT_SECURE_NO_WARNINGS)

@@ -4,6 +4,7 @@
 #include <memory>
 #include <stdexcept>
 
+#include <Game/Time.hpp>
 #include <GameFramework.hpp>
 
 #include "GlfwInstance.hpp"
@@ -48,17 +49,21 @@ int main(int argc, const char * argv[])
   {
     auto && wnd =
       windows.emplace_back(Utils::NewWindow(wndInfo.title, wndInfo.width, wndInfo.height));
-    wnd->BindInputQueue(input);
+    wnd->GetInputController().BindInputQueue(input);
   }
   gameInstance->ListenInputQueue(input);
   gameInstance->BindSignalsQueue(signalsQueue);
 
+  // in the beginning we must read and update input configuration
+  signalsQueue.PushSignal(GameFramework::GameSignal::UpdateInputConfiguration);
+
   while (std::all_of(windows.begin(), windows.end(),
                      [](const WindowUPtr & wnd) { return !wnd->ShouldClose(); }))
   {
+    GameFramework::GetTimeManager().Tick();
     instance.PollEvents();
     for (auto && wnd : windows)
-      wnd->GenerateInputEvents();
+      wnd->GetInputController().GenerateInputEvents();
 
     size_t processSignalsCount = 0;
     while (auto signal = signalsQueue.PopSignal())
@@ -70,13 +75,15 @@ int main(int argc, const char * argv[])
         {
           auto conf = gameInstance->GetInputConfiguration();
           for (auto && wnd : windows)
-            wnd->SetInputBindings(conf);
+            wnd->GetInputController().SetInputBindings(conf);
         }
       }
       processSignalsCount++;
       if (processSignalsCount >= 100)
         break;
     }
+
+    gameInstance->Tick(0.0);
   }
 
   return 0;

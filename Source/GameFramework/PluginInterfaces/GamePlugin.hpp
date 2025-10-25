@@ -5,7 +5,7 @@
 #include <variant>
 #include <vector>
 
-#include <Game/Input.hpp>
+#include <Game/InputQueue.hpp>
 #include <Game/Signal.hpp>
 #include <Plugin/Plugin.hpp>
 #include <PluginInterfaces/DrawToolPlugin.hpp>
@@ -28,7 +28,7 @@ struct GAME_FRAMEWORK_API GamePLugin : public IPluginInstance,
   virtual std::string GetGameName() const = 0;
   virtual std::vector<ProtoWindow> GetOutputConfiguration() const = 0;
 
-  virtual void Tick(float deltaTime) = 0;
+  virtual void Tick(double deltaTime) = 0;
   virtual void Render(GameFramework::IDrawTool & drawTool) = 0;
 };
 

@@ -1,3 +1,4 @@
+#include <array>
 #include <cassert>
 #include <optional>
 #include <stdexcept>
@@ -5,14 +6,19 @@
 #include <GLFW/glfw3.h>
 
 #include "IWindow.hpp"
+/// clang-format off
 #ifdef _WIN32
 #define GLFW_EXPOSE_NATIVE_WIN32
 #elif defined(__linux__)
 #define GLFW_EXPOSE_NATIVE_X11
 #endif
 #include <GLFW/glfw3native.h>
+/// clang-format on
 
-#include "GlfwInputBinding.hpp"
+#include <Game/InputController.hpp>
+
+#include "GlfwInput.hpp"
+
 
 namespace Utils
 {
@@ -31,19 +37,14 @@ public:
   void Close() override;
   bool ShouldClose() const noexcept override;
   void SetResizeCallback(ResizeCallback && callback) override;
+  virtual GameFramework::InputProducer & GetInputController() & noexcept override;
 
-public: // InputProducer
-  virtual void GenerateInputEvents() override;
-  virtual void SetInputBindings(const std::span<GameFramework::InputBinding> & bindings) override;
-
-public:
 private:
   GLFWwindow * m_window = nullptr;
   std::optional<std::pair<double, double>> m_lastCursorPos;
-  bool m_pressedKeys[GLFW_KEY_LAST]{false};
   ResizeCallback onResize = nullptr;
-  std::vector<GameFramework::InputQueue *> m_boundInputs;
-  std::vector<GlfwInputBinding> m_bindings;
+
+  GameFramework::InputController m_inputController;
 
 private:
   static void OnResizeCallback(GLFWwindow * window, int width, int height);
@@ -125,24 +126,9 @@ void GlfwWindow::SetResizeCallback(ResizeCallback && callback)
   onResize = std::move(callback);
 }
 
-void GlfwWindow::GenerateInputEvents()
+GameFramework::InputProducer & GlfwWindow::GetInputController() & noexcept
 {
-  for (auto && binding : m_bindings)
-  {
-    //if (binding.IsActive())
-    //   PushInputEvent(GameFramework::InputAction{binding.GetCode(), true});
-  }
-}
-
-void GlfwWindow::SetInputBindings(const std::span<GameFramework::InputBinding> & bindings)
-{
-  std::vector<GlfwInputBinding> newBindings;
-  newBindings.reserve(bindings.size());
-
-  for (auto && binding : bindings)
-    newBindings.emplace_back(binding);
-
-  m_bindings = std::move(newBindings);
+  return m_inputController;
 }
 
 void GlfwWindow::OnResizeCallback(GLFWwindow * window, int width, int height)
@@ -158,9 +144,7 @@ void GlfwWindow::OnCursorMoved(GLFWwindow * window, double xpos, double ypos)
   if (wnd)
   {
     assert(wnd->m_lastCursorPos.has_value());
-
-    //if (wnd->onMoveCursor)
-    //  wnd->onMoveCursor(xpos, ypos, xpos - g_oldCursorPos.first, ypos - g_oldCursorPos.second);
+    //wnd->PushInputEvent(GameFramework::AxisAction{});
     wnd->m_lastCursorPos = {xpos, ypos};
   }
 }
@@ -187,28 +171,25 @@ void GlfwWindow::OnKeyAction(GLFWwindow * window, int key, int scancode, int act
 {
   auto * wnd = reinterpret_cast<Utils::GlfwWindow *>(glfwGetWindowUserPointer(window));
   if (wnd)
-  {
-    if (action == GLFW_PRESS)
-      wnd->m_pressedKeys[key] = true;
-    else if (action == GLFW_RELEASE)
-      wnd->m_pressedKeys[key] = false;
-  }
+    wnd->m_inputController.OnButtonAction(ConvertKeyboardButtonCode(key),
+                                          ConvertPressState(action, mods));
 }
 
 void GlfwWindow::OnMouseButtonAction(GLFWwindow * window, int key, int action, int mods)
 {
   auto * wnd = reinterpret_cast<Utils::GlfwWindow *>(glfwGetWindowUserPointer(window));
   if (wnd)
-  {
-    if (action == GLFW_PRESS)
-      wnd->m_pressedKeys[key] = true;
-    else if (action == GLFW_RELEASE)
-      wnd->m_pressedKeys[key] = false;
-  }
+    wnd->m_inputController.OnButtonAction(ConvertMouseButtonCode(key),
+                                          ConvertPressState(action, mods));
 }
 
 void GlfwWindow::OnScroll(GLFWwindow * window, double xoffset, double yoffset)
 {
+  auto * wnd = reinterpret_cast<Utils::GlfwWindow *>(glfwGetWindowUserPointer(window));
+  if (wnd)
+  {
+    //wnd->PushInputEvent(GameFramework::AxisAction{});
+  }
 }
 
 std::unique_ptr<IWindow> NewWindow(const std::string & title, int width, int height)

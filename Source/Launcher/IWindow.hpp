@@ -3,13 +3,13 @@
 #include <memory>
 #include <string>
 
-#include <Game/Input.hpp>
+#include <Game/InputQueue.hpp>
 
 namespace Utils
 {
 using SurfaceDescriptor = std::pair<void *, void *>;
 
-struct IWindow : public GameFramework::InputProducer
+struct IWindow
 {
   using ResizeCallback = std::function<void(int, int)>;
 
@@ -22,6 +22,7 @@ struct IWindow : public GameFramework::InputProducer
   virtual bool IsCursorHidden() const noexcept = 0;
   virtual void Close() = 0;
   virtual bool ShouldClose() const noexcept = 0;
+  virtual GameFramework::InputProducer & GetInputController() & noexcept = 0;
 
   virtual void SetResizeCallback(ResizeCallback && callback) = 0;
 };

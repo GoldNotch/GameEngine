@@ -1,4 +1,4 @@
-#include "Input.hpp"
+#include "InputQueue.hpp"
 
 #include <vector>
 

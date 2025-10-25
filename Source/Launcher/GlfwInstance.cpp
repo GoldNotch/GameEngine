@@ -34,5 +34,10 @@ void GlfwInstance::PollEvents()
   glfwPollEvents();
 }
 
+double GlfwInstance::GetTimestamp() const
+{
+  return glfwGetTime();
+}
+
 
 } // namespace Utils

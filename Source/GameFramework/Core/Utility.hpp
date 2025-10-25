@@ -36,5 +36,10 @@ inline void hash_combine(std::size_t & seed, const T & v) noexcept
   seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 }
 
+template<typename T>
+constexpr T bit(T i)
+{
+  return static_cast<T>(1) << i;
+}
 
 } // namespace Core::utils

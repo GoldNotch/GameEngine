@@ -1,84 +1,53 @@
 #pragma once
 #include <GameFramework_def.h>
 
-#include <optional>
-#include <span>
 #include <string>
 #include <variant>
-#include <vector>
 
+//TODO: rename to InputAction.hpp
 namespace GameFramework
 {
 
-struct GAME_FRAMEWORK_API InputBinding
+enum ActionType
 {
-  char name[128];      ///< name of the action, can be "Jump", "MoveForward", etc
-  int code;            ///< code ID of the action, use enum to define it
-  char bindings[1024]; ///< string to declare keys that represents this action
+  Event,     ///< fires once when keyset is just pressed
+  Continous, ///< fires every time when keyset is pressed
+  Axis       ///< fires all the time with some variadic value
 };
 
-struct GAME_FRAMEWORK_API InputAction
+/// fires once when you press some key
+/// might have difficult condition
+struct EventAction
 {
-  int code = 0;           ///< code ID of the action, use enum to define it
-  bool isPressed = false; ///< true if action is pressed or active
+  int code = 0; ///< code ID of the action, use enum to define it
 };
 
-struct GAME_FRAMEWORK_API InputAxis
+/// continous-in-time action, has a duration. Fires while you press a button.
+/// This event might not have a hard condition like time-delay or double-click.
+/// While you're pressing the right set of keys this action is firing.
+struct ContinousAction
+{
+  int code = 0; ///< code ID of the action, use enum to define it
+  double activeStart;
+  double activeDuration;
+};
+
+/// permanent action, fires every time
+/// but it has a vector of changing some value (derivative)
+/// support 3d axis
+/// Also it might have a threshold value when this event is never happend
+struct AxisAction
 {
   int code = 0; ///< code ID of the action, use enum to define it
   float xAxisValue = 0.0f;
   float dxAxisValue = 0.0f;
   float yAxisValue = 0.0f;
   float dyAxisValue = 0.0f;
+  float zAxisValue = 0.0f;
+  float dzAxisValue = 0.0f;
 };
 
-using GameInputEvent = std::variant<InputAction, InputAxis>;
+using GameInputEvent = std::variant<EventAction, ContinousAction, AxisAction>;
 
-struct GAME_FRAMEWORK_API InputQueue final
-{
-  InputQueue();
-  ~InputQueue();
-  void PushEvent(const GameInputEvent & signal);
-  std::optional<GameInputEvent> PopEvent();
-
-private:
-  struct Queue;
-  Queue * m_queue = nullptr;
-};
-
-namespace details
-{
-struct InputsQueueList;
-}
-
-struct GAME_FRAMEWORK_API InputProducer
-{
-  InputProducer();
-  virtual ~InputProducer();
-  virtual void GenerateInputEvents() = 0;
-  virtual void SetInputBindings(const std::span<InputBinding> & bindings) = 0;
-
-public:
-  void BindInputQueue(GameFramework::InputQueue & queue);
-  void PushInputEvent(const GameInputEvent & event);
-
-private:
-  details::InputsQueueList * m_boundInputs = nullptr;
-};
-
-struct GAME_FRAMEWORK_API InputConsumer
-{
-  InputConsumer();
-  virtual ~InputConsumer();
-  virtual void ProcessInputEvents() = 0;
-  virtual std::vector<InputBinding> GetInputConfiguration() const = 0;
-
-public:
-  std::optional<GameInputEvent> ConsumeInputEvent();
-  void ListenInputQueue(GameFramework::InputQueue & queue);
-
-private:
-  details::InputsQueueList * m_listenedInputs = nullptr;
-};
 
 } // namespace GameFramework
