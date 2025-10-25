@@ -66,7 +66,6 @@ int main(int argc, const char * argv[])
     for (auto && wnd : windows)
       wnd->GetInputController().GenerateInputEvents();
 
-    size_t processSignalsCount = 0;
     while (auto signal = signalsQueue.PopSignal())
     {
       switch (signal.value())
@@ -81,9 +80,6 @@ int main(int argc, const char * argv[])
         case GameFramework::GameSignal::Quit:
           return 0;
       }
-      processSignalsCount++;
-      if (processSignalsCount >= 100)
-        break;
     }
 
     gameInstance->Tick(0.0);
