@@ -2,7 +2,7 @@
 
 #include <GLFW/glfw3.h>
 
-namespace Utils
+namespace GlfwPlugin
 {
 GameFramework::PressState ConvertPressState(int action, int mods)
 {
@@ -38,4 +38,4 @@ GameFramework::InputButton ConvertGamepadButtonCode(int code)
   return static_cast<GameFramework::InputButton>(code + GLFW_MOUSE_BUTTON_LAST);
 }
 
-} // namespace Utils
+} // namespace GlfwPlugin

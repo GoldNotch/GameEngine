@@ -6,12 +6,6 @@ add_executable(${this_target})
 target_sources(${this_target}
 PRIVATE
 	"main.cpp"
-	"GlfwInstance.hpp"
-	"GlfwInstance.cpp"
-	"IWindow.hpp"
-	"GlfwWindow.cpp"
-	"GlfwInput.cpp"
-	"GlfwInput.hpp"
 )
 
 target_link_libraries(${this_target}

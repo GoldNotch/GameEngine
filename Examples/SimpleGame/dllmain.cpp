@@ -29,7 +29,7 @@ public:
   virtual void Tick(double deltaTime) override;
 
   /// Loop over game object and choose the way to render it
-  virtual void Render(GameFramework::IDrawTool & drawTool) override;
+  virtual void Render(GameFramework::DrawTool & drawTool) override;
 
   virtual std::vector<ProtoWindow> GetOutputConfiguration() const override;
 
@@ -87,7 +87,7 @@ void SimpleGame::Tick(double deltaTime)
                      " FPS: ", 1.0 / deltaTime);
 }
 
-void SimpleGame::Render(GameFramework::IDrawTool & drawTool)
+void SimpleGame::Render(GameFramework::DrawTool & drawTool)
 {
   drawTool.SetClearColor({0.2f, 0.5f, (std::sin(t * 0.005f) + 1.0f) / 2.0f, 1.0f});
 
@@ -98,7 +98,7 @@ void SimpleGame::Render(GameFramework::IDrawTool & drawTool)
 }
 
 /// creates global game instance
-GAME_API std::unique_ptr<GameFramework::IPluginInstance> CreateInstance()
+PLUGIN_API std::unique_ptr<GameFramework::IPluginInstance> CreateInstance()
 {
   return std::make_unique<SimpleGame>();
 }

@@ -1,20 +1,22 @@
 #pragma once
+
+#pragma once
 #include <functional>
 #include <memory>
 #include <string>
 
 #include <Input/InputController.hpp>
+#include <Plugin/Plugin.hpp>
 
-namespace Utils
+namespace GameFramework
 {
 using SurfaceDescriptor = std::pair<void *, void *>;
 
-struct IWindow
+struct Window
 {
   using ResizeCallback = std::function<void(int, int)>;
 
-
-  virtual ~IWindow() = default;
+  virtual ~Window() = default;
   virtual SurfaceDescriptor GetSurface() const noexcept = 0;
   virtual std::pair<int, int> GetSize() const noexcept = 0;
   virtual float GetAspectRatio() const noexcept = 0;
@@ -27,9 +29,14 @@ struct IWindow
   virtual void SetResizeCallback(ResizeCallback && callback) = 0;
 };
 
-std::unique_ptr<IWindow> NewWindow(const std::string & title, int width, int height);
+using WindowUPtr = std::unique_ptr<Window>;
 
-} // namespace Utils
+struct WindowsPlugin : public IPluginInstance
+{
+  virtual ~WindowsPlugin() = default;
+  virtual WindowUPtr NewWindow(const std::string & title, int width, int height) = 0;
+  virtual void PollEvents() = 0;
+};
 
 
-using WindowUPtr = std::unique_ptr<Utils::IWindow>;
+} // namespace GameFramework

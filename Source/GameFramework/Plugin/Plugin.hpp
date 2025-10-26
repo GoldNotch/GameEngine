@@ -13,7 +13,7 @@ struct GAME_FRAMEWORK_API IPluginInstance
   //virtual int GetVersion() const = 0;
 };
 
-GAME_API std::unique_ptr<IPluginInstance> CreateInstance();
+PLUGIN_API std::unique_ptr<IPluginInstance> CreateInstance();
 
 struct IPluginLoader
 {

@@ -4,8 +4,6 @@
 #include <stdexcept>
 
 #include <GLFW/glfw3.h>
-
-#include "IWindow.hpp"
 /// clang-format off
 #ifdef _WIN32
 #define GLFW_EXPOSE_NATIVE_WIN32
@@ -16,20 +14,21 @@
 /// clang-format on
 
 #include <Input/InputController.hpp>
+#include <PluginInterfaces/WindowPlugin.hpp>
 
 #include "GlfwInput.hpp"
 
 
-namespace Utils
+namespace GlfwPlugin
 {
 
-struct GlfwWindow final : public IWindow
+struct GlfwWindow final : public GameFramework::Window
 {
   GlfwWindow(const std::string & title, int width, int height);
   virtual ~GlfwWindow() override;
 
 public:
-  SurfaceDescriptor GetSurface() const noexcept override;
+  GameFramework::SurfaceDescriptor GetSurface() const noexcept override;
   std::pair<int, int> GetSize() const noexcept override;
   float GetAspectRatio() const noexcept override;
   void SetCursorHidden(bool hidden = true) override;
@@ -80,7 +79,7 @@ GlfwWindow::~GlfwWindow()
   glfwDestroyWindow(m_window);
 }
 
-SurfaceDescriptor GlfwWindow::GetSurface() const noexcept
+GameFramework::SurfaceDescriptor GlfwWindow::GetSurface() const noexcept
 {
 #ifdef _WIN32
   return {glfwGetWin32Window(m_window), GetModuleHandle(nullptr)};
@@ -134,14 +133,14 @@ GameFramework::InputController & GlfwWindow::GetInputController() & noexcept
 
 void GlfwWindow::OnResizeCallback(GLFWwindow * window, int width, int height)
 {
-  auto * wnd = reinterpret_cast<Utils::GlfwWindow *>(glfwGetWindowUserPointer(window));
+  auto * wnd = reinterpret_cast<GlfwWindow *>(glfwGetWindowUserPointer(window));
   if (wnd && wnd->onResize)
     wnd->onResize(width, height);
 }
 
 void GlfwWindow::OnCursorMoved(GLFWwindow * window, double xpos, double ypos)
 {
-  auto * wnd = reinterpret_cast<Utils::GlfwWindow *>(glfwGetWindowUserPointer(window));
+  auto * wnd = reinterpret_cast<GlfwWindow *>(glfwGetWindowUserPointer(window));
   if (wnd)
   {
     assert(wnd->m_lastCursorPos.has_value());
@@ -152,7 +151,7 @@ void GlfwWindow::OnCursorMoved(GLFWwindow * window, double xpos, double ypos)
 
 void GlfwWindow::OnCursorEnterLeave(GLFWwindow * window, int entered)
 {
-  auto * wnd = reinterpret_cast<Utils::GlfwWindow *>(glfwGetWindowUserPointer(window));
+  auto * wnd = reinterpret_cast<GlfwWindow *>(glfwGetWindowUserPointer(window));
   if (wnd)
   {
     if (entered == GLFW_TRUE)
@@ -170,7 +169,7 @@ void GlfwWindow::OnCursorEnterLeave(GLFWwindow * window, int entered)
 
 void GlfwWindow::OnKeyAction(GLFWwindow * window, int key, int scancode, int action, int mods)
 {
-  auto * wnd = reinterpret_cast<Utils::GlfwWindow *>(glfwGetWindowUserPointer(window));
+  auto * wnd = reinterpret_cast<GlfwWindow *>(glfwGetWindowUserPointer(window));
   if (wnd)
     wnd->m_inputController->OnButtonAction(ConvertKeyboardButtonCode(key),
                                            ConvertPressState(action, mods));
@@ -178,7 +177,7 @@ void GlfwWindow::OnKeyAction(GLFWwindow * window, int key, int scancode, int act
 
 void GlfwWindow::OnMouseButtonAction(GLFWwindow * window, int key, int action, int mods)
 {
-  auto * wnd = reinterpret_cast<Utils::GlfwWindow *>(glfwGetWindowUserPointer(window));
+  auto * wnd = reinterpret_cast<GlfwWindow *>(glfwGetWindowUserPointer(window));
   if (wnd)
     wnd->m_inputController->OnButtonAction(ConvertMouseButtonCode(key),
                                            ConvertPressState(action, mods));
@@ -186,16 +185,17 @@ void GlfwWindow::OnMouseButtonAction(GLFWwindow * window, int key, int action, i
 
 void GlfwWindow::OnScroll(GLFWwindow * window, double xoffset, double yoffset)
 {
-  auto * wnd = reinterpret_cast<Utils::GlfwWindow *>(glfwGetWindowUserPointer(window));
+  auto * wnd = reinterpret_cast<GlfwWindow *>(glfwGetWindowUserPointer(window));
   if (wnd)
   {
     //wnd->PushInputEvent(GameFramework::AxisAction{});
   }
 }
 
-std::unique_ptr<IWindow> NewWindow(const std::string & title, int width, int height)
+std::unique_ptr<GameFramework::Window> NewWindowImpl(const std::string & title, int width,
+                                                     int height)
 {
   return std::make_unique<GlfwWindow>(title, width, height);
 }
 
-} // namespace Utils
+} // namespace GlfwPlugin

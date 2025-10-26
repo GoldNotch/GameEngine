@@ -30,7 +30,7 @@ struct GAME_FRAMEWORK_API GamePlugin : public IPluginInstance,
   virtual std::vector<ProtoWindow> GetOutputConfiguration() const = 0;
 
   virtual void Tick(double deltaTime) = 0;
-  virtual void Render(GameFramework::IDrawTool & drawTool) = 0;
+  virtual void Render(GameFramework::DrawTool & drawTool) = 0;
 };
 
 } // namespace GameFramework

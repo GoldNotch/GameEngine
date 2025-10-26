@@ -7,9 +7,6 @@
 #include <Game/Time.hpp>
 #include <GameFramework.hpp>
 
-#include "GlfwInstance.hpp"
-#include "IWindow.hpp"
-
 void RenderThread()
 {
   /*while (true)
@@ -31,24 +28,27 @@ void GameThread()
 
 int main(int argc, const char * argv[])
 {
-  if (argc < 2)
+  if (argc < 3)
   {
     std::printf("Incorrect launch format");
     return -1;
   }
   std::filesystem::path gamePath = argv[1];
+  std::filesystem::path windowsPluginPath = argv[2];
   auto gamePluginLoader = GameFramework::LoadPlugin(gamePath);
   auto * gameInstance = dynamic_cast<GameFramework::GamePlugin *>(gamePluginLoader->GetInstance());
+  auto windowsPluginLoader = GameFramework::LoadPlugin(windowsPluginPath);
+  auto * windowsPlugin =
+    dynamic_cast<GameFramework::WindowsPlugin *>(windowsPluginLoader->GetInstance());
 
   GameFramework::InputQueue input;
   GameFramework::SignalsQueue signalsQueue;
 
-  Utils::GlfwInstance instance;
-  std::vector<WindowUPtr> windows;
+  std::vector<GameFramework::WindowUPtr> windows;
   for (auto && wndInfo : gameInstance->GetOutputConfiguration())
   {
     auto && wnd =
-      windows.emplace_back(Utils::NewWindow(wndInfo.title, wndInfo.width, wndInfo.height));
+      windows.emplace_back(windowsPlugin->NewWindow(wndInfo.title, wndInfo.width, wndInfo.height));
     wnd->GetInputController().BindInputQueue(input);
   }
   gameInstance->ListenInputQueue(input);
@@ -58,10 +58,10 @@ int main(int argc, const char * argv[])
   signalsQueue.PushSignal(GameFramework::GameSignal::UpdateInputConfiguration);
 
   while (std::all_of(windows.begin(), windows.end(),
-                     [](const WindowUPtr & wnd) { return !wnd->ShouldClose(); }))
+                     [](const GameFramework::WindowUPtr & wnd) { return !wnd->ShouldClose(); }))
   {
     GameFramework::GetTimeManager().Tick();
-    instance.PollEvents();
+    windowsPlugin->PollEvents();
     for (auto && wnd : windows)
     {
       wnd->GetInputController().GenerateInputEvents();

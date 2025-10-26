@@ -9,6 +9,7 @@
 
 #include <PluginInterfaces/DrawToolPlugin.hpp>
 #include <PluginInterfaces/GamePlugin.hpp>
+#include <PluginInterfaces/WindowPlugin.hpp>
 
 namespace GameFramework
 {

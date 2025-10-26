@@ -1,7 +1,7 @@
 #pragma once
 #include <Input/InputController.hpp>
 
-namespace Utils
+namespace GlfwPlugin
 {
 GameFramework::PressState ConvertPressState(int action, int mods);
 GameFramework::InputButton ConvertMouseButtonCode(int code);
