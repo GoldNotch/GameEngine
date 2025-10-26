@@ -1,6 +1,6 @@
 #pragma once
 
-namespace GlfwPlugin
+namespace GlfwWindowsPlugin
 {
 struct GlfwInstance final
 {

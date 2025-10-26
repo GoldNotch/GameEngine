@@ -1,14 +1,14 @@
-#include <PluginInterfaces/WindowPlugin.hpp>
+#include <GameFramework.hpp>
 
 #include "GlfwInstance.hpp"
 #include "GlfwWindow.hpp"
 
-namespace GlfwPlugin
+namespace GlfwWindowsPlugin
 {
 
-struct GlfwWindowsPlugin : public GameFramework::WindowsPlugin
+struct GlfwPlugin : public GameFramework::WindowsPlugin
 {
-  ~GlfwWindowsPlugin() override = default;
+  ~GlfwPlugin() override = default;
   virtual GameFramework::WindowUPtr NewWindow(const std::string & title, int width,
                                               int height) override;
   virtual void PollEvents() override;
@@ -17,21 +17,20 @@ private:
   GlfwInstance m_instance;
 };
 
-GameFramework::WindowUPtr GlfwWindowsPlugin::NewWindow(const std::string & title, int width,
-                                                       int height)
+GameFramework::WindowUPtr GlfwPlugin::NewWindow(const std::string & title, int width, int height)
 {
-  return GlfwPlugin::NewWindowImpl(title, width, height);
+  return GlfwWindowsPlugin::NewWindowImpl(title, width, height);
 }
 
-void GlfwWindowsPlugin::PollEvents()
+void GlfwPlugin::PollEvents()
 {
   m_instance.PollEvents();
 }
 
-} // namespace GlfwPlugin
+} // namespace GlfwWindowsPlugin
 
 /// creates global game instance
 PLUGIN_API std::unique_ptr<GameFramework::IPluginInstance> CreateInstance()
 {
-  return std::make_unique<GlfwPlugin::GlfwWindowsPlugin>();
+  return std::make_unique<GlfwWindowsPlugin::GlfwPlugin>();
 }

@@ -1,8 +1,8 @@
 #pragma once
 
-#include <PluginInterfaces/WindowPlugin.hpp>
+#include <PluginInterfaces/WindowsPlugin.hpp>
 
-namespace GlfwPlugin
+namespace GlfwWindowsPlugin
 {
 GameFramework::WindowUPtr NewWindowImpl(const std::string & title, int width, int height);
 }

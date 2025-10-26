@@ -14,15 +14,15 @@
 /// clang-format on
 
 #include <Input/InputController.hpp>
-#include <PluginInterfaces/WindowPlugin.hpp>
 
 #include "GlfwInput.hpp"
+#include "GlfwWindow.hpp"
 
 
-namespace GlfwPlugin
+namespace GlfwWindowsPlugin
 {
 
-struct GlfwWindow final : public GameFramework::Window
+struct GlfwWindow final : public GameFramework::IWindow
 {
   GlfwWindow(const std::string & title, int width, int height);
   virtual ~GlfwWindow() override;
@@ -192,10 +192,9 @@ void GlfwWindow::OnScroll(GLFWwindow * window, double xoffset, double yoffset)
   }
 }
 
-std::unique_ptr<GameFramework::Window> NewWindowImpl(const std::string & title, int width,
-                                                     int height)
+GameFramework::WindowUPtr NewWindowImpl(const std::string & title, int width, int height)
 {
   return std::make_unique<GlfwWindow>(title, width, height);
 }
 
-} // namespace GlfwPlugin
+} // namespace GlfwWindowsPlugin

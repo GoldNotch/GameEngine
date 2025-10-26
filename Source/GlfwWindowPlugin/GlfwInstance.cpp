@@ -14,7 +14,7 @@ void OnGlfwError(int code, const char * description)
 
 } // namespace
 
-namespace GlfwPlugin
+namespace GlfwWindowsPlugin
 {
 
 GlfwInstance::GlfwInstance()
@@ -40,4 +40,4 @@ double GlfwInstance::GetTimestamp() const
 }
 
 
-} // namespace GlfwPlugin
+} // namespace GlfwWindowsPlugin
