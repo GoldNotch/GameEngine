@@ -20,11 +20,11 @@ struct ProtoWindow
   int height;
 };
 
-struct GAME_FRAMEWORK_API GamePLugin : public IPluginInstance,
+struct GAME_FRAMEWORK_API GamePlugin : public IPluginInstance,
                                        public InputConsumer,
                                        public SignalsProducer
 {
-  virtual ~GamePLugin() = default;
+  virtual ~GamePlugin() = default;
   virtual std::string GetGameName() const = 0;
   virtual std::vector<InputBinding> GetInputConfiguration() const = 0;
   virtual std::vector<ProtoWindow> GetOutputConfiguration() const = 0;

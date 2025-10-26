@@ -23,7 +23,7 @@ public:
 
 private:
   std::array<PressState, static_cast<size_t>(InputButton::TOTAL)> m_pressedButtons;
-  std::vector<ActionGenerator> m_generators;
+  std::vector<details::ActionGenerator> m_generators;
 };
 
 InputControllerImpl::InputControllerImpl()
@@ -50,7 +50,7 @@ void InputControllerImpl::SetInputBindings(const std::span<InputBinding> & bindi
     return m_pressedButtons[static_cast<size_t>(btn)];
   };
 
-  std::vector<ActionGenerator> newBindings;
+  std::vector<details::ActionGenerator> newBindings;
   newBindings.reserve(bindings.size());
   for (auto && srcBinding : bindings)
   {

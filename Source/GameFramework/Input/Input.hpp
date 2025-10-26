@@ -8,7 +8,7 @@
 namespace GameFramework
 {
 
-enum ActionType
+enum class ActionType : uint8_t
 {
   Event,     ///< fires once when keyset is just pressed
   Continous, ///< fires every time when keyset is pressed

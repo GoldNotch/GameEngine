@@ -9,7 +9,7 @@ namespace GameFramework
 /// 100 - 199 - first priority (high)
 /// 200 - 299 - second priority (major)
 /// 300 - 399 - third priority (minor)
-enum GameSignal
+enum class GameSignal : uint32_t
 {
   Quit = 200,
   InvalidateRenderCache = 100,

@@ -9,7 +9,7 @@
 #include <Core/StringUtils.hpp>
 #include <GameFramework.hpp>
 
-namespace GameFramework
+namespace GameFramework::details
 {
 /// all binding are delimited with ;
 static constexpr char s_delimiter = ';';
@@ -420,7 +420,7 @@ std::optional<GameInputEvent> ActionGenerator::GetAction() const noexcept
         return AxisAction{m_binding.code};
       default:
         Log(LogMessageType::Warning, "Unknown action type is fired - ", m_binding.name, L"(",
-            m_binding.type, ")");
+            static_cast<int>(m_binding.type), ")");
         return std::nullopt;
     }
   }
@@ -445,4 +445,4 @@ bool ActionGenerator::IsActionActive() const
   return std::ranges::any_of(m_builtCondition, checkButtonSet);
 }
 
-} // namespace GameFramework
+} // namespace GameFramework::details

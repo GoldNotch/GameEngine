@@ -38,7 +38,7 @@ int main(int argc, const char * argv[])
   }
   std::filesystem::path gamePath = argv[1];
   auto gamePluginLoader = GameFramework::LoadPlugin(gamePath);
-  auto * gameInstance = dynamic_cast<GameFramework::GamePLugin *>(gamePluginLoader->GetInstance());
+  auto * gameInstance = dynamic_cast<GameFramework::GamePlugin *>(gamePluginLoader->GetInstance());
 
   GameFramework::InputQueue input;
   GameFramework::SignalsQueue signalsQueue;
@@ -63,7 +63,10 @@ int main(int argc, const char * argv[])
     GameFramework::GetTimeManager().Tick();
     instance.PollEvents();
     for (auto && wnd : windows)
+    {
       wnd->GetInputController().GenerateInputEvents();
+      //TODO: render in window
+    }
 
     while (auto signal = signalsQueue.PopSignal())
     {

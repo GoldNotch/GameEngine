@@ -25,7 +25,6 @@ namespace details
 using ButtonSimpleCondition = std::pair<InputButton, PressState>;
 using BindingConjunction = std::vector<ButtonSimpleCondition>;
 using BindingDisjunction = std::vector<BindingConjunction>;
-} // namespace details
 
 class ActionGenerator
 {
@@ -54,5 +53,7 @@ private:
 private:
   bool IsActionActive() const;
 };
+
+} // namespace details
 
 } // namespace GameFramework

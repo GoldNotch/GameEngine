@@ -13,7 +13,7 @@
 namespace GameFramework
 {
 
-enum GAME_FRAMEWORK_API LogMessageType
+enum class LogMessageType : uint8_t
 {
   Info,
   Warning,

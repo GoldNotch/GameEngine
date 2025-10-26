@@ -14,7 +14,7 @@ enum ActionCode
   MoveRight,
 };
 
-class SimpleGame : public GameFramework::GamePLugin
+class SimpleGame : public GameFramework::GamePlugin
 {
   float t = 0.0;
 
@@ -81,17 +81,18 @@ void SimpleGame::ProcessInput()
 void SimpleGame::Tick(double deltaTime)
 {
   ProcessInput();
-  t += deltaTime;
+  t += static_cast<float>(deltaTime);
   GenerateSignal(GameSignal::InvalidateRenderCache);
-  GameFramework::Log(GameFramework::Info, "Tick: ", deltaTime * 1000.0, " FPS: ", 1.0 / deltaTime);
+  GameFramework::Log(GameFramework::LogMessageType::Info, "Tick: ", deltaTime * 1000.0,
+                     " FPS: ", 1.0 / deltaTime);
 }
 
 void SimpleGame::Render(GameFramework::IDrawTool & drawTool)
 {
   drawTool.SetClearColor({0.2f, 0.5f, (std::sin(t * 0.005f) + 1.0f) / 2.0f, 1.0f});
 
-  float right = 0.5f + (std::sin(t * 0.002) + 1.0f) / 4.0f;
-  float top = 0.5f + (std::sin(t * 0.002) + 1.0f) / 8.0f;
+  float right = 0.5f + (std::sin(t * 0.002f) + 1.0f) / 4.0f;
+  float top = 0.5f + (std::sin(t * 0.002f) + 1.0f) / 8.0f;
   drawTool.DrawRect(0.0f, top, right, 0.0f);
   drawTool.DrawRect(-0.5f, 0.0f, 0.0f, -0.2f);
 }
