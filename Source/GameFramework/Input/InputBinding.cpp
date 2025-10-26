@@ -6,8 +6,8 @@
 #include <stdexcept>
 #include <unordered_map>
 
-#include <Core/StringUtils.hpp>
 #include <GameFramework.hpp>
+#include <Utility/StringUtils.hpp>
 
 namespace GameFramework::details
 {
@@ -154,7 +154,7 @@ InputButton ParseButtonName(std::string_view str) noexcept
     {"KeyNumpadEqual", InputButton::KEY_KP_EQUAL},
   };
 
-  auto it = s_buttonsMap.find(Core::utils::Trim(str));
+  auto it = s_buttonsMap.find(Utils::Trim(str));
   return it == s_buttonsMap.end() ? InputButton::UNKNOWN : it->second;
 }
 
@@ -165,7 +165,7 @@ PressState ParseButtonModifier(std::string_view mod) noexcept
                    {"Ctrl", PressState::CTRL},          {"Super", PressState::SUPER},
                    {"CapsLock", PressState::CAPS_LOCK}, {"NumLock", PressState::NUM_LOCK}};
 
-  auto it = s_modifiersMap.find(Core::utils::Trim(mod));
+  auto it = s_modifiersMap.find(Utils::Trim(mod));
   return it == s_modifiersMap.end() ? PressState::RELEASED : it->second;
 }
 
@@ -316,7 +316,7 @@ details::ButtonSimpleCondition ParseButtonAndMods(std::string_view str)
     throw std::runtime_error("Button or modifier expected");
   InputButton resultBtn = InputButton::UNKNOWN;
   PressState modsRequired = PressState::JUST_PRESSED;
-  auto mods = Core::utils::Split(str, s_modButton);
+  auto mods = Utils::Split(str, s_modButton);
   for (auto && mod : mods)
   {
     InputButton btn = ParseButtonName(mod);
@@ -346,7 +346,7 @@ details::BindingConjunction ParseBindingConjunction(std::string_view str)
   if (str.empty())
     throw std::runtime_error("Binding conjunction expected");
   details::BindingConjunction conjunction;
-  auto buttons = Core::utils::Split(str, s_addButton);
+  auto buttons = Utils::Split(str, s_addButton);
   conjunction.reserve(buttons.size());
   for (auto && btn : buttons)
   {
@@ -360,7 +360,7 @@ details::BindingDisjunction ParseBindingString(std::string_view str)
   if (str.empty())
     throw std::runtime_error("Binding expression was empty");
   details::BindingDisjunction disjunction;
-  auto conjunctions = Core::utils::Split(str, s_delimiter);
+  auto conjunctions = Utils::Split(str, s_delimiter);
   disjunction.reserve(conjunctions.size());
   for (auto && conjun : conjunctions)
     disjunction.push_back(ParseBindingConjunction(conjun));

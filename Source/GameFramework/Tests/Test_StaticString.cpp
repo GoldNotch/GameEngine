@@ -1,8 +1,8 @@
 #include <iostream>
 
 #include <catch2/catch_test_macros.hpp>
-#include <Core/StaticString.hpp>
-using namespace Core;
+#include <Utility/StaticString.hpp>
+using namespace GameFramework;
 
 TEST_CASE("Construct & Output", "[static_string]")
 {

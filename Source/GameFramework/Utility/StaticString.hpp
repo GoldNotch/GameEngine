@@ -37,7 +37,7 @@ SOFTWARE.
 
 #include "Utility.hpp"
 
-namespace Core
+namespace GameFramework
 {
 
 template<typename Char, size_t Size>
@@ -181,4 +181,4 @@ std::basic_ostream<Char> & operator<<(std::basic_ostream<Char> & bos,
   return bos;
 }
 
-} // namespace Core
+} // namespace GameFramework

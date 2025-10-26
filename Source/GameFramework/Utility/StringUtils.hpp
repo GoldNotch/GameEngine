@@ -3,7 +3,7 @@
 #include <string>
 #include <string_view>
 
-namespace Core::utils
+namespace GameFramework::Utils
 {
 
 constexpr std::string_view Trim(std::string_view text, std::string_view exclude = " \n\r\t\v\0")
@@ -46,4 +46,4 @@ constexpr std::vector<std::string_view> Split(std::string_view text, char delimi
   return result;
 }
 
-} // namespace Core::utils
+} // namespace GameFramework::utils

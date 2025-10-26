@@ -21,11 +21,11 @@ enum class LogMessageType : uint8_t
   Debug
 };
 
-namespace detail
+namespace details
 {
 /// Log message during game is running
 GAME_FRAMEWORK_API void LogImpl(LogMessageType type, std::wstring && message);
-} // namespace detail
+} // namespace details
 
 template<typename... Args>
 inline void Log(LogMessageType type, Args &&... args)
@@ -54,7 +54,7 @@ inline void Log(LogMessageType type, Args &&... args)
   stream.str(L"");
   stream.clear();
   (writeToStream(stream, std::forward<Args>(args)), ...);
-  detail::LogImpl(type, stream.str());
+  details::LogImpl(type, stream.str());
 }
 
 } // namespace GameFramework

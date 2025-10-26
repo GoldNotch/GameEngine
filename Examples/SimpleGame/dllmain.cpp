@@ -64,16 +64,16 @@ void SimpleGame::ProcessInput()
   auto evt = ConsumeInputEvent();
   if (evt.has_value())
   {
-    std::visit(Core::utils::overloaded{[this](const EventAction & evt)
-                                       {
-                                         if (evt.code == ActionCode::Quit)
-                                           GenerateSignal(GameSignal::Quit);
-                                       },
-                                       [](const ContinousAction & action) {
+    std::visit(Utils::overloaded{[this](const EventAction & evt)
+                                 {
+                                   if (evt.code == ActionCode::Quit)
+                                     GenerateSignal(GameSignal::Quit);
+                                 },
+                                 [](const ContinousAction & action) {
 
-                                       },
-                                       [](const AxisAction & action) {
-                                       }},
+                                 },
+                                 [](const AxisAction & action) {
+                                 }},
                *evt);
   }
 }

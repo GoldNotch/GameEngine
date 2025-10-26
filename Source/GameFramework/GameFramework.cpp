@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-namespace GameFramework::detail
+namespace GameFramework::details
 {
 
 GAME_FRAMEWORK_API void LogImpl(LogMessageType type, std::wstring && message)

@@ -2,6 +2,9 @@
 #include <sstream>
 #include <string_view>
 
+namespace GameFramework
+{
+
 class Formatter final
 {
 public:
@@ -31,3 +34,5 @@ private:
   Formatter(const Formatter &) = delete;
   Formatter & operator=(Formatter &) = delete;
 };
+
+} // namespace GameFramework

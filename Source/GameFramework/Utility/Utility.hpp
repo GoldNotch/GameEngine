@@ -2,7 +2,7 @@
 
 #include <utility>
 
-namespace Core::utils
+namespace GameFramework::Utils
 {
 
 // internal overload with indices tag
@@ -51,4 +51,4 @@ struct overloaded : Ts...
 template<class... Ts>
 overloaded(Ts...) -> overloaded<Ts...>;
 
-} // namespace Core::utils
+} // namespace GameFramework::utils

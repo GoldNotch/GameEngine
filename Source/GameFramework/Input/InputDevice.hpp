@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Core/Utility.hpp>
+#include <Utility/Utility.hpp>
 
 namespace GameFramework
 {
@@ -170,12 +170,12 @@ enum class PressState : uint8_t
   JUST_PRESSED = 1, // just pressed
   PRESSING = 2,     // pressing for a long time
 
-  SHIFT = Core::utils::bit(2),
-  CTRL = Core::utils::bit(3),
-  ALT = Core::utils::bit(4),
-  SUPER = Core::utils::bit(5),
-  CAPS_LOCK = Core::utils::bit(6),
-  NUM_LOCK = Core::utils::bit(7),
+  SHIFT = Utils::bit(2),
+  CTRL = Utils::bit(3),
+  ALT = Utils::bit(4),
+  SUPER = Utils::bit(5),
+  CAPS_LOCK = Utils::bit(6),
+  NUM_LOCK = Utils::bit(7),
 };
 
 enum class InputAxis : int
