@@ -1,28 +1,37 @@
 #pragma once
+#include <list>
+
 #include <GameFramework.hpp>
 #include <RHI.hpp>
+#include <Scene2D.hpp>
 
 namespace RenderPlugin
 {
 
 struct ScreenDevice : public GameFramework::IScreenDevice
 {
-  explicit ScreenDevice(GameFramework::IWindow & window);
+  explicit ScreenDevice(RHI::IContext & ctx, GameFramework::IWindow & window);
   virtual ~ScreenDevice() override;
 
-public:
+public: // IDevice interface
   virtual GameFramework::Scene2DUPtr AcquireScene2D() override;
 
-public:
+public: //IScreenDevice interface
   virtual bool BeginFrame() override;
   virtual void EndFrame() override;
   virtual void Refresh() override;
   virtual const GameFramework::IWindow & GetWindow() const & noexcept override;
 
 private:
+  RHI::IContext & m_context;
   GameFramework::IWindow & m_window;
   std::unique_ptr<RHI::IFramebuffer> m_framebuffer;
   RHI::IRenderTarget * m_renderTarget = nullptr;
+  RHI::IAttachment * m_colorAttachment = nullptr;
+  RHI::IAttachment * m_depthStencilAttachment = nullptr;
+  RHI::IAttachment * m_msaaResolveAttachment = nullptr;
+
+  Scene2D m_scene2D;
 };
 
 } // namespace RenderPlugin

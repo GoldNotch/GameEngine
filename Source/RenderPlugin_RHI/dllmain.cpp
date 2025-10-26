@@ -28,7 +28,7 @@ RenderPlugin_RHI::RenderPlugin_RHI()
 GameFramework::ScreenDeviceUPtr RenderPlugin_RHI::CreateScreenDevice(
   GameFramework::IWindow & window)
 {
-  return std::make_unique<ScreenDevice>(window);
+  return std::make_unique<ScreenDevice>(*m_context, window);
 }
 
 void RenderPlugin_RHI::Tick()

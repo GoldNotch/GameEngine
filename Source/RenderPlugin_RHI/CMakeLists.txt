@@ -7,7 +7,7 @@ PRIVATE
 	"dllmain.cpp"
 	"ScreenDevice.cpp"
 	"ScreenDevice.hpp"
-)
+ "Scene2D.cpp" "Scene2DProxy.cpp")
 
 target_include_directories(${this_target} 
 PUBLIC

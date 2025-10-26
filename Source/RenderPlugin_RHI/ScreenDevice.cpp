@@ -1,12 +1,28 @@
 #include "ScreenDevice.hpp"
 
-#include <Scene2D.hpp>
+#include <Scene2DProxy.hpp>
 
 namespace RenderPlugin
 {
-ScreenDevice::ScreenDevice(GameFramework::IWindow & window)
-  : m_window(window)
+ScreenDevice::ScreenDevice(RHI::IContext & ctx, GameFramework::IWindow & window)
+  : m_context(ctx)
+  , m_window(window)
+  , m_framebuffer(ctx.CreateFramebuffer())
+  , m_scene2D(*m_framebuffer)
 {
+  auto [hwnd, hInstance] = window.GetSurface();
+  RHI::SurfaceConfig config{hwnd, hInstance};
+  m_msaaResolveAttachment = ctx.CreateSurfacedAttachment(config, RHI::RenderBuffering::Triple);
+  auto description = m_msaaResolveAttachment->GetDescription();
+  m_colorAttachment = ctx.AllocAttachment(description.format, description.extent,
+                                          RHI::RenderBuffering::Triple, RHI::SamplesCount::Eight);
+  m_depthStencilAttachment = ctx.AllocAttachment(RHI::ImageFormat::DEPTH_STENCIL,
+                                                 description.extent, RHI::RenderBuffering::Triple,
+                                                 RHI::SamplesCount::Eight);
+
+  m_framebuffer->AddAttachment(0, m_colorAttachment);
+  m_framebuffer->AddAttachment(1, m_depthStencilAttachment);
+  m_framebuffer->AddAttachment(2, m_msaaResolveAttachment);
 }
 
 ScreenDevice::~ScreenDevice()
@@ -16,7 +32,7 @@ ScreenDevice::~ScreenDevice()
 
 GameFramework::Scene2DUPtr ScreenDevice::AcquireScene2D()
 {
-  return std::make_unique<Scene2D>(*this);
+  return std::make_unique<Scene2DProxy>(m_scene2D);
 }
 
 bool ScreenDevice::BeginFrame()
@@ -24,6 +40,7 @@ bool ScreenDevice::BeginFrame()
   if (!m_framebuffer)
     return false;
   m_renderTarget = m_framebuffer->BeginFrame();
+  m_renderTarget->SetClearValue(0, 1.0, 0, 0, 1.0);
   return m_renderTarget != nullptr;
 }
 
@@ -35,6 +52,7 @@ void ScreenDevice::EndFrame()
 
 void ScreenDevice::Refresh()
 {
+  m_scene2D.Invalidate();
 }
 
 const GameFramework::IWindow & ScreenDevice::GetWindow() const & noexcept
