@@ -1,3 +1,4 @@
 add_subdirectory(GameFramework)
-add_subdirectory(GlfwWindowPlugin)
 add_subdirectory(Launcher)
+add_subdirectory(GlfwWindowPlugin)
+add_subdirectory(RenderPlugin_RHI)

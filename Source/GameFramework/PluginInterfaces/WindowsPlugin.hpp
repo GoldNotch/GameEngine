@@ -17,6 +17,8 @@ struct IWindow
   using ResizeCallback = std::function<void(int, int)>;
 
   virtual ~IWindow() = default;
+  virtual int GetId() const noexcept = 0;
+  virtual std::string GetTitle() const noexcept = 0;
   virtual SurfaceDescriptor GetSurface() const noexcept = 0;
   virtual std::pair<int, int> GetSize() const noexcept = 0;
   virtual float GetAspectRatio() const noexcept = 0;
@@ -34,7 +36,7 @@ using WindowUPtr = std::unique_ptr<IWindow>;
 struct WindowsPlugin : public IPluginInstance
 {
   virtual ~WindowsPlugin() = default;
-  virtual WindowUPtr NewWindow(const std::string & title, int width, int height) = 0;
+  virtual WindowUPtr NewWindow(int id, const std::string & title, int width, int height) = 0;
   virtual void PollEvents() = 0;
 };
 

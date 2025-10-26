@@ -24,10 +24,12 @@ namespace GlfwWindowsPlugin
 
 struct GlfwWindow final : public GameFramework::IWindow
 {
-  GlfwWindow(const std::string & title, int width, int height);
+  GlfwWindow(int id, const std::string & title, int width, int height);
   virtual ~GlfwWindow() override;
 
 public:
+  virtual int GetId() const noexcept override { return m_id; }
+  virtual std::string GetTitle() const noexcept override { return m_title; };
   GameFramework::SurfaceDescriptor GetSurface() const noexcept override;
   std::pair<int, int> GetSize() const noexcept override;
   float GetAspectRatio() const noexcept override;
@@ -39,6 +41,8 @@ public:
   virtual GameFramework::InputController & GetInputController() & noexcept override;
 
 private:
+  int m_id;
+  std::string m_title;
   GameFramework::InputControllerUPtr m_inputController;
   GLFWwindow * m_window = nullptr;
   std::optional<std::pair<double, double>> m_lastCursorPos;
@@ -54,7 +58,7 @@ private:
   static void OnScroll(GLFWwindow * window, double xoffset, double yoffset);
 };
 
-GlfwWindow::GlfwWindow(const std::string & title, int width, int height)
+GlfwWindow::GlfwWindow(int id, const std::string & title, int width, int height)
   : m_inputController(GameFramework::CreateInputController())
 {
   // Create GLFW window
@@ -192,9 +196,9 @@ void GlfwWindow::OnScroll(GLFWwindow * window, double xoffset, double yoffset)
   }
 }
 
-GameFramework::WindowUPtr NewWindowImpl(const std::string & title, int width, int height)
+GameFramework::WindowUPtr NewWindowImpl(int id, const std::string & title, int width, int height)
 {
-  return std::make_unique<GlfwWindow>(title, width, height);
+  return std::make_unique<GlfwWindow>(id, title, width, height);
 }
 
 } // namespace GlfwWindowsPlugin

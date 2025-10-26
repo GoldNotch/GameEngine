@@ -28,28 +28,45 @@ void GameThread()
 
 int main(int argc, const char * argv[])
 {
-  if (argc < 3)
+  if (argc < 4)
   {
     std::printf("Incorrect launch format");
     return -1;
   }
+  std::unique_ptr<GameFramework::IPluginLoader> gamePlugin;
+  std::unique_ptr<GameFramework::IPluginLoader> windowsPlugin;
+  std::unique_ptr<GameFramework::IPluginLoader> renderPlugin;
+
   std::filesystem::path gamePath = argv[1];
   std::filesystem::path windowsPluginPath = argv[2];
-  auto gamePluginLoader = GameFramework::LoadPlugin(gamePath);
-  auto * gameInstance = dynamic_cast<GameFramework::GamePlugin *>(gamePluginLoader->GetInstance());
-  auto windowsPluginLoader = GameFramework::LoadPlugin(windowsPluginPath);
-  auto * windowsPlugin =
-    dynamic_cast<GameFramework::WindowsPlugin *>(windowsPluginLoader->GetInstance());
+  std::filesystem::path renderPluginPath = argv[3];
+  try
+  {
+    gamePlugin = GameFramework::LoadPlugin(gamePath);
+    windowsPlugin = GameFramework::LoadPlugin(windowsPluginPath);
+    renderPlugin = GameFramework::LoadPlugin(renderPluginPath);
+  }
+  catch (const std::exception & e)
+  {
+    std::printf("%s", e.what());
+    return -1;
+  }
+  auto * gameInstance = dynamic_cast<GameFramework::GamePlugin *>(gamePlugin->GetInstance());
+  auto * windowsManager =
+    dynamic_cast<GameFramework::WindowsPlugin *>(windowsPlugin->GetInstance());
+  auto * renderManager = dynamic_cast<GameFramework::RenderPlugin *>(renderPlugin->GetInstance());
 
   GameFramework::InputQueue input;
   GameFramework::SignalsQueue signalsQueue;
 
   std::vector<GameFramework::WindowUPtr> windows;
+  std::vector<GameFramework::ScreenDeviceUPtr> drawDevices;
   for (auto && wndInfo : gameInstance->GetOutputConfiguration())
   {
-    auto && wnd =
-      windows.emplace_back(windowsPlugin->NewWindow(wndInfo.title, wndInfo.width, wndInfo.height));
+    auto && wnd = windows.emplace_back(
+      windowsManager->NewWindow(wndInfo.id, wndInfo.title, wndInfo.width, wndInfo.height));
     wnd->GetInputController().BindInputQueue(input);
+    drawDevices.emplace_back(renderManager->CreateScreenDevice(*wnd));
   }
   gameInstance->ListenInputQueue(input);
   gameInstance->BindSignalsQueue(signalsQueue);
@@ -61,11 +78,19 @@ int main(int argc, const char * argv[])
                      [](const GameFramework::WindowUPtr & wnd) { return !wnd->ShouldClose(); }))
   {
     GameFramework::GetTimeManager().Tick();
-    windowsPlugin->PollEvents();
+    windowsManager->PollEvents();
     for (auto && wnd : windows)
-    {
       wnd->GetInputController().GenerateInputEvents();
-      //TODO: render in window
+
+    renderManager->Tick();
+
+    for (auto && dc : drawDevices)
+    {
+      if (dc && dc->BeginFrame())
+      {
+        gameInstance->Render(*dc);
+        dc->EndFrame();
+      }
     }
 
     while (auto signal = signalsQueue.PopSignal())
@@ -81,6 +106,12 @@ int main(int argc, const char * argv[])
         break;
         case GameFramework::GameSignal::Quit:
           return 0;
+        case GameFramework::GameSignal::InvalidateRenderCache:
+        {
+          for (auto && dc : drawDevices)
+            dc->Refresh();
+        }
+        break;
       }
     }
 

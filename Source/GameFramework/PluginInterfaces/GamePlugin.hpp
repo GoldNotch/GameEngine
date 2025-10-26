@@ -8,13 +8,14 @@
 #include <Game/Signal.hpp>
 #include <Input/InputQueue.hpp>
 #include <Plugin/Plugin.hpp>
-#include <PluginInterfaces/DrawToolPlugin.hpp>
+#include <PluginInterfaces/RenderPlugin.hpp>
 
 namespace GameFramework
 {
 
 struct ProtoWindow
 {
+  int id; ///< user-defined id. Declare enum for that
   std::string title;
   int width;
   int height;
@@ -30,7 +31,7 @@ struct GAME_FRAMEWORK_API GamePlugin : public IPluginInstance,
   virtual std::vector<ProtoWindow> GetOutputConfiguration() const = 0;
 
   virtual void Tick(double deltaTime) = 0;
-  virtual void Render(GameFramework::DrawTool & drawTool) = 0;
+  virtual void Render(GameFramework::IDevice & device) = 0;
 };
 
 } // namespace GameFramework

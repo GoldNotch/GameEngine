@@ -7,7 +7,7 @@
 #include <stdexcept>
 #include <string>
 
-#include <PluginInterfaces/DrawToolPlugin.hpp>
+#include <PluginInterfaces/RenderPlugin.hpp>
 #include <PluginInterfaces/GamePlugin.hpp>
 #include <PluginInterfaces/WindowsPlugin.hpp>
 

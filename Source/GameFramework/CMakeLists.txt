@@ -6,7 +6,8 @@ target_sources(${this_target}
 PUBLIC
 	"GameFramework.hpp"
 	"PluginInterfaces/GamePlugin.hpp"
-	"PluginInterfaces/DrawToolPlugin.hpp"
+	"PluginInterfaces/RenderPlugin.hpp"
+	"PluginInterfaces/WindowsPlugin.hpp"
 PRIVATE
 	"GameFramework_def.h"
 	"GameFramework.cpp"
@@ -32,6 +33,8 @@ PRIVATE
 	"Input/InputController.cpp" 
 	"Input/InputQueue.cpp"
 	"Input/InputQueue.hpp"
+
+	
 )
 
 if (MSVC)
