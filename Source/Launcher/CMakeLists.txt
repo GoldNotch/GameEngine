@@ -26,5 +26,5 @@ PUBLIC
 
 target_link_libraries(${this_target}
 PRIVATE
-	glfw
+	
 )
