@@ -7,25 +7,32 @@ PUBLIC
 	"GameFramework.hpp"
 	"PluginInterfaces/GamePlugin.hpp"
 	"PluginInterfaces/DrawToolPlugin.hpp"
-	"Plugin/Plugin.hpp"
-	"Game/Signal.hpp"
-	"Input/Input.hpp"
 PRIVATE
 	"GameFramework_def.h"
 	"GameFramework.cpp"
-	"Core/Formatter.hpp"
-	"Core/Storage.hpp"
-	"Core/TypeMapping.hpp"
-	"Core/StringUtils.hpp"
+
+	"Utility/Formatter.hpp"
+	"Utility/Storage.hpp"
+	"Utility/TypeMapping.hpp"
+	"Utility/StringUtils.hpp"
+
 	"Plugin/Plugin.cpp"
+	"Plugin/Plugin.hpp"
+
 	"Game/Signal.cpp" 
+	"Game/Signal.hpp"
+	"Game/Time.cpp"
+	"Game/Time.hpp"
+
+	"Input/Input.hpp"
+	"Input/InputDevice.hpp"
 	"Input/InputBinding.hpp" 
 	"Input/InputBinding.cpp" 
 	"Input/InputController.hpp"
 	"Input/InputController.cpp" 
 	"Input/InputQueue.cpp"
 	"Input/InputQueue.hpp"
- "Game/Time.cpp")
+)
 
 if (MSVC)
 	add_compile_definitions(_CRT_SECURE_NO_WARNINGS)

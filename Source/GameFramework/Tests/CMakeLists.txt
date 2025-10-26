@@ -4,7 +4,7 @@ add_executable(${test_target})
 target_sources(${test_target}
 PUBLIC
 	"Test_StaticString.cpp"
- "Test_Storage.cpp"
+	"Test_Storage.cpp"
 )
 
 target_link_libraries(${test_target}  PRIVATE
