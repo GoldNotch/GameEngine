@@ -7,7 +7,11 @@ PRIVATE
 	"dllmain.cpp"
 	"ScreenDevice.cpp"
 	"ScreenDevice.hpp"
- "Scene2D.cpp" "Scene2DProxy.cpp")
+	"Scene2D.cpp" 
+	"Scene2D.hpp" 
+	"Scene2DProxy.cpp"
+	"Scene2DProxy.hpp"
+)
 
 target_include_directories(${this_target} 
 PUBLIC
@@ -18,4 +22,19 @@ target_link_libraries(${this_target}
 PRIVATE
 	GameFramework
 	RHI
+)
+
+target_compile_definitions(${this_target}
+PRIVATE
+	SHADERS_DIRECTORY=".shaders"
+)
+
+include(CompileSpirV.cmake)
+
+TARGET_PRECOMPILE_SPIRV(
+TARGET ${this_target} 
+SHADERS_DIRECTORY ".shaders"
+SHADERS
+	"Shaders/rect2d.frag"
+	"Shaders/rect2d.vert"
 )
