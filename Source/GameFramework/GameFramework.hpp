@@ -7,8 +7,9 @@
 #include <stdexcept>
 #include <string>
 
-#include <PluginInterfaces/RenderPlugin.hpp>
+#include <Files/FileManager.hpp>
 #include <PluginInterfaces/GamePlugin.hpp>
+#include <PluginInterfaces/RenderPlugin.hpp>
 #include <PluginInterfaces/WindowsPlugin.hpp>
 
 namespace GameFramework

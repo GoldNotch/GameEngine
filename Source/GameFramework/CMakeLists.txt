@@ -25,6 +25,12 @@ PRIVATE
 	"Game/Time.cpp"
 	"Game/Time.hpp"
 
+	"Files/FileStream.hpp"
+	"Files/MountPoint.hpp"
+	"Files/FileManager.hpp"
+	"Files/FileManager.cpp"
+	 "Files/StandardFileStream.cpp"
+
 	"Input/Input.hpp"
 	"Input/InputDevice.hpp"
 	"Input/InputBinding.hpp" 
@@ -33,8 +39,6 @@ PRIVATE
 	"Input/InputController.cpp" 
 	"Input/InputQueue.cpp"
 	"Input/InputQueue.hpp"
-
-	
 )
 
 if (MSVC)

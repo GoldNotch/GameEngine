@@ -5,12 +5,18 @@ add_library(${this_target} SHARED)
 target_sources(${this_target}
 PRIVATE
 	"dllmain.cpp"
+	"Constants.hpp"
 	"ScreenDevice.cpp"
 	"ScreenDevice.hpp"
 	"Scene2D.cpp" 
 	"Scene2D.hpp" 
 	"Scene2DProxy.cpp"
 	"Scene2DProxy.hpp"
+
+	"ShadersMountPoint.hpp"
+	"ShadersMountPoint.cpp"
+	"ShaderFile.hpp"
+	"ShaderFile.cpp"
 )
 
 target_include_directories(${this_target} 

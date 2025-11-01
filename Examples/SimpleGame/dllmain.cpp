@@ -108,7 +108,8 @@ void SimpleGame::Render(GameFramework::IDevice & device)
 }
 
 /// creates global game instance
-PLUGIN_API std::unique_ptr<GameFramework::IPluginInstance> CreateInstance()
+PLUGIN_API std::unique_ptr<GameFramework::IPluginInstance> CreateInstance(
+  const GameFramework::IPluginLoader & loader)
 {
   return std::make_unique<SimpleGame>();
 }

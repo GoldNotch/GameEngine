@@ -1,5 +1,9 @@
 #include "Scene2D.hpp"
 
+#include <Constants.hpp>
+#include <Files/FileManager.hpp>
+#include <ShaderFile.hpp>
+
 namespace RenderPlugin
 {
 
@@ -12,6 +16,9 @@ Scene2D::Scene2D(RHI::IFramebuffer & framebuffer)
   subpassConfig.BindAttachment(1, RHI::ShaderAttachmentSlot::DepthStencil);
   subpassConfig.BindResolver(2, 0);
   subpassConfig.EnableDepthTest(true);
+  auto && stream = GameFramework::GetFileManager().Open(g_shadersDirectory / "rect2d_vert.spv");
+  ShaderFile file = stream->ReadObject<ShaderFile>();
+  file.GetSpirV();
 }
 
 Scene2D::~Scene2D()

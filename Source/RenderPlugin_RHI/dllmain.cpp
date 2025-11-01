@@ -1,6 +1,7 @@
+#include <Constants.hpp>
 #include <GameFramework.hpp>
-
-#include "ScreenDevice.hpp"
+#include <ScreenDevice.hpp>
+#include <ShadersMountPoint.hpp>
 
 namespace RenderPlugin
 {
@@ -20,6 +21,8 @@ private:
 
 RenderPlugin_RHI::RenderPlugin_RHI()
 {
+  GameFramework::GetFileManager().Mount(g_shadersDirectory,
+                                        std::make_unique<ShadersMountPoint>(g_shadersDirectory));
   RHI::GpuTraits gpuTraits{};
   gpuTraits.require_presentation = true;
   m_context = CreateContext(gpuTraits, nullptr);
@@ -40,7 +43,8 @@ void RenderPlugin_RHI::Tick()
 } // namespace RenderPlugin
 
 /// creates global game instance
-PLUGIN_API std::unique_ptr<GameFramework::IPluginInstance> CreateInstance()
+PLUGIN_API std::unique_ptr<GameFramework::IPluginInstance> CreateInstance(
+  const GameFramework::IPluginLoader & loader)
 {
   return std::make_unique<RenderPlugin::RenderPlugin_RHI>();
 }

@@ -13,14 +13,14 @@ struct GAME_FRAMEWORK_API IPluginInstance
   //virtual int GetVersion() const = 0;
 };
 
-PLUGIN_API std::unique_ptr<IPluginInstance> CreateInstance();
-
 struct IPluginLoader
 {
   virtual ~IPluginLoader() = default;
   virtual IPluginInstance * GetInstance() = 0;
+  virtual const std::filesystem::path & Path() const & noexcept = 0;
 };
 
+PLUGIN_API std::unique_ptr<IPluginInstance> CreateInstance(const IPluginLoader & loader);
 GAME_FRAMEWORK_API std::unique_ptr<IPluginLoader> LoadPlugin(const std::filesystem::path & path);
 
 } // namespace GameFramework
