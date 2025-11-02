@@ -23,8 +23,10 @@ DylibPluginLoader::DylibPluginLoader(const std::filesystem::path & path)
   : m_path(path)
   , m_library(path, dylib::decorations::os_default())
 {
+  m_path = m_path.remove_filename();
   using CreateInstanceFunc = decltype(CreateInstance);
-  auto createInstanceFunc = m_library.get_function<CreateInstanceFunc>("CreateInstance(IPluginLoader const &)");
+  auto createInstanceFunc = m_library.get_function<CreateInstanceFunc>(
+    "CreateInstance(GameFramework::IPluginLoader const &)");
   if (createInstanceFunc)
     m_instance = createInstanceFunc(*this);
 }

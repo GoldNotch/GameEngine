@@ -90,8 +90,8 @@ GAME_FRAMEWORK_API FileStreamUPtr OpenBinaryFileStream(const std::filesystem::pa
 }
 
 
-GAME_FRAMEWORK_API FileStreamUPtr OpenTextFileStream(const std::filesystem::path & path)
-{
-  return std::make_unique<StandardFileStream>(path, false /*binary*/);
-}
+//GAME_FRAMEWORK_API FileStreamUPtr OpenTextFileStream(const std::filesystem::path & path)
+//{
+//  return std::make_unique<StandardFileStream>(path, false /*binary*/);
+//}
 } // namespace GameFramework

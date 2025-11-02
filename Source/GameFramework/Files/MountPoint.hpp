@@ -26,4 +26,6 @@ struct IMountPoint
 
 using MountPointUPtr = std::unique_ptr<IMountPoint>;
 
+GAME_FRAMEWORK_API MountPointUPtr CreateDirectoryMountPoint(const std::filesystem::path & path);
+
 } // namespace GameFramework

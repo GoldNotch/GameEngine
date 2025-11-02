@@ -12,9 +12,7 @@ PRIVATE
 	"Scene2D.hpp" 
 	"Scene2DProxy.cpp"
 	"Scene2DProxy.hpp"
-
-	"ShadersMountPoint.hpp"
-	"ShadersMountPoint.cpp"
+	
 	"ShaderFile.hpp"
 	"ShaderFile.cpp"
 )

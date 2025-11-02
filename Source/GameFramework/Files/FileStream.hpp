@@ -73,6 +73,7 @@ namespace GameFramework
 {
 
 GAME_FRAMEWORK_API FileStreamUPtr OpenBinaryFileStream(const std::filesystem::path & path);
-GAME_FRAMEWORK_API FileStreamUPtr OpenTextFileStream(const std::filesystem::path & path);
+// blocks OpenTextFileStream because std::fstream::write can't write a text data for integer
+//GAME_FRAMEWORK_API FileStreamUPtr OpenTextFileStream(const std::filesystem::path & path);
 
 } // namespace GameFramework

@@ -1,13 +1,12 @@
 #include <Constants.hpp>
 #include <GameFramework.hpp>
 #include <ScreenDevice.hpp>
-#include <ShadersMountPoint.hpp>
 
 namespace RenderPlugin
 {
 struct RenderPlugin_RHI : public GameFramework::RenderPlugin
 {
-  RenderPlugin_RHI();
+  explicit RenderPlugin_RHI(const GameFramework::IPluginLoader & loader);
   virtual ~RenderPlugin_RHI() = default;
 
   virtual GameFramework::ScreenDeviceUPtr CreateScreenDevice(
@@ -19,10 +18,11 @@ private:
   std::unique_ptr<RHI::IContext> m_context;
 };
 
-RenderPlugin_RHI::RenderPlugin_RHI()
+RenderPlugin_RHI::RenderPlugin_RHI(const GameFramework::IPluginLoader & loader)
 {
   GameFramework::GetFileManager().Mount(g_shadersDirectory,
-                                        std::make_unique<ShadersMountPoint>(g_shadersDirectory));
+                                        GameFramework::CreateDirectoryMountPoint(
+                                          loader.Path() / g_shadersDirectory));
   RHI::GpuTraits gpuTraits{};
   gpuTraits.require_presentation = true;
   m_context = CreateContext(gpuTraits, nullptr);
@@ -46,5 +46,5 @@ void RenderPlugin_RHI::Tick()
 PLUGIN_API std::unique_ptr<GameFramework::IPluginInstance> CreateInstance(
   const GameFramework::IPluginLoader & loader)
 {
-  return std::make_unique<RenderPlugin::RenderPlugin_RHI>();
+  return std::make_unique<RenderPlugin::RenderPlugin_RHI>(loader);
 }

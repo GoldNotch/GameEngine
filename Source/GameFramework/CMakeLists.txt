@@ -29,7 +29,8 @@ PRIVATE
 	"Files/MountPoint.hpp"
 	"Files/FileManager.hpp"
 	"Files/FileManager.cpp"
-	 "Files/StandardFileStream.cpp"
+	"Files/StandardFileStream.cpp"
+	"Files/DirectoryMountPoint.cpp"
 
 	"Input/Input.hpp"
 	"Input/InputDevice.hpp"
