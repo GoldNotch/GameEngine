@@ -44,9 +44,10 @@ const std::filesystem::path & DirectoryMountPoint::Path() const & noexcept
 
 bool DirectoryMountPoint::Exists(const std::filesystem::path & path) const
 {
-  if (m_files.find(path) != m_files.end())
+  auto correctPath = m_rootPath / path;
+  if (m_files.find(correctPath) != m_files.end())
   {
-    return std::filesystem::exists(m_rootPath / path);
+    return std::filesystem::exists(correctPath);
   }
   return false;
 }

@@ -1,9 +1,11 @@
 #include "FileManager.hpp"
 
+#include <algorithm>
+#include <cassert>
 #include <filesystem>
+#include <map>
 #include <ranges>
 #include <stdexcept>
-#include <unordered_map>
 
 namespace
 {
@@ -36,14 +38,20 @@ public:
 
 private:
   using MountOverrides = std::vector<MountPointUPtr>; // it behaves like a stack
-  std::unordered_map<std::filesystem::path, MountOverrides> m_mountedPoints;
+  std::map<std::filesystem::path, MountOverrides> m_mountedPoints;
 };
 
 
 void FileManagerImpl::Mount(std::filesystem::path shortPath, MountPointUPtr && mountPoint)
 {
   auto [it, inserted] = m_mountedPoints.insert({shortPath, MountOverrides{}});
-  it->second.emplace_back(std::move(mountPoint));
+  // all mount points should be with unique path
+  auto subIt = std::ranges::find_if(it->second, [&mountPoint](const MountPointUPtr & mp)
+                                    { return mp->Path() == mountPoint->Path(); });
+  if (subIt == it->second.end())
+    it->second.emplace_back(std::move(mountPoint));
+  else
+    *subIt = std::move(mountPoint);
 }
 
 

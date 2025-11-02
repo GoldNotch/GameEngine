@@ -1,99 +1,69 @@
+#include <filesystem>
+#include <fstream>
 #include <iostream>
 
 #include <catch2/catch_test_macros.hpp>
 #include <Files/FileManager.hpp>
 using namespace GameFramework;
 
-struct DummyFileStream : public IFileStream
+static const std::filesystem::path testDir1 = "./TestDir";
+static const std::filesystem::path testDir2 = "./TestDir/meshes";
+static const std::filesystem::path testDir3 = "./AnotherTestDir";
+
+struct FileManagerTestContext
 {
-  explicit DummyFileStream(const std::filesystem::path & path) {};
-  /// read bytes from stream
-  virtual size_t Read(std::span<std::byte> buffer) override
-  {
-    return std::cin.readsome(reinterpret_cast<char *>(buffer.data()), buffer.size_bytes());
-  }
-  /// write bytes into stream
-  virtual void Write(std::span<const std::byte> data) override
-  {
-    std::cout.write(reinterpret_cast<const char *>(data.data()), data.size_bytes());
-  }
-  /// set cursor in a stream
-  virtual bool Seek(ptrdiff_t offset, SeekOrigin origin) override
-  {
-    std::cin.seekg(offset, static_cast<std::ios_base::seekdir>(origin));
-    std::cout.seekp(offset, static_cast<std::ios_base::seekdir>(origin));
-    return true;
-  }
-  /// get position of cursor
-  virtual size_t Tell() const override { return std::cin.tellg(); }
-  /// get size of stream
-  virtual size_t Size() const override { return static_cast<size_t>(-1); }
-  /// checks if end-of-file is reached
-  virtual bool Eof() const override { return false; }
+  FileManagerTestContext();
+  ~FileManagerTestContext();
 };
 
-struct DummyMountPoint : public IMountPoint
+FileManagerTestContext::FileManagerTestContext()
 {
-  /// path to mount point
-  virtual const std::filesystem::path & Path() const & noexcept;
-  /// Checks that file exists in mount point
-  virtual bool Exists(const std::filesystem::path & path) const;
-  /// Open file stream for reading or writing
-  virtual FileStreamUPtr Open(const std::filesystem::path & path);
-  /// enumerates all files and returns paths
-  virtual std::vector<std::filesystem::path> ListFiles(
-    const std::filesystem::path & rootPath = "") const;
+  std::filesystem::create_directory(testDir1);
+  for (int i = 0; i < 5; ++i)
+  {
+    std::string fileName = "file" + std::to_string(i) + ".dat";
+    std::ofstream f(testDir1 / fileName, std::ios::binary);
+  }
 
-private:
-  std::filesystem::path m_path =
-    std::filesystem::temp_directory_path() / "EngineModules/DummyModule/";
-};
+  std::filesystem::create_directory(testDir2);
+  for (int i = 0; i < 5; ++i)
+  {
+    std::string fileName = "mesh" + std::to_string(i) + ".dat";
+    std::ofstream f(testDir2 / fileName, std::ios::binary);
+  }
 
-const std::filesystem::path & DummyMountPoint::Path() const & noexcept
-{
-  return m_path;
+  std::filesystem::create_directory(testDir3);
+  for (int i = 0; i < 5; ++i)
+  {
+    std::string fileName = "script" + std::to_string(i) + ".scr";
+    std::ofstream f(testDir3 / fileName, std::ios::binary);
+  }
 }
 
-bool DummyMountPoint::Exists(const std::filesystem::path & path) const
+FileManagerTestContext::~FileManagerTestContext()
 {
-  auto && listFiles = ListFiles();
-  for (auto && file : listFiles)
-    if (file == path)
-      return true;
-  return false;
+  std::filesystem::remove_all(testDir1);
+  // std::filesystem::remove_all(testDir2); //don't need because testDir2 is inside testDir1
+  std::filesystem::remove_all(testDir3);
 }
 
-FileStreamUPtr DummyMountPoint::Open(const std::filesystem::path & path)
-{
-  return std::make_unique<DummyFileStream>(m_path / path);
-}
-
-std::vector<std::filesystem::path> DummyMountPoint::ListFiles(
-  const std::filesystem::path & rootPath) const
-{
-  // the paths are written as relative paths (in m_path)
-  return {"data/file1.txt", "data/file2.txt", "data/file3.txt"};
-  // the actual paths to files are:
-  // /tmp/EngineModules/DummyModule/data/file1.txt
-  // /tmp/EngineModules/DummyModule/data/file2.txt
-  // /tmp/EngineModules/DummyModule/data/file3.txt
-}
+static FileManagerTestContext g_context;
 
 
 TEST_CASE("", "[FileManager]")
 {
-  GetFileManager().Mount("dummy", std::make_unique<DummyMountPoint>());
+  GetFileManager().Mount("data", CreateDirectoryMountPoint(testDir1));
+  GetFileManager().Mount("data/meshes", CreateDirectoryMountPoint(testDir2));
+  GetFileManager().Mount("data/scripts", CreateDirectoryMountPoint(testDir3));
 
-  auto notFountStream = GetFileManager().Open("dummy/data/unknown.txt");
+  auto notFountStream = GetFileManager().Open("data/unknown.txt");
   REQUIRE(notFountStream == nullptr);
 
-  auto stream1 = GetFileManager().Open("dummy/data/file1.txt");
+  auto stream1 = GetFileManager().Open("data/file1.dat");
   REQUIRE(stream1 != nullptr);
   std::string dummyString = "text1: dummy string";
-  stream1->Write({reinterpret_cast<const std::byte *>(dummyString.c_str()), dummyString.size()});
-  stream1->Seek(-dummyString.size(), GameFramework::SeekOrigin::Current);
+  stream1->Write(dummyString);
   std::string readString(dummyString.size(), '\0');
-  size_t readBytes =
-    stream1->Read({reinterpret_cast<std::byte *>(readString.data()), readString.size()});
-  //REQUIRE(readBytes == dummyString.size());
+  size_t readBytes = stream1->Read(readString);
+  REQUIRE(readString == dummyString);
 }

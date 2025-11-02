@@ -9,28 +9,13 @@
 namespace GameFramework
 {
 
-enum class SeekOrigin : uint8_t
-{
-  Begin,
-  Current,
-  End
-};
-
 struct IFileStream
 {
   virtual ~IFileStream() = default;
   /// read bytes from stream
-  virtual size_t Read(std::span<std::byte> buffer) = 0;
+  virtual size_t Read(std::span<char> buffer) = 0;
   /// write bytes into stream
-  virtual void Write(std::span<const std::byte> data) = 0;
-  /// set cursor in a stream
-  virtual bool Seek(ptrdiff_t offset, SeekOrigin origin) = 0;
-  /// get position of cursor
-  virtual size_t Tell() const = 0;
-  /// get size of stream
-  virtual size_t Size() const = 0;
-  /// checks if end-of-file is reached
-  virtual bool Eof() const = 0;
+  virtual void Write(std::span<const char> data) = 0;
 
   /// reads trivially copyable value from stream
   template<typename T>

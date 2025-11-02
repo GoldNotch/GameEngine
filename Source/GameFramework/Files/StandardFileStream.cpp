@@ -14,35 +14,23 @@ public:
 
 public:
   /// read bytes from stream
-  virtual size_t Read(std::span<std::byte> buffer) override;
+  virtual size_t Read(std::span<char> buffer) override;
   /// write bytes into stream
-  virtual void Write(std::span<const std::byte> data) override;
-  /// set cursor in a stream
-  virtual bool Seek(ptrdiff_t offset, SeekOrigin origin) override;
-  /// get position of cursor
-  virtual size_t Tell() const override;
-  /// get size of stream
-  virtual size_t Size() const override;
-  /// checks if end-of-file is reached
-  virtual bool Eof() const override;
+  virtual void Write(std::span<const char> data) override;
 
 private:
   std::fstream m_stream;
-  std::size_t m_fileSize = 0;
 };
 
 
 StandardFileStream::StandardFileStream(const std::filesystem::path & path, bool binary)
 {
-  std::ios_base::openmode mode = std::ios::in | std::ios::out | std::ios::trunc | std::ios::ate;
+  std::ios_base::openmode mode = std::ios::in | std::ios::out | std::ios::trunc;
   if (binary)
     mode |= std::ios_base::binary;
   m_stream.open(path, mode);
   if (m_stream.is_open() && m_stream.good())
   {
-    m_fileSize = m_stream.tellg();
-    m_stream.seekg(0, std::ios::beg);
-    m_stream.seekp(0, std::ios::beg);
   }
   else
   {
@@ -50,37 +38,15 @@ StandardFileStream::StandardFileStream(const std::filesystem::path & path, bool 
   }
 }
 
-size_t StandardFileStream::Read(std::span<std::byte> buffer)
+size_t StandardFileStream::Read(std::span<char> buffer)
 {
-  return m_stream.readsome(reinterpret_cast<char *>(buffer.data()), buffer.size_bytes());
+  m_stream.read(buffer.data(), buffer.size_bytes());
+  return m_stream.gcount();
 }
 
-void StandardFileStream::Write(std::span<const std::byte> data)
+void StandardFileStream::Write(std::span<const char> data)
 {
-  m_stream.write(reinterpret_cast<const char *>(data.data()), data.size_bytes());
-}
-
-bool StandardFileStream::Seek(ptrdiff_t offset, SeekOrigin origin)
-{
-  std::ios_base::seekdir dir = static_cast<std::ios_base::seekdir>(origin);
-  m_stream.seekg(offset, dir);
-  m_stream.seekp(offset, dir);
-  return true;
-}
-
-size_t StandardFileStream::Tell() const
-{
-  return const_cast<std::fstream &>(m_stream).tellg();
-}
-
-size_t StandardFileStream::Size() const
-{
-  return m_fileSize;
-}
-
-bool StandardFileStream::Eof() const
-{
-  return m_stream.eof();
+  m_stream.write(data.data(), data.size_bytes());
 }
 
 
