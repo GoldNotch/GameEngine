@@ -34,7 +34,14 @@ public:
 
 public:
   virtual void Mount(std::filesystem::path shortPath, MountPointUPtr && mountPoint) override;
-  virtual FileStreamUPtr Open(const std::filesystem::path & path) const override;
+  /// open file for reading
+  virtual FileReaderUPtr OpenRead(const std::filesystem::path & path) const override;
+  /// open file for writing
+  virtual FileWriterUPtr OpenWrite(const std::filesystem::path & path) const override;
+
+private:
+  template<typename ResultT>
+  ResultT OpenImpl(const std::filesystem::path & path) const;
 
 private:
   using MountOverrides = std::vector<MountPointUPtr>; // it behaves like a stack
@@ -55,7 +62,8 @@ void FileManagerImpl::Mount(std::filesystem::path shortPath, MountPointUPtr && m
 }
 
 
-FileStreamUPtr FileManagerImpl::Open(const std::filesystem::path & path) const
+template<typename ResultT>
+ResultT FileManagerImpl::OpenImpl(const std::filesystem::path & path) const
 {
   if (path.empty())
     throw std::runtime_error("Invalid path");
@@ -89,10 +97,25 @@ FileStreamUPtr FileManagerImpl::Open(const std::filesystem::path & path) const
   for (auto && mountPoint : reversedView)
   {
     if (mountPoint->Exists(miniPath))
-      return mountPoint->Open(miniPath);
+    {
+      if constexpr (std::is_same_v<ResultT, FileReaderUPtr>)
+        return mountPoint->OpenRead(miniPath);
+      else
+        return mountPoint->OpenWrite(miniPath);
+    }
   }
 
   return nullptr;
+}
+
+FileReaderUPtr FileManagerImpl::OpenRead(const std::filesystem::path & path) const
+{
+  return OpenImpl<FileReaderUPtr>(path);
+}
+
+FileWriterUPtr FileManagerImpl::OpenWrite(const std::filesystem::path & path) const
+{
+  return OpenImpl<FileWriterUPtr>(path);
 }
 
 

@@ -7,16 +7,13 @@
 namespace RenderPlugin
 {
 
-ShaderFile ShaderFile::Read(GameFramework::IFileStream & stream)
+size_t ShaderFile::ReadBinary(GameFramework::IFileReader & stream, ShaderFile & file)
 {
-  ShaderFile result;
-  //result.m_data.resize(stream.Size() / sizeof(uint32_t) + 1);
-  std::span<uint32_t> dataSpan(result.m_data.data(), result.m_data.size());
-  //stream.Read(std::as_writable_bytes(dataSpan));
-  return result;
+  file.m_data.resize(stream.Size() / sizeof(uint32_t) + 1);
+  return stream.Read(std::as_writable_bytes(std::span{file.m_data}));
 }
 
-void ShaderFile::Write(const ShaderFile & file, GameFramework::IFileStream & stream)
+void ShaderFile::WriteBinary(GameFramework::IFileWriter & stream, const ShaderFile & file)
 {
   assert(false); // You can't write shaders
 }

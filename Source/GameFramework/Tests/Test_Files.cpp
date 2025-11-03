@@ -50,20 +50,64 @@ FileManagerTestContext::~FileManagerTestContext()
 static FileManagerTestContext g_context;
 
 
-TEST_CASE("", "[FileManager]")
+TEST_CASE("Read & Write", "[FileManager]")
+{
+  GetFileManager().Mount("data", CreateDirectoryMountPoint(testDir1));
+
+  std::string dummyString = "text1: dummy string";
+  {
+    auto stream = GetFileManager().OpenWrite("data/file1.dat");
+    REQUIRE(stream != nullptr);
+    stream->WriteValue(dummyString);
+    stream->Flush();
+  }
+
+  {
+    auto stream = GetFileManager().OpenRead("data/file1.dat");
+    REQUIRE(stream != nullptr);
+    std::string readString(dummyString.size(), '\0');
+    stream->ReadValue(readString);
+    REQUIRE(readString == dummyString);
+  }
+
+  {
+    std::string testString = "test string: hello world";
+    auto writeStream = GetFileManager().OpenWrite("data/file1.dat");
+    writeStream->WriteValue(testString);
+    writeStream->Flush(); // use flush to other streams see your changes
+    auto readStream = GetFileManager().OpenRead("data/file1.dat");
+    REQUIRE(readStream != nullptr);
+    REQUIRE(writeStream != nullptr);
+    std::string readString(1024, '\0');
+    size_t t = readStream->ReadValue(readString);
+    REQUIRE(readString.starts_with(testString));
+  }
+}
+
+TEST_CASE("Open Files", "[FileManager]")
 {
   GetFileManager().Mount("data", CreateDirectoryMountPoint(testDir1));
   GetFileManager().Mount("data/meshes", CreateDirectoryMountPoint(testDir2));
   GetFileManager().Mount("data/scripts", CreateDirectoryMountPoint(testDir3));
 
-  auto notFountStream = GetFileManager().Open("data/unknown.txt");
+  auto notFountStream = GetFileManager().OpenRead("data/unknown.txt");
   REQUIRE(notFountStream == nullptr);
 
-  auto stream1 = GetFileManager().Open("data/file1.dat");
-  REQUIRE(stream1 != nullptr);
-  std::string dummyString = "text1: dummy string";
-  stream1->Write(dummyString);
-  std::string readString(dummyString.size(), '\0');
-  size_t readBytes = stream1->Read(readString);
-  REQUIRE(readString == dummyString);
+  {
+    auto stream = GetFileManager().OpenRead("data/file1.dat");
+    REQUIRE(stream != nullptr);
+    REQUIRE(stream->FullPath() == "./TestDir/file1.dat");
+  }
+
+  {
+    auto stream = GetFileManager().OpenRead("data/meshes/mesh1.dat");
+    REQUIRE(stream != nullptr);
+    REQUIRE(stream->FullPath() == "./TestDir/meshes/mesh1.dat");
+  }
+
+  {
+    auto stream = GetFileManager().OpenRead("data/scripts/script1.scr");
+    REQUIRE(stream != nullptr);
+    REQUIRE(stream->FullPath() == "./AnotherTestDir/script1.scr");
+  }
 }

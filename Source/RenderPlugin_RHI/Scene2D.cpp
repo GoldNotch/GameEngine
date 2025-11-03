@@ -16,8 +16,9 @@ Scene2D::Scene2D(RHI::IFramebuffer & framebuffer)
   subpassConfig.BindAttachment(1, RHI::ShaderAttachmentSlot::DepthStencil);
   subpassConfig.BindResolver(2, 0);
   subpassConfig.EnableDepthTest(true);
-  auto && stream = GameFramework::GetFileManager().Open(g_shadersDirectory / "rect2d_vert.spv");
-  ShaderFile file = stream->ReadObject<ShaderFile>();
+  auto && stream = GameFramework::GetFileManager().OpenRead(g_shadersDirectory / "rect2d_vert.spv");
+  ShaderFile file;
+  stream->ReadValue<ShaderFile>(file);
   file.GetSpirV();
 }
 

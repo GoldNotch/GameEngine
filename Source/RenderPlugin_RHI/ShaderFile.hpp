@@ -14,8 +14,8 @@ public:
   const std::vector<uint32_t> & GetSpirV() const & noexcept { return m_data; }
 
 public:
-  static ShaderFile Read(GameFramework::IFileStream & stream);
-  static void Write(const ShaderFile & file, GameFramework::IFileStream & stream);
+  static size_t ReadBinary(GameFramework::IFileReader & stream, ShaderFile & file);
+  static void WriteBinary(GameFramework::IFileWriter & stream, const ShaderFile & file);
 
 private:
   std::vector<uint32_t> m_data;

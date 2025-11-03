@@ -17,8 +17,10 @@ struct IMountPoint
   virtual const std::filesystem::path & Path() const & noexcept = 0;
   /// Checks that file exists in mount point
   virtual bool Exists(const std::filesystem::path & path) const = 0;
-  /// Open file stream for reading or writing
-  virtual FileStreamUPtr Open(const std::filesystem::path & path) = 0;
+  /// Open file stream for reading
+  virtual FileReaderUPtr OpenRead(const std::filesystem::path & path) = 0;
+  /// Open file stream for writing
+  virtual FileWriterUPtr OpenWrite(const std::filesystem::path & path) = 0;
   /// enumerates all files and returns paths
   virtual std::vector<std::filesystem::path> ListFiles(
     const std::filesystem::path & rootPath = "") const = 0;
