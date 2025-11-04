@@ -8,16 +8,18 @@ PRIVATE
 	"Constants.hpp"
 	"ScreenDevice.cpp"
 	"ScreenDevice.hpp"
-	"Scene2D.cpp" 
-	"Scene2D.hpp" 
-	"Scene2DProxy.cpp"
-	"Scene2DProxy.hpp"
+	"Scene2D_GPU.cpp" 
+	"Scene2D_GPU.hpp" 
+	"Scene2D_CPU.cpp"
+	"Scene2D_CPU.hpp"
 	
 	"ShaderFile.hpp"
 	"ShaderFile.cpp"
 
 	"Renderer/BackgroundRenderer.cpp"
 	"Renderer/BackgroundRenderer.hpp"
+	"Renderer/Rect2dRenderer.cpp"
+	"Renderer/Rect2dRenderer.hpp"
 )
 
 target_include_directories(${this_target} 

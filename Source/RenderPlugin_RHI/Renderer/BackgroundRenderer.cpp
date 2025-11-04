@@ -42,9 +42,8 @@ BackgroundRenderer::~BackgroundRenderer()
   //TODO: remove buffer
 }
 
-void BackgroundRenderer::SetBackground(float r, float g, float b)
+void BackgroundRenderer::SetBackground(const GameFramework::Color3f & color)
 {
-  std::array<float, 3> color{r, g, b};
   m_colorBuffer->UploadSync(color.data(), color.size() * sizeof(float));
 }
 

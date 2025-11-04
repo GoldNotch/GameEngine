@@ -32,6 +32,10 @@ PRIVATE
 	"Files/StandardFileStream.cpp"
 	"Files/DirectoryMountPoint.cpp"
 
+	 "Render/Rect2d.cpp"
+	 "Render/Rect2d.hpp"
+	 "Render/RenderPrimitive.hpp"
+
 	"Input/Input.hpp"
 	"Input/InputDevice.hpp"
 	"Input/InputBinding.hpp" 

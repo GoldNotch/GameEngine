@@ -3,7 +3,7 @@
 
 #include <GameFramework.hpp>
 #include <RHI.hpp>
-#include <Scene2D.hpp>
+#include <Scene2D_GPU.hpp>
 
 namespace RenderPlugin
 {
@@ -32,7 +32,7 @@ private:
   RHI::IAttachment * m_depthStencilAttachment = nullptr;
   RHI::IAttachment * m_msaaResolveAttachment = nullptr;
 
-  Scene2D m_scene2D;
+  Scene2D_GPU m_scene2D;
 };
 
 } // namespace RenderPlugin

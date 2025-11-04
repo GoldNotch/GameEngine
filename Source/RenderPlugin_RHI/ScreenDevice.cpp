@@ -1,6 +1,6 @@
 #include "ScreenDevice.hpp"
 
-#include <Scene2DProxy.hpp>
+#include <Scene2D_CPU.hpp>
 
 namespace RenderPlugin
 {
@@ -33,7 +33,7 @@ ScreenDevice::~ScreenDevice()
 
 GameFramework::Scene2DUPtr ScreenDevice::AcquireScene2D()
 {
-  return std::make_unique<Scene2DProxy>(m_scene2D);
+  return std::make_unique<Scene2D_CPU>(m_scene2D);
 }
 
 int ScreenDevice::GetOwnerId() const noexcept

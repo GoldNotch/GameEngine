@@ -1,4 +1,5 @@
 #pragma once
+#include <GameFramework.hpp>
 #include <OwnedBy.hpp>
 #include <RHI.hpp>
 
@@ -14,7 +15,7 @@ public:
   MAKE_ALIAS_FOR_GET_OWNER(RHI::IFramebuffer, GetFramebuffer);
 
 public:
-  void SetBackground(float r, float g, float b);
+  void SetBackground(const GameFramework::Color3f & color);
   void Submit();
 
 private:
