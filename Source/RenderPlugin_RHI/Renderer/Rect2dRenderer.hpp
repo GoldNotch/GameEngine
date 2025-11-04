@@ -20,9 +20,8 @@ public:
 
 private:
   size_t m_hash = 0;
+  std::vector<std::pair<float, float>> m_verticesCpuBuffer;
   RHI::ISubpass * m_renderPass = nullptr;
   RHI::IBufferGPU * m_verticesBuffer = nullptr;
-  std::vector<float> m_verticesCpuBuffer;
-  RHI::IBufferUniformDescriptor * m_verticesDescriptor = nullptr;
 };
 } // namespace RenderPlugin

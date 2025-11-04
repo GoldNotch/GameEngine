@@ -66,7 +66,7 @@ int main(int argc, const char * argv[])
     auto && wnd = windows.emplace_back(
       windowsManager->NewWindow(wndInfo.id, wndInfo.title, wndInfo.width, wndInfo.height));
     wnd->GetInputController().BindInputQueue(input);
-    drawDevices.emplace_back(renderManager->CreateScreenDevice(*wnd));
+    auto && device = drawDevices.emplace_back(renderManager->CreateScreenDevice(*wnd));
   }
   gameInstance->ListenInputQueue(input);
   gameInstance->BindSignalsQueue(signalsQueue);

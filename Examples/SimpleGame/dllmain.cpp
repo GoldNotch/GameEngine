@@ -102,14 +102,14 @@ void SimpleGame::Render(GameFramework::IDevice & device)
     if (device.GetOwnerId() == TEST_WINDOW1)
     {
       scene->SetBackground({0.2f, 0.5f, (std::sin(t * 0.5f) + 1.0f) / 2.0f});
-      float width = 0.5f + (std::sin(t * 0.002f) + 1.0f) / 4.0f;
-      float top = 0.5f + (std::sin(t * 0.002f) + 1.0f) / 8.0f;
-      scene->AddRect({0.0f, top, width, 0.5f});
+      float width = 0.5f + (std::sin(t) + 1.0f) / 2.0f;
+      float height = 0.5f + (std::sin(t) + 1.0f) / 2.0f;
+      scene->AddRect({-0.5f, -0.5f, width, height});
     }
     else
     {
       scene->SetBackground({0.2f, 0.5f, 0.7f});
-      scene->AddRect({-0.5f, 0.0f, 0.0f, 0.2f});
+      scene->AddRect({-0.3f, -0.3f, 0.6f, 0.6f});
     }
   }
 }
