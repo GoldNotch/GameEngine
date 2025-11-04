@@ -9,7 +9,7 @@ namespace RenderPlugin
 
 size_t ShaderFile::ReadBinary(GameFramework::IFileReader & stream, ShaderFile & file)
 {
-  file.m_data.resize(stream.Size() / sizeof(uint32_t) + 1);
+  file.m_data.resize(stream.Size() / sizeof(uint32_t));
   return stream.Read(std::as_writable_bytes(std::span{file.m_data}));
 }
 

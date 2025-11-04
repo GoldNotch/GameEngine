@@ -23,6 +23,7 @@ struct IDevice
 {
   virtual ~IDevice() = default;
   virtual Scene2DUPtr AcquireScene2D() = 0;
+  virtual int GetOwnerId() const noexcept = 0;
 };
 
 /// поверхность рисования в окно

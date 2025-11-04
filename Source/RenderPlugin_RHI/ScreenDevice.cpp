@@ -8,7 +8,7 @@ ScreenDevice::ScreenDevice(RHI::IContext & ctx, GameFramework::IWindow & window)
   : m_context(ctx)
   , m_window(window)
   , m_framebuffer(ctx.CreateFramebuffer())
-  , m_scene2D(*m_framebuffer)
+  , m_scene2D(ctx, *m_framebuffer)
 {
   auto [hwnd, hInstance] = window.GetSurface();
   RHI::SurfaceConfig config{hwnd, hInstance};
@@ -28,6 +28,7 @@ ScreenDevice::ScreenDevice(RHI::IContext & ctx, GameFramework::IWindow & window)
 ScreenDevice::~ScreenDevice()
 {
   assert(m_renderTarget == nullptr);
+  //TODO: destroy m_framebuffer in context
 }
 
 GameFramework::Scene2DUPtr ScreenDevice::AcquireScene2D()
@@ -35,12 +36,19 @@ GameFramework::Scene2DUPtr ScreenDevice::AcquireScene2D()
   return std::make_unique<Scene2DProxy>(m_scene2D);
 }
 
+int ScreenDevice::GetOwnerId() const noexcept
+{
+  return GetWindow().GetId();
+}
+
 bool ScreenDevice::BeginFrame()
 {
   if (!m_framebuffer)
     return false;
   m_renderTarget = m_framebuffer->BeginFrame();
-  m_renderTarget->SetClearValue(0, 1.0, 0, 0, 1.0);
+  m_renderTarget->SetClearValue(0, 0.0, 0.0, 0.0, 1.0);
+  m_renderTarget->SetClearValue(1, 1.0f, 0);
+
   return m_renderTarget != nullptr;
 }
 

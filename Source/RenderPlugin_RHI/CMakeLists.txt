@@ -15,6 +15,9 @@ PRIVATE
 	
 	"ShaderFile.hpp"
 	"ShaderFile.cpp"
+
+	"Renderer/BackgroundRenderer.cpp"
+	"Renderer/BackgroundRenderer.hpp"
 )
 
 target_include_directories(${this_target} 
@@ -39,6 +42,8 @@ TARGET_PRECOMPILE_SPIRV(
 TARGET ${this_target} 
 SHADERS_DIRECTORY ".shaders"
 SHADERS
+	"Shaders/background.vert"
+	"Shaders/background.frag"
 	"Shaders/rect2d.frag"
 	"Shaders/rect2d.vert"
 )

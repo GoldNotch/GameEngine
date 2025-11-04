@@ -15,6 +15,7 @@ struct ScreenDevice : public GameFramework::IScreenDevice
 
 public: // IDevice interface
   virtual GameFramework::Scene2DUPtr AcquireScene2D() override;
+  virtual int GetOwnerId() const noexcept override;
 
 public: //IScreenDevice interface
   virtual bool BeginFrame() override;
@@ -25,7 +26,7 @@ public: //IScreenDevice interface
 private:
   RHI::IContext & m_context;
   GameFramework::IWindow & m_window;
-  std::unique_ptr<RHI::IFramebuffer> m_framebuffer;
+  RHI::IFramebuffer * m_framebuffer = nullptr;
   RHI::IRenderTarget * m_renderTarget = nullptr;
   RHI::IAttachment * m_colorAttachment = nullptr;
   RHI::IAttachment * m_depthStencilAttachment = nullptr;

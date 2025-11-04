@@ -99,11 +99,18 @@ void SimpleGame::Render(GameFramework::IDevice & device)
   auto scene = device.AcquireScene2D();
   if (scene)
   {
-    scene->AddBackground({0.2f, 0.5f, (std::sin(t * 0.005f) + 1.0f) / 2.0f, 1.0f});
-    float right = 0.5f + (std::sin(t * 0.002f) + 1.0f) / 4.0f;
-    float top = 0.5f + (std::sin(t * 0.002f) + 1.0f) / 8.0f;
-    scene->AddRect(0.0f, top, right, 0.0f);
-    scene->AddRect(-0.5f, 0.0f, 0.0f, -0.2f);
+    if (device.GetOwnerId() == TEST_WINDOW1)
+    {
+      scene->AddBackground({0.2f, 0.5f, (std::sin(t * 0.5f) + 1.0f) / 2.0f, 1.0f});
+      float right = 0.5f + (std::sin(t * 0.002f) + 1.0f) / 4.0f;
+      float top = 0.5f + (std::sin(t * 0.002f) + 1.0f) / 8.0f;
+      scene->AddRect(0.0f, top, right, 0.0f);
+    }
+    else
+    {
+      scene->AddBackground({0.2f, 0.5f, 0.7f, 1.0f});
+      scene->AddRect(-0.5f, 0.0f, 0.0f, -0.2f);
+    }
   }
 }
 

@@ -1,14 +1,14 @@
 #pragma once
 
 #include <PluginInterfaces/RenderPlugin.hpp>
-#include <RHI.hpp>
+#include <Renderer/BackgroundRenderer.hpp>
 
 namespace RenderPlugin
 {
 
 struct Scene2D : public GameFramework::IRenderableScene2D
 {
-  explicit Scene2D(RHI::IFramebuffer & framebuffer);
+  explicit Scene2D(RHI::IContext & ctx, RHI::IFramebuffer & framebuffer);
   virtual ~Scene2D() override;
 
   virtual void AddBackground(const std::array<float, 4> & color) override;
@@ -20,8 +20,7 @@ public:
   bool ShouldBeInvalidated() const noexcept;
 
 private:
-  RHI::IFramebuffer & m_framebuffer;
-  RHI::ISubpass * m_renderPass;
+  BackgroundRenderer m_backgroundRenderer;
 };
 
 } // namespace RenderPlugin

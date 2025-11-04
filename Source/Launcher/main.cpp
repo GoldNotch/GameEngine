@@ -59,8 +59,8 @@ int main(int argc, const char * argv[])
   GameFramework::InputQueue input;
   GameFramework::SignalsQueue signalsQueue;
 
-  std::vector<GameFramework::WindowUPtr> windows;
-  std::vector<GameFramework::ScreenDeviceUPtr> drawDevices;
+  std::list<GameFramework::WindowUPtr> windows;
+  std::list<GameFramework::ScreenDeviceUPtr> drawDevices;
   for (auto && wndInfo : gameInstance->GetOutputConfiguration())
   {
     auto && wnd = windows.emplace_back(
@@ -117,6 +117,6 @@ int main(int argc, const char * argv[])
 
     gameInstance->Tick(GameFramework::GetTimeManager().Delta());
   }
-
+ 
   return 0;
 }

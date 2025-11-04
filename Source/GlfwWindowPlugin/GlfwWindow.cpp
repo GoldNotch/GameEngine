@@ -60,6 +60,7 @@ private:
 
 GlfwWindow::GlfwWindow(int id, const std::string & title, int width, int height)
   : m_inputController(GameFramework::CreateInputController())
+  , m_id(id)
 {
   // Create GLFW window
   GLFWwindow * window = glfwCreateWindow(width, height, title.c_str(), NULL, NULL);
