@@ -1,5 +1,4 @@
 set(this_target "Launcher")
-include (ShaderCompile.cmake)
 
 add_executable(${this_target})
 

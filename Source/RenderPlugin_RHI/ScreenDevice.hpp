@@ -21,6 +21,7 @@ public: //IScreenDevice interface
   virtual bool BeginFrame() override;
   virtual void EndFrame() override;
   virtual void Refresh() override;
+  virtual void OnResize(int newWidth, int newHeight) override;
   virtual const GameFramework::IWindow & GetWindow() const & noexcept override;
 
 private:

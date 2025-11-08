@@ -63,6 +63,11 @@ void ScreenDevice::Refresh()
   m_scene2D.Invalidate();
 }
 
+void ScreenDevice::OnResize(int newWidth, int newHeight)
+{
+    m_framebuffer->Resize(newWidth, newHeight);
+}
+
 const GameFramework::IWindow & ScreenDevice::GetWindow() const & noexcept
 {
   return m_window;

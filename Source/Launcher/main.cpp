@@ -67,6 +67,7 @@ int main(int argc, const char * argv[])
       windowsManager->NewWindow(wndInfo.id, wndInfo.title, wndInfo.width, wndInfo.height));
     wnd->GetInputController().BindInputQueue(input);
     auto && device = drawDevices.emplace_back(renderManager->CreateScreenDevice(*wnd));
+    wnd->SetResizeCallback([dcPtr = device.get()](int w, int h) { dcPtr->OnResize(w, h); });
   }
   gameInstance->ListenInputQueue(input);
   gameInstance->BindSignalsQueue(signalsQueue);
@@ -117,6 +118,6 @@ int main(int argc, const char * argv[])
 
     gameInstance->Tick(GameFramework::GetTimeManager().Delta());
   }
- 
+
   return 0;
 }
