@@ -8,18 +8,24 @@ PRIVATE
 	"Constants.hpp"
 	"ScreenDevice.cpp"
 	"ScreenDevice.hpp"
-	"Scene2D_GPU.cpp" 
-	"Scene2D_GPU.hpp" 
-	"Scene2D_CPU.cpp"
-	"Scene2D_CPU.hpp"
-	
 	"ShaderFile.hpp"
 	"ShaderFile.cpp"
 
-	"Renderer/BackgroundRenderer.cpp"
-	"Renderer/BackgroundRenderer.hpp"
-	"Renderer/Rect2dRenderer.cpp"
-	"Renderer/Rect2dRenderer.hpp"
+	"Render2D/Scene2D_GPU.cpp" 
+	"Render2D/Scene2D_GPU.hpp" 
+	"Render2D/Scene2D_CPU.cpp"
+	"Render2D/Scene2D_CPU.hpp"
+	"Render2D/Renderer/BackgroundRenderer.cpp"
+	"Render2D/Renderer/BackgroundRenderer.hpp"
+	"Render2D/Renderer/Rect2dRenderer.cpp"
+	"Render2D/Renderer/Rect2dRenderer.hpp"
+
+	"Render3D/Scene3D_CPU.cpp"
+	"Render3D/Scene3D_CPU.hpp"
+	"Render3D/Scene3D_GPU.cpp"
+	"Render3D/Scene3D_GPU.hpp"
+	"Render3D/Renderer/CubeRenderer.cpp"
+	"Render3D/Renderer/CubeRenderer.hpp"
 )
 
 target_include_directories(${this_target} 
@@ -44,8 +50,11 @@ TARGET_PRECOMPILE_SPIRV(
 TARGET ${this_target} 
 SHADERS_DIRECTORY ".shaders"
 SHADERS
-	"Shaders/background.vert"
-	"Shaders/background.frag"
-	"Shaders/rect2d.frag"
-	"Shaders/rect2d.vert"
+	"Render2D/Shaders/background.vert"
+	"Render2D/Shaders/background.frag"
+	"Render2D/Shaders/rect2d.frag"
+	"Render2D/Shaders/rect2d.vert"
+
+	"Render3D/Shaders/Cube.frag"
+	"Render3D/Shaders/Cube.vert"
 )

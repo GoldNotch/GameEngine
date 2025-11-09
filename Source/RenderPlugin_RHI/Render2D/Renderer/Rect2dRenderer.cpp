@@ -81,7 +81,7 @@ void Rect2DRenderer::TrySetRects(size_t newHash, std::span<const GameFramework::
 
 void Rect2DRenderer::Submit()
 {
-  if (m_renderPass && m_renderPass->ShouldBeInvalidated())
+  if (m_renderPass && m_renderPass->ShouldBeInvalidated() && !m_verticesCpuBuffer.empty())
   {
     auto extent = GetFramebuffer().GetExtent();
     m_renderPass->BeginPass();

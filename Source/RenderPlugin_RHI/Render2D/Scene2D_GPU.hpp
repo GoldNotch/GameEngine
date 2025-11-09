@@ -1,8 +1,8 @@
 #pragma once
 
-#include <PluginInterfaces/RenderPlugin.hpp>
-#include <Renderer/BackgroundRenderer.hpp>
-#include <Renderer/Rect2dRenderer.hpp>
+#include <GameFramework.hpp>
+#include <Render2D/Renderer/BackgroundRenderer.hpp>
+#include <Render2D/Renderer/Rect2dRenderer.hpp>
 
 namespace RenderPlugin
 {

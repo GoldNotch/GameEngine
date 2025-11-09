@@ -1,6 +1,7 @@
 #include "ScreenDevice.hpp"
 
-#include <Scene2D_CPU.hpp>
+#include <Render2D/Scene2D_CPU.hpp>
+#include <Render3D/Scene3D_CPU.hpp>
 
 namespace RenderPlugin
 {
@@ -9,6 +10,7 @@ ScreenDevice::ScreenDevice(RHI::IContext & ctx, GameFramework::IWindow & window)
   , m_window(window)
   , m_framebuffer(ctx.CreateFramebuffer())
   , m_scene2D(ctx, *m_framebuffer)
+  , m_scene3D(ctx, *m_framebuffer)
 {
   auto [hwnd, hInstance] = window.GetSurface();
   RHI::SurfaceConfig config{hwnd, hInstance};
@@ -36,9 +38,19 @@ GameFramework::Scene2DUPtr ScreenDevice::AcquireScene2D()
   return std::make_unique<Scene2D_CPU>(m_scene2D);
 }
 
+GameFramework::Scene3DUPtr ScreenDevice::AcquireScene3D()
+{
+  return std::make_unique<Scene3D_CPU>(m_scene3D);
+}
+
 int ScreenDevice::GetOwnerId() const noexcept
 {
   return GetWindow().GetId();
+}
+
+float ScreenDevice::GetAspectRatio() const noexcept
+{
+  return GetWindow().GetAspectRatio();
 }
 
 bool ScreenDevice::BeginFrame()
@@ -65,7 +77,7 @@ void ScreenDevice::Refresh()
 
 void ScreenDevice::OnResize(int newWidth, int newHeight)
 {
-    m_framebuffer->Resize(newWidth, newHeight);
+  m_framebuffer->Resize(newWidth, newHeight);
 }
 
 const GameFramework::IWindow & ScreenDevice::GetWindow() const & noexcept

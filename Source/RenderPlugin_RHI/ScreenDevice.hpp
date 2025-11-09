@@ -3,7 +3,8 @@
 
 #include <GameFramework.hpp>
 #include <RHI.hpp>
-#include <Scene2D_GPU.hpp>
+#include <Render2D/Scene2D_GPU.hpp>
+#include <Render3D/Scene3D_GPU.hpp>
 
 namespace RenderPlugin
 {
@@ -15,7 +16,9 @@ struct ScreenDevice : public GameFramework::IScreenDevice
 
 public: // IDevice interface
   virtual GameFramework::Scene2DUPtr AcquireScene2D() override;
+  virtual GameFramework::Scene3DUPtr AcquireScene3D() override;
   virtual int GetOwnerId() const noexcept override;
+  virtual float GetAspectRatio() const noexcept override;
 
 public: //IScreenDevice interface
   virtual bool BeginFrame() override;
@@ -34,6 +37,7 @@ private:
   RHI::IAttachment * m_msaaResolveAttachment = nullptr;
 
   Scene2D_GPU m_scene2D;
+  Scene3D_GPU m_scene3D;
 };
 
 } // namespace RenderPlugin

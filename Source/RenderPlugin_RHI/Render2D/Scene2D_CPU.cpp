@@ -1,6 +1,6 @@
 #include "Scene2D_CPU.hpp"
 
-#include <Scene2D_GPU.hpp>
+#include <Render2D/Scene2D_GPU.hpp>
 #include <Utility/Utility.hpp>
 
 namespace RenderPlugin

@@ -2,6 +2,7 @@
 #include <memory>
 
 #include <Render/Color.hpp>
+#include <Render/Primitive2d/Rect2d.hpp>
 
 namespace GameFramework
 {

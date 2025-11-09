@@ -24,6 +24,7 @@ PRIVATE
 	"Game/Signal.hpp"
 	"Game/Time.cpp"
 	"Game/Time.hpp"
+	"Game/Math.hpp"
 
 	"Files/FileStream.hpp"
 	"Files/MountPoint.hpp"
@@ -32,9 +33,16 @@ PRIVATE
 	"Files/StandardFileStream.cpp"
 	"Files/DirectoryMountPoint.cpp"
 
-	 "Render/Rect2d.cpp"
-	 "Render/Rect2d.hpp"
-	 "Render/RenderPrimitive.hpp"
+	"Render/Primitive2d/Rect2d.cpp"
+	"Render/Primitive2d/Rect2d.hpp"
+	"Render/Primitive3d/Cube.hpp"
+	"Render/Primitive3d/Cube.cpp"
+	"Render/Primitive3d/Camera.cpp"
+	"Render/Primitive3d/Camera.hpp"
+	"Render/Color.hpp"
+	"Render/RenderPrimitive.hpp"
+	"Render/Scene2d.hpp"
+	"Render/Scene3d.hpp"
 
 	"Input/Input.hpp"
 	"Input/InputDevice.hpp"
@@ -65,4 +73,5 @@ target_link_libraries(${this_target}
 PRIVATE
 	dylib
 	concurrentqueue
+	glm
 )

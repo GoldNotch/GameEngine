@@ -4,8 +4,8 @@
 #include <Plugin/Plugin.hpp>
 #include <PluginInterfaces/WindowsPlugin.hpp>
 #include <Render/Color.hpp>
-#include <Render/Rect2d.hpp>
 #include <Render/Scene2d.hpp>
+#include <Render/Scene3d.hpp>
 
 namespace GameFramework
 {
@@ -15,7 +15,9 @@ struct IDevice
 {
   virtual ~IDevice() = default;
   virtual Scene2DUPtr AcquireScene2D() = 0;
+  virtual Scene3DUPtr AcquireScene3D() = 0;
   virtual int GetOwnerId() const noexcept = 0;
+  virtual float GetAspectRatio() const noexcept = 0;
 };
 
 /// поверхность рисования в окно

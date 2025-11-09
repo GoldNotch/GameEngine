@@ -1,15 +1,10 @@
+#include <cassert>
 #include <iostream>
 #include <memory>
 #include <vector>
 
 #include <GameFramework.hpp>
 using namespace GameFramework;
-
-enum Windows
-{
-  TEST_WINDOW1,
-  TEST_WINDOW2
-};
 
 enum ActionCode
 {
@@ -18,17 +13,18 @@ enum ActionCode
   MoveBackward,
   MoveLeft,
   MoveRight,
+  RotateCamera
 };
 
-class SimpleGame : public GameFramework::GamePlugin
+class Hello3D : public GameFramework::GamePlugin
 {
   float t = 0.0;
 
 public:
-  SimpleGame() = default;
-  virtual ~SimpleGame() override = default;
+  Hello3D() = default;
+  virtual ~Hello3D() override = default;
 
-  virtual std::string GetGameName() const override { return "SimpleGame"; }
+  virtual std::string GetGameName() const override { return "Hello3D"; }
   virtual std::vector<InputBinding> GetInputConfiguration() const override;
 
   ///
@@ -47,7 +43,7 @@ private:
   std::vector<SignalsQueue *> m_boundSignalsQueue;
 };
 
-std::vector<InputBinding> SimpleGame::GetInputConfiguration() const
+std::vector<InputBinding> Hello3D::GetInputConfiguration() const
 {
   std::vector<InputBinding> actions{
     {"Quit", ActionCode::Quit, "KeyEscape", ActionType::Event},
@@ -55,18 +51,18 @@ std::vector<InputBinding> SimpleGame::GetInputConfiguration() const
     {"MoveBackward", ActionCode::MoveBackward, "KeyS", ActionType::Continous},
     {"MoveLeft", ActionCode::MoveLeft, "KeyA", ActionType::Continous},
     {"MoveRight", ActionCode::MoveRight, "KeyD", ActionType::Continous},
+    //{"RotateCamera", ActionCode::RotateCamera, "MouseCursor", ActionType::Axis}
   };
   return actions;
 }
 
-std::vector<ProtoWindow> SimpleGame::GetOutputConfiguration() const
+std::vector<ProtoWindow> Hello3D::GetOutputConfiguration() const
 {
-  std::vector<ProtoWindow> windows{{TEST_WINDOW1, "SimpleGame", 800, 600},
-                                   {TEST_WINDOW2, "TestWindow", 500, 500}};
+  std::vector<ProtoWindow> windows{{1, "Hello3D", 800, 600}};
   return windows;
 }
 
-void SimpleGame::ProcessInput()
+void Hello3D::ProcessInput()
 {
   auto evt = ConsumeInputEvent();
   if (evt.has_value())
@@ -85,7 +81,7 @@ void SimpleGame::ProcessInput()
   }
 }
 
-void SimpleGame::Tick(double deltaTime)
+void Hello3D::Tick(double deltaTime)
 {
   ProcessInput();
   t += static_cast<float>(deltaTime);
@@ -94,23 +90,20 @@ void SimpleGame::Tick(double deltaTime)
                      " FPS: ", 1.0 / deltaTime);
 }
 
-void SimpleGame::Render(GameFramework::IDevice & device)
+void Hello3D::Render(GameFramework::IDevice & device)
 {
-  auto scene = device.AcquireScene2D();
-  if (scene)
+  if (auto scene = device.AcquireScene2D())
   {
-    if (device.GetOwnerId() == TEST_WINDOW1)
-    {
-      scene->SetBackground({0.2f, 0.5f, (std::sin(t * 0.5f) + 1.0f) / 2.0f});
-      float width = 0.5f + (std::sin(t) + 1.0f) / 2.0f;
-      float height = 0.5f + (std::sin(t) + 1.0f) / 2.0f;
-      scene->AddRect({-0.5f, -0.5f, width, height});
-    }
-    else
-    {
-      scene->SetBackground({0.2f, 0.5f, 0.7f});
-      scene->AddRect(Rect2d{-0.3f, -0.3f, 0.6f, 0.6f});
-    }
+    scene->SetBackground({0.2f, 0.5f, (std::sin(t * 0.5f) + 1.0f) / 2.0f});
+  }
+  if (auto scene = device.AcquireScene3D())
+  {
+    Camera cam;
+    cam.SetPlacement(Vec3f{0.0, 0.0, 10.f}, {0.0f, 0.0, -1.0f});
+    cam.SetPerspectiveSettings(PerspectiveSettings{45.0f, device.GetAspectRatio(), {0.1f, 1000.0f}});
+    scene->SetCamera(cam);
+    scene->AddCube(Cube());
+    scene->AddCube(Cube(Vec3f{3, -3.0, 0.0f}));
   }
 }
 
@@ -118,5 +111,5 @@ void SimpleGame::Render(GameFramework::IDevice & device)
 PLUGIN_API std::unique_ptr<GameFramework::IPluginInstance> CreateInstance(
   const GameFramework::IPluginLoader & loader)
 {
-  return std::make_unique<SimpleGame>();
+  return std::make_unique<Hello3D>();
 }
