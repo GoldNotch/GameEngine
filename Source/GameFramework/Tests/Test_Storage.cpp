@@ -1,8 +1,8 @@
 #include <iostream>
 
 #include <catch2/catch_test_macros.hpp>
-#include <Core/Storage.hpp>
-using namespace Core;
+#include <Utility/Storage.hpp>
+using namespace GameFramework;
 
 TEST_CASE("Heterogeneous Storage of primary types", "[HeterogeneousStorage]")
 {
