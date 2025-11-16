@@ -13,55 +13,19 @@
 #include <GLFW/glfw3native.h>
 /// clang-format on
 
+#include <GlfwInput.hpp>
+#include <GlfwInstance.hpp>
+#include <GlfwWindow.hpp>
 #include <Input/InputController.hpp>
-
-#include "GlfwInput.hpp"
-#include "GlfwWindow.hpp"
-
+using namespace GameFramework;
 
 namespace GlfwWindowsPlugin
 {
 
-struct GlfwWindow final : public GameFramework::IWindow
-{
-  GlfwWindow(int id, const std::string & title, int width, int height);
-  virtual ~GlfwWindow() override;
-
-public:
-  virtual int GetId() const noexcept override { return m_id; }
-  virtual std::string GetTitle() const noexcept override { return m_title; };
-  GameFramework::SurfaceDescriptor GetSurface() const noexcept override;
-  std::pair<int, int> GetSize() const noexcept override;
-  float GetAspectRatio() const noexcept override;
-  void SetCursorHidden(bool hidden = true) override;
-  bool IsCursorHidden() const noexcept override;
-  void Close() override;
-  bool ShouldClose() const noexcept override;
-  void SetResizeCallback(ResizeCallback && callback) override;
-  virtual GameFramework::InputController & GetInputController() & noexcept override;
-
-private:
-  int m_id;
-  std::string m_title;
-  GameFramework::InputControllerUPtr m_inputController;
-  GLFWwindow * m_window = nullptr;
-  std::optional<std::pair<double, double>> m_lastCursorPos;
-  ResizeCallback onResize = nullptr;
-
-
-private:
-  static void OnResizeCallback(GLFWwindow * window, int width, int height);
-  static void OnCursorMoved(GLFWwindow * window, double xpos, double ypos);
-  static void OnCursorEnterLeave(GLFWwindow * window, int entered);
-  static void OnKeyAction(GLFWwindow * window, int key, int scancode, int action, int mods);
-  static void OnMouseButtonAction(GLFWwindow * window, int key, int action, int mods);
-  static void OnScroll(GLFWwindow * window, double xoffset, double yoffset);
-};
-
 GlfwWindow::GlfwWindow(int id, const std::string & title, int width, int height)
-  : m_inputController(GameFramework::CreateInputController())
-  , m_id(id)
+  : m_id(id)
 {
+  GetGlfwInstance().TrackWindow(this);
   // Create GLFW window
   GLFWwindow * window = glfwCreateWindow(width, height, title.c_str(), NULL, NULL);
   if (window == NULL)
@@ -81,10 +45,11 @@ GlfwWindow::GlfwWindow(int id, const std::string & title, int width, int height)
 
 GlfwWindow::~GlfwWindow()
 {
+  GetGlfwInstance().UntrackWindow(this);
   glfwDestroyWindow(m_window);
 }
 
-GameFramework::SurfaceDescriptor GlfwWindow::GetSurface() const noexcept
+SurfaceDescriptor GlfwWindow::GetSurface() const noexcept
 {
 #ifdef _WIN32
   return {glfwGetWin32Window(m_window), GetModuleHandle(nullptr)};
@@ -131,9 +96,95 @@ void GlfwWindow::SetResizeCallback(ResizeCallback && callback)
   onResize = std::move(callback);
 }
 
-GameFramework::InputController & GlfwWindow::GetInputController() & noexcept
+void GlfwWindow::OnGamepadConnected(int jid, bool connected)
 {
-  return *m_inputController;
+  if (connected)
+    m_gamepadStates.insert({jid, {}});
+  else
+    m_gamepadStates.erase(jid);
+}
+
+PressState GlfwWindow::CheckButtonState(InputDevice device, InputButton btn) const noexcept
+{
+  if (device == InputDevice::KEYBOARD_MOUSE)
+  {
+    return m_pressedButtons[static_cast<size_t>(btn)];
+  }
+  else /*if (device == InputDevice::GAMEPAD_i)*/
+  {
+    // Get state of Gamepad button
+    int jid = InputDevice2GamepadId(device);
+    auto it = m_gamepadStates.find(jid);
+    if (it == m_gamepadStates.end())
+      return GameFramework::PressState::RELEASED;
+    auto && oldState = it->second.first;
+    auto && curState = it->second.second;
+
+    int code = ConvertGamepadButton2Code(btn);
+    // if it was pressed later, then it's long pressing state,
+    // if it's first press then it's JUST_PRESSED
+    // if release, then RELEASED
+    if (oldState.buttons[code] == GLFW_PRESS)
+    {
+      return curState.buttons[code] == GLFW_PRESS ? GameFramework::PressState::PRESSING
+                                                  : GameFramework::PressState::RELEASED;
+    }
+    else // GLFW_RELEASE
+    {
+      return curState.buttons[code] == GLFW_PRESS ? GameFramework::PressState::JUST_PRESSED
+                                                  : GameFramework::PressState::RELEASED;
+    }
+  }
+}
+
+std::optional<Vec3f> GlfwWindow::CheckAxisState(InputDevice device, InputAxis axis) const noexcept
+{
+  if (device == InputDevice::KEYBOARD_MOUSE && axis == InputAxis::MOUSE_CURSOR)
+  {
+    return m_curCursorPos;
+  }
+  else /*if (device == InputDevice::GAMEPAD_i)*/
+  {
+    int jid = InputDevice2GamepadId(device);
+    auto it = m_gamepadStates.find(jid);
+    if (it == m_gamepadStates.end())
+      return std::nullopt;
+    auto && oldState = it->second.first;
+    auto && curState = it->second.second;
+
+    constexpr int lx = GLFW_GAMEPAD_AXIS_LEFT_X;
+    constexpr int ly = GLFW_GAMEPAD_AXIS_LEFT_Y;
+    constexpr int rx = GLFW_GAMEPAD_AXIS_RIGHT_X;
+    constexpr int ry = GLFW_GAMEPAD_AXIS_RIGHT_Y;
+    constexpr int l2 = GLFW_GAMEPAD_AXIS_LEFT_TRIGGER;
+    constexpr int r2 = GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER;
+    switch (axis)
+    {
+      case InputAxis::GAMEPAD_LEFT_STICK:
+        return Vec3f{curState.axes[lx], curState.axes[ly], 0.0f};
+      case InputAxis::GAMEPAD_RIGHT_STICK:
+        return Vec3f{curState.axes[rx], curState.axes[ry], 0.0f};
+      case InputAxis::GAMEPAD_LEFT_TRIGGER:
+        return Vec3f{curState.axes[l2], 0.0f, 0.0f};
+      case InputAxis::GAMEPAD_RIGHT_TRIGGER:
+        return Vec3f{curState.axes[r2], 0.0f, 0.0f};
+      default:
+        return std::nullopt;
+    }
+  }
+  return std::nullopt;
+}
+
+void GlfwWindow::PollGamepadEvents(int jid, const GLFWgamepadstate & state)
+{
+  auto it = m_gamepadStates.find(jid);
+  if (it == m_gamepadStates.end())
+  {
+    assert(false);
+    return;
+  }
+  // replace new state and store old
+  it->second.first = std::exchange(it->second.second, state);
 }
 
 void GlfwWindow::OnResizeCallback(GLFWwindow * window, int width, int height)
@@ -148,9 +199,7 @@ void GlfwWindow::OnCursorMoved(GLFWwindow * window, double xpos, double ypos)
   auto * wnd = reinterpret_cast<GlfwWindow *>(glfwGetWindowUserPointer(window));
   if (wnd)
   {
-    assert(wnd->m_lastCursorPos.has_value());
-    //wnd->PushInputEvent(GameFramework::AxisAction{});
-    wnd->m_lastCursorPos = {xpos, ypos};
+    wnd->m_curCursorPos = {static_cast<float>(xpos), static_cast<float>(ypos), 0.0f};
   }
 }
 
@@ -163,11 +212,11 @@ void GlfwWindow::OnCursorEnterLeave(GLFWwindow * window, int entered)
     {
       double x, y;
       glfwGetCursorPos(window, &x, &y);
-      wnd->m_lastCursorPos = {x, y};
+      wnd->m_curCursorPos = {static_cast<float>(x), static_cast<float>(y), 0.0f};
     }
     else
     {
-      wnd->m_lastCursorPos.reset();
+      wnd->m_curCursorPos.reset();
     }
   }
 }
@@ -176,16 +225,20 @@ void GlfwWindow::OnKeyAction(GLFWwindow * window, int key, int scancode, int act
 {
   auto * wnd = reinterpret_cast<GlfwWindow *>(glfwGetWindowUserPointer(window));
   if (wnd)
-    wnd->m_inputController->OnButtonAction(ConvertKeyboardButtonCode(key),
-                                           ConvertPressState(action, mods));
+  {
+    size_t btnIdx = static_cast<size_t>(ConvertMouseButtonCode(key));
+    wnd->m_pressedButtons[btnIdx] = ConvertPressState(action, mods);
+  }
 }
 
 void GlfwWindow::OnMouseButtonAction(GLFWwindow * window, int key, int action, int mods)
 {
   auto * wnd = reinterpret_cast<GlfwWindow *>(glfwGetWindowUserPointer(window));
   if (wnd)
-    wnd->m_inputController->OnButtonAction(ConvertMouseButtonCode(key),
-                                           ConvertPressState(action, mods));
+  {
+    size_t btnIdx = static_cast<size_t>(ConvertMouseButtonCode(key));
+    wnd->m_pressedButtons[btnIdx] = ConvertPressState(action, mods);
+  }
 }
 
 void GlfwWindow::OnScroll(GLFWwindow * window, double xoffset, double yoffset)
@@ -193,13 +246,8 @@ void GlfwWindow::OnScroll(GLFWwindow * window, double xoffset, double yoffset)
   auto * wnd = reinterpret_cast<GlfwWindow *>(glfwGetWindowUserPointer(window));
   if (wnd)
   {
-    //wnd->PushInputEvent(GameFramework::AxisAction{});
+    //wnd->PushInputEvent(AxisAction{});
   }
-}
-
-GameFramework::WindowUPtr NewWindowImpl(int id, const std::string & title, int width, int height)
-{
-  return std::make_unique<GlfwWindow>(id, title, width, height);
 }
 
 } // namespace GlfwWindowsPlugin

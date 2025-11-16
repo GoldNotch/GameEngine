@@ -3,25 +3,30 @@
 
 #include <memory>
 
-#include <Input/InputBinding.hpp>
+#include <Input/Input.hpp>
 #include <Input/InputDevice.hpp>
 #include <Input/InputQueue.hpp>
 
 namespace GameFramework
 {
 
-
+/// @brief links window, game and input system
 struct InputController : public InputProducer
 {
   virtual ~InputController() = default;
+
+  /// @brief generates input actions in game
   virtual void GenerateInputEvents() = 0;
+
+  /// @brief applies new input binding
+  /// @param bindings - a set of bindings for actions
   virtual void SetInputBindings(const std::span<InputBinding> & bindings) = 0;
-  virtual void OnButtonAction(InputButton code, PressState state) = 0;
 };
 
 using InputControllerUPtr = std::unique_ptr<InputController>;
 
-GAME_FRAMEWORK_API InputControllerUPtr CreateInputController();
+GAME_FRAMEWORK_API InputControllerUPtr CreateInputController(
+  CheckButtonStateFunc && checkButtonState, CheckAxisStateFunc && checkAxisState);
 
 /*
 * Нажатие характеризуется двумя вещами: кнопка и длительность нажатия. 

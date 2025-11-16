@@ -6,7 +6,6 @@
 #include <vector>
 
 #include <Input/Input.hpp>
-#include <Input/InputBinding.hpp>
 
 namespace GameFramework
 {

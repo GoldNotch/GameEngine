@@ -1,16 +1,19 @@
-#include "InputBinding.hpp"
-
 #include <algorithm>
+#include <cassert>
 #include <chrono>
 #include <ranges>
 #include <stdexcept>
 #include <unordered_map>
 
 #include <GameFramework.hpp>
+#include <Input/InputProcessor.hpp>
 #include <Utility/StringUtils.hpp>
 
 namespace GameFramework::details
 {
+using ButtonSimpleCondition = std::pair<InputButton, PressState>;
+using BindingConjunction = std::vector<ButtonSimpleCondition>;
+using BindingDisjunction = std::vector<BindingConjunction>;
 /// all binding are delimited with ;
 static constexpr char s_delimiter = ';';
 static constexpr char s_addButton = '+';
@@ -368,8 +371,33 @@ details::BindingDisjunction ParseBindingString(std::string_view str)
   return disjunction;
 }
 
-ActionGenerator::ActionGenerator(const InputBinding & binding)
+
+/// @brief parses a set of keys or combination keys and generate one action if it occures
+struct ButtonProcessor final : public IInputProcessor
+{
+  explicit ButtonProcessor(const InputBinding & binding, CheckButtonStateFunc && checkState);
+
+  /// update state of action
+  virtual void TickAction(double currentTime) override;
+  /// get generated action if it's active
+  virtual std::optional<GameInputEvent> GetAction() const noexcept override;
+
+private:
+  InputBinding m_binding;
+  bool m_isActive = false;
+  double m_activeTimestamp = 0.0;
+  double m_activeDuration = 0.0;
+  details::BindingDisjunction m_builtCondition;
+
+  CheckButtonStateFunc m_checkState;
+
+private:
+  bool IsActionActive() const;
+};
+
+ButtonProcessor::ButtonProcessor(const InputBinding & binding, CheckButtonStateFunc && checkState)
   : m_binding(binding)
+  , m_checkState(checkState)
 {
   details::BindingDisjunction builtResult;
   try
@@ -384,28 +412,23 @@ ActionGenerator::ActionGenerator(const InputBinding & binding)
   m_builtCondition = std::move(builtResult);
 }
 
-void ActionGenerator::SetCheckButtonStateFunc(CheckButtonStateFunc && checkState) noexcept
+void ButtonProcessor::TickAction(double currentTime)
 {
-  m_checkState = std::move(checkState);
-}
-
-void ActionGenerator::TickAction(double currentTime)
-{
-  bool isActive = IsActionActive();
-  if (m_isActive != isActive)
+  bool isStillActive = IsActionActive();
+  if (m_isActive != isStillActive)
   {
     // if just activated when set time to currentTime
-    m_activeTimestamp = !m_isActive && isActive ? currentTime : 0.0;
+    m_activeTimestamp = !m_isActive && isStillActive ? currentTime : 0.0;
     m_activeDuration = 0.0;
   }
   else
   {
     m_activeDuration = currentTime - m_activeTimestamp;
   }
-  m_isActive = isActive;
+  m_isActive = isStillActive;
 }
 
-std::optional<GameInputEvent> ActionGenerator::GetAction() const noexcept
+std::optional<GameInputEvent> ButtonProcessor::GetAction() const noexcept
 {
   if (m_isActive)
   {
@@ -415,9 +438,8 @@ std::optional<GameInputEvent> ActionGenerator::GetAction() const noexcept
         return m_activeDuration > 0.0 ? std::nullopt
                                       : std::make_optional(EventAction{m_binding.code});
       case ActionType::Continous:
-        return ContinousAction{m_binding.code, m_activeTimestamp, m_activeDuration};
-      case ActionType::Axis:
-        return AxisAction{m_binding.code};
+        return ContinousAction{m_binding.code, m_binding.playerId, m_activeTimestamp,
+                               m_activeDuration};
       default:
         Log(LogMessageType::Warning, "Unknown action type is fired - ", m_binding.name, L"(",
             static_cast<int>(m_binding.type), ")");
@@ -427,14 +449,14 @@ std::optional<GameInputEvent> ActionGenerator::GetAction() const noexcept
   return std::nullopt;
 }
 
-bool ActionGenerator::IsActionActive() const
+bool ButtonProcessor::IsActionActive() const
 {
   if (m_builtCondition.empty())
     return false;
 
   auto checkSimpleCondition = [this](const details::ButtonSimpleCondition & btn)
   {
-    return m_checkState(btn.first) == btn.second;
+    return m_checkState(InputDevice::KEYBOARD_MOUSE, btn.first) == btn.second;
   };
   auto checkButtonSet =
     [&checkSimpleCondition](const details::BindingConjunction & buttonSet) -> bool
@@ -443,6 +465,13 @@ bool ActionGenerator::IsActionActive() const
   };
 
   return std::ranges::any_of(m_builtCondition, checkButtonSet);
+}
+
+InputProcessorUPtr CreateButtonProcessor(const InputBinding & binding,
+                                         CheckButtonStateFunc checkButtonState)
+{
+  assert(binding.type == ActionType::Continous || binding.type == ActionType::Event);
+  return std::make_unique<ButtonProcessor>(binding, std::move(checkButtonState));
 }
 
 } // namespace GameFramework::details

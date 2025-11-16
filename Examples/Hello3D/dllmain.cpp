@@ -45,14 +45,15 @@ private:
 
 std::vector<InputBinding> Hello3D::GetInputConfiguration() const
 {
-  std::vector<InputBinding> actions{
-    {"Quit", ActionCode::Quit, "KeyEscape", ActionType::Event},
-    {"MoveForward", ActionCode::MoveForward, "KeyW", ActionType::Continous},
-    {"MoveBackward", ActionCode::MoveBackward, "KeyS", ActionType::Continous},
-    {"MoveLeft", ActionCode::MoveLeft, "KeyA", ActionType::Continous},
-    {"MoveRight", ActionCode::MoveRight, "KeyD", ActionType::Continous},
-    //{"RotateCamera", ActionCode::RotateCamera, "MouseCursor", ActionType::Axis}
-  };
+  // clang-format off
+  std::vector<InputBinding>
+    actions{{"Quit", ActionCode::Quit, PlayerID::ANY, "KeyEscape", ActionType::Event},
+            {"MoveForward", ActionCode::MoveForward, PlayerID::PLAYER0, "KeyW", ActionType::Continous},
+            {"MoveBackward", ActionCode::MoveBackward,  PlayerID::PLAYER0, "KeyS", ActionType::Continous},
+            {"MoveLeft", ActionCode::MoveLeft,PlayerID::PLAYER0, "KeyA",  ActionType::Continous},
+            {"MoveRight", ActionCode::MoveRight,PlayerID::PLAYER0, "KeyD",  ActionType::Continous},
+            {"RotateCamera", ActionCode::RotateCamera, PlayerID::PLAYER0, "MouseCursor", ActionType::Axis}};
+  // clang=format on
   return actions;
 }
 
@@ -75,7 +76,11 @@ void Hello3D::ProcessInput()
                                  [](const ContinousAction & action) {
 
                                  },
-                                 [](const AxisAction & action) {
+                                 [](const AxisAction & axis) {
+                                       if (axis.code == ActionCode::RotateCamera)
+                                       {
+                                           std::cout << "camera rotated" << std::endl;
+                                       }
                                  }},
                *evt);
   }
@@ -100,7 +105,8 @@ void Hello3D::Render(GameFramework::IDevice & device)
   {
     Camera cam;
     cam.SetPlacement(Vec3f{0.0, 0.0, 10.f}, {0.0f, 0.0, -1.0f});
-    cam.SetPerspectiveSettings(PerspectiveSettings{45.0f, device.GetAspectRatio(), {0.1f, 1000.0f}});
+    cam.SetPerspectiveSettings(
+      PerspectiveSettings{45.0f, device.GetAspectRatio(), {0.1f, 1000.0f}});
     scene->SetCamera(cam);
     scene->AddCube(Cube());
     scene->AddCube(Cube(Vec3f{3, -3.0, 0.0f}));

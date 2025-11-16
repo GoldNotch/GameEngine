@@ -33,9 +33,22 @@ GameFramework::InputButton ConvertKeyboardButtonCode(int code)
   return static_cast<GameFramework::InputButton>(code);
 }
 
-GameFramework::InputButton ConvertGamepadButtonCode(int code)
+int ConvertGamepadButton2Code(GameFramework::InputButton btn)
 {
-  return static_cast<GameFramework::InputButton>(code + GLFW_MOUSE_BUTTON_LAST);
+  if (btn < GameFramework::InputButton::GAMEPAD_BUTTON_A ||
+      btn > GameFramework::InputButton::GAMEPAD_BUTTON_DPAD_LEFT)
+    return GLFW_KEY_UNKNOWN;
+
+  return static_cast<int>(btn) - static_cast<int>(GameFramework::InputButton::GAMEPAD_BUTTON_A);
+}
+
+int InputDevice2GamepadId(GameFramework::InputDevice dev) noexcept
+{
+  using namespace GameFramework;
+  if (dev == InputDevice::KEYBOARD_MOUSE)
+    return -1;
+  else
+    return static_cast<int>(dev) >> 1;
 }
 
 } // namespace GlfwWindowsPlugin

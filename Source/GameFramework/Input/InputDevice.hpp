@@ -1,5 +1,8 @@
 #pragma once
 
+#include <functional>
+#include <optional>
+
 #include <Utility/Utility.hpp>
 
 namespace GameFramework
@@ -180,14 +183,39 @@ enum class PressState : uint8_t
 
 enum class InputAxis : int
 {
+  UNKNOWN = -1,
   MOUSE_CURSOR,
-  GAMEPAD_HAT,           // up, left, right, down
-  GAMEPAD_LEFT_AXIS,     // left stick
-  GAMEPAD_RIGHT_AXIS,    // Right stick
-  GAMEPAD_LEFT_TRIGGET,  // L2
+  GAMEPAD_LEFT_STICK,    // left stick
+  GAMEPAD_RIGHT_STICK,   // Right stick
+  GAMEPAD_LEFT_TRIGGER,  // L2
   GAMEPAD_RIGHT_TRIGGER, // R2
 };
 
+enum class InputDevice : uint32_t
+{
+  KEYBOARD_MOUSE = Utils::bit<uint32_t>(0),
+  GAMEPAD_1 = Utils::bit<uint32_t>(1),
+  GAMEPAD_2 = Utils::bit<uint32_t>(2),
+  GAMEPAD_3 = Utils::bit<uint32_t>(3),
+  PAMEPAD_4 = Utils::bit<uint32_t>(4),
+  GAMEPAD_5 = Utils::bit<uint32_t>(5),
+  GAMEPAD_6 = Utils::bit<uint32_t>(6),
+  GAMEPAD_7 = Utils::bit<uint32_t>(7),
+  PAMEPAD_8 = Utils::bit<uint32_t>(8),
+  GAMEPAD_9 = Utils::bit<uint32_t>(9),
+  GAMEPAD_10 = Utils::bit<uint32_t>(10),
+  GAMEPAD_11 = Utils::bit<uint32_t>(11),
+  PAMEPAD_12 = Utils::bit<uint32_t>(12),
+  GAMEPAD_13 = Utils::bit<uint32_t>(13),
+  GAMEPAD_14 = Utils::bit<uint32_t>(14),
+  GAMEPAD_15 = Utils::bit<uint32_t>(15),
+  PAMEPAD_16 = Utils::bit<uint32_t>(16),
+  ALL = 0xFFFFFFFF
+};
+
+using CheckAxisStateFunc =
+  std::function<std::optional<GameFramework::Vec3f>(InputDevice, InputAxis)>;
+using CheckButtonStateFunc = std::function<PressState(InputDevice, InputButton)>;
 
 constexpr inline PressState operator|(PressState s1, PressState s2)
 {
@@ -197,5 +225,15 @@ constexpr inline PressState operator|(PressState s1, PressState s2)
 constexpr inline int operator&(PressState s1, PressState s2)
 {
   return static_cast<int>(s1) & static_cast<int>(s2);
+}
+
+constexpr inline InputDevice operator|(InputDevice d1, InputDevice d2)
+{
+  return static_cast<InputDevice>(static_cast<uint32_t>(d1) | static_cast<uint32_t>(d2));
+}
+
+constexpr inline uint32_t operator&(InputDevice d1, InputDevice d2)
+{
+  return static_cast<int>(d1) & static_cast<int>(d2);
 }
 } // namespace GameFramework

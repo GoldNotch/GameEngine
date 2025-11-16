@@ -46,8 +46,9 @@ PRIVATE
 
 	"Input/Input.hpp"
 	"Input/InputDevice.hpp"
-	"Input/InputBinding.hpp" 
-	"Input/InputBinding.cpp" 
+	"Input/InputProcessor.hpp" 
+	"Input/ButtonProcessor.cpp" 
+	"Input/AxisProcessor.cpp"
 	"Input/InputController.hpp"
 	"Input/InputController.cpp" 
 	"Input/InputQueue.cpp"

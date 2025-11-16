@@ -2,10 +2,12 @@
 
 #include <algorithm>
 #include <array>
+#include <memory>
 #include <ranges>
 
 #include <Game/Time.hpp>
 #include <GameFramework.hpp>
+#include <Input/InputProcessor.hpp>
 #include <Input/InputQueue.hpp>
 
 namespace GameFramework
@@ -14,30 +16,33 @@ namespace GameFramework
 class InputControllerImpl : public InputController
 {
 public:
-  InputControllerImpl();
+  InputControllerImpl(CheckButtonStateFunc && checkButtonState,
+                      CheckAxisStateFunc && checkAxisState);
   virtual ~InputControllerImpl() = default;
 
   virtual void GenerateInputEvents() override;
   virtual void SetInputBindings(const std::span<InputBinding> & bindings) override;
-  virtual void OnButtonAction(InputButton code, PressState state) override;
 
 private:
-  std::array<PressState, static_cast<size_t>(InputButton::TOTAL)> m_pressedButtons;
-  std::vector<details::ActionGenerator> m_generators;
+  CheckButtonStateFunc m_checkButtonStateFunc;
+  CheckAxisStateFunc m_checkAxisStateFunc;
+  std::vector<details::InputProcessorUPtr> m_processors;
 };
 
-InputControllerImpl::InputControllerImpl()
-  : m_pressedButtons{PressState::RELEASED}
+InputControllerImpl::InputControllerImpl(CheckButtonStateFunc && checkButtonState,
+                                         CheckAxisStateFunc && checkAxisState)
+  : m_checkButtonStateFunc(checkButtonState)
+  , m_checkAxisStateFunc(checkAxisState)
 {
 }
 
 void InputControllerImpl::GenerateInputEvents()
 {
   double time = GetTimeManager().Now();
-  for (auto && binding : m_generators)
+  for (auto && processor : m_processors)
   {
-    binding.TickAction(time);
-    auto event = binding.GetAction();
+    processor->TickAction(time);
+    auto event = processor->GetAction();
     if (event.has_value())
       PushInputEvent(*event);
   }
@@ -45,41 +50,25 @@ void InputControllerImpl::GenerateInputEvents()
 
 void InputControllerImpl::SetInputBindings(const std::span<InputBinding> & bindings)
 {
-  auto checkState = [this](InputButton btn)
-  {
-    return m_pressedButtons[static_cast<size_t>(btn)];
-  };
-
-  std::vector<details::ActionGenerator> newBindings;
-  newBindings.reserve(bindings.size());
+  std::vector<details::InputProcessorUPtr> newProcessors;
+  newProcessors.reserve(bindings.size());
   for (auto && srcBinding : bindings)
   {
-    auto && generator = newBindings.emplace_back(srcBinding);
-    generator.SetCheckButtonStateFunc(checkState);
+    if (srcBinding.type == ActionType::Axis)
+      newProcessors.emplace_back(details::CreateAxisProcessor(srcBinding, m_checkAxisStateFunc));
+    else if (srcBinding.type == ActionType::Event || srcBinding.type == ActionType::Continous)
+      newProcessors.emplace_back(
+        details::CreateButtonProcessor(srcBinding, m_checkButtonStateFunc));
   }
-  m_generators = std::move(newBindings);
-}
-
-void InputControllerImpl::OnButtonAction(InputButton code, PressState state)
-{
-  auto && keyInfo = m_pressedButtons[static_cast<size_t>(code)];
-  keyInfo = state;
-  //if (state & GameFramework::PressState::JUST_PRESSED)
-  //{
-  //}
-  //else if (state & GameFramework::PressState::PRESSING)
-  //{
-  //}
-  //else if (state & GameFramework::PressState::RELEASED)
-  //{
-  //}
+  m_processors = std::move(newProcessors);
 }
 
 
-GAME_FRAMEWORK_API InputControllerUPtr CreateInputController()
+GAME_FRAMEWORK_API InputControllerUPtr CreateInputController(
+  CheckButtonStateFunc && checkButtonState, CheckAxisStateFunc && checkAxisState)
 {
-  return std::make_unique<InputControllerImpl>();
-  ;
+  return std::make_unique<InputControllerImpl>(std::move(checkButtonState),
+                                               std::move(checkAxisState));
 }
 
 } // namespace GameFramework

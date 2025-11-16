@@ -8,6 +8,7 @@
 #include <string>
 
 #include <Files/FileManager.hpp>
+#include <Input/InputController.hpp>
 #include <PluginInterfaces/GamePlugin.hpp>
 #include <PluginInterfaces/RenderPlugin.hpp>
 #include <PluginInterfaces/WindowsPlugin.hpp>
