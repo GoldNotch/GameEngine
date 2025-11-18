@@ -7,29 +7,9 @@
 
 #include <GameFramework.hpp>
 #include <Input/InputProcessor.hpp>
-#include <Utility/StringUtils.hpp>
 
 namespace GameFramework::details
 {
-using AxesSet = std::vector<InputAxis>;
-/// all binding are delimited with ;
-static constexpr char s_delimiter = ';';
-
-InputAxis ParseAxisName(std::string_view str) noexcept
-{
-  using AxisMap = std::unordered_map<std::string_view, InputAxis>;
-  static const AxisMap s_axisMap = {
-    // Mouse buttons
-    {"MouseCursor", InputAxis::MOUSE_CURSOR},
-    {"GamepadLeftStick", InputAxis::GAMEPAD_LEFT_STICK},
-    {"GamepadRightStick", InputAxis::GAMEPAD_RIGHT_STICK},
-    {"GamepadL2", InputAxis::GAMEPAD_LEFT_TRIGGER},
-    {"GamepadR2", InputAxis::GAMEPAD_RIGHT_TRIGGER},
-  };
-
-  auto it = s_axisMap.find(Utils::Trim(str));
-  return it == s_axisMap.end() ? InputAxis::UNKNOWN : it->second;
-}
 
 int GetDimensionOfAxis(InputAxis axis) noexcept
 {
@@ -48,72 +28,71 @@ int GetDimensionOfAxis(InputAxis axis) noexcept
   }
 }
 
-struct AxisProcessor final : public IInputProcessor
+struct AxisProcessor final : public InputProcessor
 {
-  explicit AxisProcessor(const InputBinding & binding, CheckAxisStateFunc && checkPos);
+  explicit AxisProcessor(ActionType actionType, int actionCode, InputDevice device,
+                         AxesCondition && condition, CheckAxisStateFunc && checkPos);
   /// update state of action
   virtual void TickAction(double currentTime) override;
   /// get generated action if it's active
   virtual std::optional<GameInputEvent> GetAction() const noexcept override;
+  /// @brief get device to be listened
+  /// @return id of device
+  virtual InputDevice GetDevice() const noexcept override { return m_device; }
 
 private:
-  InputBinding m_binding;
+  ActionType m_actionType = ActionType::Axis;
+  int m_actionCode;
+  InputDevice m_device;
+  AxesCondition m_condition;
   std::optional<Vec3f> m_oldAxisValue;
+  std::optional<Vec3f> m_curAxisValue;
   CheckAxisStateFunc m_checkStateFunc;
-  AxesSet m_boundAxes;
 };
 
-details::AxesSet ParseBindingString(std::string_view str)
-{
-  if (str.empty())
-    throw std::runtime_error("Binding expression was empty");
-  details::AxesSet set;
-  auto axesStr = Utils::Split(str, s_delimiter);
-  set.reserve(axesStr.size());
-  for (auto && axisStr : axesStr)
-    set.push_back(ParseAxisName(axisStr));
-
-  return set;
-}
-
-AxisProcessor::AxisProcessor(const InputBinding & binding, CheckAxisStateFunc && checkPos)
-  : m_binding(binding)
+AxisProcessor::AxisProcessor(ActionType actionType, int actionCode, InputDevice device,
+                             AxesCondition && condition, CheckAxisStateFunc && checkPos)
+  : m_actionType(actionType)
+  , m_actionCode(actionCode)
+  , m_device(device)
+  , m_condition(std::move(condition))
   , m_checkStateFunc(std::move(checkPos))
 {
-  details::AxesSet builtResult;
-  try
-  {
-    builtResult = ParseBindingString(binding.bindings);
-  }
-  catch (const std::exception & e)
-  {
-    Log(LogMessageType::Error, "Failed to built input binding string - ", e.what());
-    return;
-  }
-  m_boundAxes = std::move(builtResult);
+  assert(m_actionType == ActionType::Axis);
 }
 
 void AxisProcessor::TickAction(double currentTime)
 {
-  for (auto axis : m_boundAxes)
+  for (auto axis : m_condition)
   {
-    //auto state = m_checkStateFunc(axis);
-    //if (state.has_value())
-    //{
-    //}
+    auto state = m_checkStateFunc(m_device, axis);
+    m_oldAxisValue = std::exchange(m_curAxisValue, state);
   }
 }
 
 std::optional<GameInputEvent> AxisProcessor::GetAction() const noexcept
 {
-  return std::optional<GameInputEvent>();
+  if (!m_curAxisValue.has_value())
+  {
+    return std::nullopt;
+  }
+
+  Vec3f delta = {0.0f, 0.0f, 0.0f};
+  if (m_oldAxisValue.has_value())
+  {
+    delta = {m_curAxisValue->x - m_oldAxisValue->x, m_curAxisValue->y - m_oldAxisValue->y,
+             m_curAxisValue->z - m_oldAxisValue->z};
+  }
+  return AxisAction{m_actionCode, m_device, *m_curAxisValue, delta};
 }
 
-InputProcessorUPtr CreateAxisProcessor(const InputBinding & binding,
-                                       CheckAxisStateFunc checkAxisState)
+InputProcessorUPtr CreateAxisProcessor(ActionType actionType, int actionCode, InputDevice device,
+                                       AxesCondition condition, CheckAxisStateFunc checkAxisState)
 {
-  assert(binding.type == ActionType::Axis);
-  return std::make_unique<AxisProcessor>(binding, std::move(checkAxisState));
+  if (condition.empty() || actionType != ActionType::Axis)
+    return nullptr;
+  return std::make_unique<AxisProcessor>(actionType, actionCode, device, std::move(condition),
+                                         std::move(checkAxisState));
 }
 
 } // namespace GameFramework::details

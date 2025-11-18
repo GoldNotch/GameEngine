@@ -67,11 +67,8 @@ int main(int argc, const char * argv[])
     using namespace GameFramework;
     auto && wnd = windows.emplace_back(
       windowsManager->NewWindow(wndInfo.id, wndInfo.title, wndInfo.width, wndInfo.height));
-    auto && controller = inputControllers.emplace_back(
-      GameFramework::CreateInputController(std::bind(&IWindow::CheckButtonState, wnd.get(),
-                                                     std::placeholders::_1, std::placeholders::_2),
-                                           std::bind(&IWindow::CheckAxisState, wnd.get(),
-                                                     std::placeholders::_1, std::placeholders::_2)));
+    auto && controller =
+      inputControllers.emplace_back(GameFramework::CreateInputController(wnd->GetInput()));
     controller->BindInputQueue(input);
     auto && device = drawDevices.emplace_back(renderManager->CreateScreenDevice(*wnd));
     wnd->SetResizeCallback([dcPtr = device.get()](int w, int h) { dcPtr->OnResize(w, h); });

@@ -3,6 +3,7 @@
 #include <functional>
 #include <optional>
 
+#include <Game/Math.hpp>
 #include <Utility/Utility.hpp>
 
 namespace GameFramework
@@ -193,23 +194,27 @@ enum class InputAxis : int
 
 enum class InputDevice : uint32_t
 {
+  UNKNOWN = 0,
   KEYBOARD_MOUSE = Utils::bit<uint32_t>(0),
   GAMEPAD_1 = Utils::bit<uint32_t>(1),
   GAMEPAD_2 = Utils::bit<uint32_t>(2),
   GAMEPAD_3 = Utils::bit<uint32_t>(3),
-  PAMEPAD_4 = Utils::bit<uint32_t>(4),
+  GAMEPAD_4 = Utils::bit<uint32_t>(4),
   GAMEPAD_5 = Utils::bit<uint32_t>(5),
   GAMEPAD_6 = Utils::bit<uint32_t>(6),
   GAMEPAD_7 = Utils::bit<uint32_t>(7),
-  PAMEPAD_8 = Utils::bit<uint32_t>(8),
+  GAMEPAD_8 = Utils::bit<uint32_t>(8),
   GAMEPAD_9 = Utils::bit<uint32_t>(9),
   GAMEPAD_10 = Utils::bit<uint32_t>(10),
   GAMEPAD_11 = Utils::bit<uint32_t>(11),
-  PAMEPAD_12 = Utils::bit<uint32_t>(12),
+  GAMEPAD_12 = Utils::bit<uint32_t>(12),
   GAMEPAD_13 = Utils::bit<uint32_t>(13),
   GAMEPAD_14 = Utils::bit<uint32_t>(14),
   GAMEPAD_15 = Utils::bit<uint32_t>(15),
-  PAMEPAD_16 = Utils::bit<uint32_t>(16),
+  GAMEPAD_16 = Utils::bit<uint32_t>(16),
+  ANY_GAMEPAD = GAMEPAD_1 | GAMEPAD_2 | GAMEPAD_3 | GAMEPAD_4 | GAMEPAD_5 | GAMEPAD_6 | GAMEPAD_7 |
+                GAMEPAD_8 | GAMEPAD_9 | GAMEPAD_10 | GAMEPAD_11 | GAMEPAD_12 | GAMEPAD_13 |
+                GAMEPAD_14 | GAMEPAD_15 | GAMEPAD_16,
   ALL = 0xFFFFFFFF
 };
 
@@ -232,8 +237,18 @@ constexpr inline InputDevice operator|(InputDevice d1, InputDevice d2)
   return static_cast<InputDevice>(static_cast<uint32_t>(d1) | static_cast<uint32_t>(d2));
 }
 
-constexpr inline uint32_t operator&(InputDevice d1, InputDevice d2)
+constexpr inline InputDevice operator&(InputDevice d1, InputDevice d2)
 {
-  return static_cast<int>(d1) & static_cast<int>(d2);
+  return static_cast<InputDevice>(static_cast<uint32_t>(d1) & static_cast<uint32_t>(d2));
+}
+
+constexpr inline bool operator!(InputDevice d1)
+{
+  return static_cast<uint32_t>(d1) == 0;
+}
+
+constexpr inline InputDevice operator~(InputDevice d1)
+{
+  return static_cast<InputDevice>(~static_cast<uint32_t>(d1));
 }
 } // namespace GameFramework

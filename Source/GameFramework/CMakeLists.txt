@@ -53,6 +53,8 @@ PRIVATE
 	"Input/InputController.cpp" 
 	"Input/InputQueue.cpp"
 	"Input/InputQueue.hpp"
+	"Input/BindingParser.cpp"
+	"Input/BindingParser.hpp"
 )
 
 if (MSVC)

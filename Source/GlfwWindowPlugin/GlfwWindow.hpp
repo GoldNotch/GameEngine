@@ -8,7 +8,8 @@
 namespace GlfwWindowsPlugin
 {
 
-struct GlfwWindow final : public GameFramework::IWindow
+struct GlfwWindow final : public GameFramework::IWindow,
+                          public GameFramework::InputBackend
 {
   GlfwWindow(int id, const std::string & title, int width, int height);
   virtual ~GlfwWindow() override;
@@ -24,30 +25,28 @@ public:
   void Close() override;
   bool ShouldClose() const noexcept override;
   void SetResizeCallback(ResizeCallback && callback) override;
+  virtual InputBackend & GetInput() & noexcept override;
 
+public: // InputBackend
+  virtual void BindController(GameFramework::InputController * controller) override;
   virtual GameFramework::PressState CheckButtonState(
     GameFramework::InputDevice device, GameFramework::InputButton btn) const noexcept override;
   virtual std::optional<GameFramework::Vec3f> CheckAxisState(
     GameFramework::InputDevice device, GameFramework::InputAxis axis) const noexcept override;
 
 public: // Internal API
-  /// @brief called every frame to get state of gamepad
-  /// @param jid - id of gamepad
-  /// @param state - state of buttons and axes of gamepad
-  void PollGamepadEvents(int jid, const GLFWgamepadstate & state);
-
   /// @brief called when gamepad has been connected to machine
   /// @param jid - id of gamepad
   /// @param connected - true if connected, false otherwise
   void OnGamepadConnected(int jid, bool connected);
 
 private:
-  int m_id;                                           ///< user-defined id of window
-  std::string m_title;                                ///< title of window
-  GLFWwindow * m_window = nullptr;                    ///< GLFW handle
+  int m_id;                                                ///< user-defined id of window
+  std::string m_title;                                     ///< title of window
+  GLFWwindow * m_window = nullptr;                         ///< GLFW handle
+  GameFramework::InputController * m_controller = nullptr; ///< doesn't own
+
   std::optional<GameFramework::Vec3f> m_curCursorPos; ///< position of cursor
-  std::unordered_map<int, std::pair<GLFWgamepadstate /*old*/, GLFWgamepadstate /*new*/>>
-    m_gamepadStates; ///< state of each gamepad
   /// @brief state of each button
   std::array<GameFramework::PressState, static_cast<size_t>(GameFramework::InputButton::TOTAL)>
     m_pressedButtons;

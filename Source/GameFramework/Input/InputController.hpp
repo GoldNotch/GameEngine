@@ -10,7 +10,19 @@
 namespace GameFramework
 {
 
-/// @brief links window, game and input system
+struct InputController;
+
+/// @brief provides low-level input events
+struct InputBackend
+{
+  virtual ~InputBackend() = default;
+  virtual void BindController(InputController * controller) = 0;
+  virtual PressState CheckButtonState(InputDevice device, InputButton btn) const noexcept = 0;
+  virtual std::optional<Vec3f> CheckAxisState(InputDevice device,
+                                              InputAxis axis) const noexcept = 0;
+};
+
+/// @brief it's the core of input system. Links window's low-level input system and game
 struct InputController : public InputProducer
 {
   virtual ~InputController() = default;
@@ -21,12 +33,16 @@ struct InputController : public InputProducer
   /// @brief applies new input binding
   /// @param bindings - a set of bindings for actions
   virtual void SetInputBindings(const std::span<InputBinding> & bindings) = 0;
+
+  /// @brief event on connection of new input device
+  /// @param device - id of device
+  /// @param connected - bool flag of connection state
+  virtual void OnNewInputDeviceConnected(InputDevice device, bool connected) = 0;
 };
 
 using InputControllerUPtr = std::unique_ptr<InputController>;
 
-GAME_FRAMEWORK_API InputControllerUPtr CreateInputController(
-  CheckButtonStateFunc && checkButtonState, CheckAxisStateFunc && checkAxisState);
+GAME_FRAMEWORK_API InputControllerUPtr CreateInputController(InputBackend & backend);
 
 /*
 * Нажатие характеризуется двумя вещами: кнопка и длительность нажатия. 

@@ -5,6 +5,7 @@
 #include <variant>
 
 #include <Game/Math.hpp>
+#include <Input/InputDevice.hpp>
 
 namespace GameFramework
 {
@@ -16,30 +17,12 @@ enum class ActionType : uint8_t
   Axis       ///< fires all the time with some variadic value
 };
 
-enum class PlayerID : int8_t
-{
-  ANY = -1,
-  PLAYER0,
-  PLAYER1,
-  PLAYER2,
-  PLAYER3,
-  PLAYER4,
-  PLAYER5,
-  PLAYER6,
-  PLAYER7,
-  PLAYER8,
-  PLAYER9,
-  PLAYER10,
-
-  MAXPLAYER = 127
-};
-
 /// fires once when you press some key
 /// might have difficult condition
 struct EventAction final
 {
   int code = 0; ///< code ID of the action, use enum to define it
-  PlayerID playerId = PlayerID::ANY;
+  InputDevice device = InputDevice::UNKNOWN;
 };
 
 /// continous-in-time action, has a duration. Fires while you press a button.
@@ -48,7 +31,7 @@ struct EventAction final
 struct ContinousAction final
 {
   int code = 0; ///< code ID of the action, use enum to define it
-  PlayerID playerId = PlayerID::ANY;
+  InputDevice device = InputDevice::UNKNOWN;
   double activeStart;
   double activeDuration;
 };
@@ -60,7 +43,7 @@ struct ContinousAction final
 struct AxisAction final
 {
   int code = 0; ///< code ID of the action, use enum to define it
-  PlayerID playerId = PlayerID::ANY;
+  InputDevice device = InputDevice::UNKNOWN;
   Vec3f axisValue;
   Vec3f deltaValue;
 };
@@ -69,9 +52,8 @@ using GameInputEvent = std::variant<EventAction, ContinousAction, AxisAction>;
 
 struct InputBinding
 {
-  std::string name; ///< name of the action, can be "Jump", "MoveForward", etc
-  int code = 0;     ///< code ID of the action, use enum to define it
-  PlayerID playerId = PlayerID::ANY;
+  std::string name;     ///< name of the action, can be "Jump", "MoveForward", etc
+  int code = 0;         ///< code ID of the action, use enum to define it
   std::string bindings; ///< string to declare keys that represents this action
   ActionType type = ActionType::Event;
 };

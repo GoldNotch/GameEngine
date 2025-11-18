@@ -37,7 +37,8 @@ inline void Log(LogMessageType type, Args &&... args)
   auto writeToStream = [](std::wostringstream & stream, auto && value)
   {
     using T = decltype(value);
-    if constexpr (std::is_same_v<std::decay_t<T>, std::string>)
+    if constexpr (std::is_same_v<std::decay_t<T>, std::string> ||
+                  std::is_same_v<std::decay_t<T>, std::string_view>)
     {
       // Convert std::string to std::wstring
       stream << std::wstring(value.begin(), value.end());

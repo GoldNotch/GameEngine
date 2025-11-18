@@ -48,7 +48,12 @@ int InputDevice2GamepadId(GameFramework::InputDevice dev) noexcept
   if (dev == InputDevice::KEYBOARD_MOUSE)
     return -1;
   else
-    return static_cast<int>(dev) >> 1;
+    return (static_cast<int>(dev) >> 1) - 1;
+}
+
+GameFramework::InputDevice GamepadId2InputDevice(int jid) noexcept
+{
+  return static_cast<GameFramework::InputDevice>((jid + 1) << 1);
 }
 
 } // namespace GlfwWindowsPlugin

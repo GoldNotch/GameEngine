@@ -4,7 +4,7 @@
 #include <memory>
 #include <string>
 
-#include <Input/InputDevice.hpp>
+#include <Input/InputController.hpp>
 #include <Plugin/Plugin.hpp>
 
 namespace GameFramework
@@ -25,9 +25,7 @@ struct IWindow
   virtual bool IsCursorHidden() const noexcept = 0;
   virtual void Close() = 0;
   virtual bool ShouldClose() const noexcept = 0;
-  virtual PressState CheckButtonState(InputDevice device, InputButton btn) const noexcept = 0;
-  virtual std::optional<Vec3f> CheckAxisState(InputDevice device,
-                                              InputAxis axis) const noexcept = 0;
+  virtual InputBackend & GetInput() & noexcept = 0;
 
   virtual void SetResizeCallback(ResizeCallback && callback) = 0;
 };

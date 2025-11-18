@@ -96,12 +96,26 @@ void GlfwWindow::SetResizeCallback(ResizeCallback && callback)
   onResize = std::move(callback);
 }
 
+InputBackend & GlfwWindow::GetInput() & noexcept
+{
+  return *this;
+}
+
 void GlfwWindow::OnGamepadConnected(int jid, bool connected)
 {
-  if (connected)
-    m_gamepadStates.insert({jid, {}});
-  else
-    m_gamepadStates.erase(jid);
+  if (m_controller)
+  {
+    m_controller->OnNewInputDeviceConnected(GamepadId2InputDevice(jid), connected);
+  }
+}
+
+void GlfwWindow::BindController(GameFramework::InputController * controller)
+{
+  m_controller = controller;
+  if (m_controller)
+  {
+    m_controller->OnNewInputDeviceConnected(InputDevice::KEYBOARD_MOUSE, true);
+  }
 }
 
 PressState GlfwWindow::CheckButtonState(InputDevice device, InputButton btn) const noexcept
@@ -114,11 +128,8 @@ PressState GlfwWindow::CheckButtonState(InputDevice device, InputButton btn) con
   {
     // Get state of Gamepad button
     int jid = InputDevice2GamepadId(device);
-    auto it = m_gamepadStates.find(jid);
-    if (it == m_gamepadStates.end())
-      return GameFramework::PressState::RELEASED;
-    auto && oldState = it->second.first;
-    auto && curState = it->second.second;
+    auto && state = GetGlfwInstance().GetGamepadState(jid);
+    auto&& oldState = GetGlfwInstance().GetOldGamepadState(jid);
 
     int code = ConvertGamepadButton2Code(btn);
     // if it was pressed later, then it's long pressing state,
@@ -126,13 +137,13 @@ PressState GlfwWindow::CheckButtonState(InputDevice device, InputButton btn) con
     // if release, then RELEASED
     if (oldState.buttons[code] == GLFW_PRESS)
     {
-      return curState.buttons[code] == GLFW_PRESS ? GameFramework::PressState::PRESSING
-                                                  : GameFramework::PressState::RELEASED;
+      return state.buttons[code] == GLFW_PRESS ? GameFramework::PressState::PRESSING
+                                               : GameFramework::PressState::RELEASED;
     }
     else // GLFW_RELEASE
     {
-      return curState.buttons[code] == GLFW_PRESS ? GameFramework::PressState::JUST_PRESSED
-                                                  : GameFramework::PressState::RELEASED;
+      return state.buttons[code] == GLFW_PRESS ? GameFramework::PressState::JUST_PRESSED
+                                               : GameFramework::PressState::RELEASED;
     }
   }
 }
@@ -143,14 +154,10 @@ std::optional<Vec3f> GlfwWindow::CheckAxisState(InputDevice device, InputAxis ax
   {
     return m_curCursorPos;
   }
-  else /*if (device == InputDevice::GAMEPAD_i)*/
+  else /*if (device == InputDevice::ANY_GAMEPAD)*/
   {
     int jid = InputDevice2GamepadId(device);
-    auto it = m_gamepadStates.find(jid);
-    if (it == m_gamepadStates.end())
-      return std::nullopt;
-    auto && oldState = it->second.first;
-    auto && curState = it->second.second;
+    auto && state = GetGlfwInstance().GetGamepadState(jid);
 
     constexpr int lx = GLFW_GAMEPAD_AXIS_LEFT_X;
     constexpr int ly = GLFW_GAMEPAD_AXIS_LEFT_Y;
@@ -161,30 +168,18 @@ std::optional<Vec3f> GlfwWindow::CheckAxisState(InputDevice device, InputAxis ax
     switch (axis)
     {
       case InputAxis::GAMEPAD_LEFT_STICK:
-        return Vec3f{curState.axes[lx], curState.axes[ly], 0.0f};
+        return Vec3f{state.axes[lx], state.axes[ly], 0.0f};
       case InputAxis::GAMEPAD_RIGHT_STICK:
-        return Vec3f{curState.axes[rx], curState.axes[ry], 0.0f};
+        return Vec3f{state.axes[rx], state.axes[ry], 0.0f};
       case InputAxis::GAMEPAD_LEFT_TRIGGER:
-        return Vec3f{curState.axes[l2], 0.0f, 0.0f};
+        return Vec3f{state.axes[l2], 0.0f, 0.0f};
       case InputAxis::GAMEPAD_RIGHT_TRIGGER:
-        return Vec3f{curState.axes[r2], 0.0f, 0.0f};
+        return Vec3f{state.axes[r2], 0.0f, 0.0f};
       default:
         return std::nullopt;
     }
   }
   return std::nullopt;
-}
-
-void GlfwWindow::PollGamepadEvents(int jid, const GLFWgamepadstate & state)
-{
-  auto it = m_gamepadStates.find(jid);
-  if (it == m_gamepadStates.end())
-  {
-    assert(false);
-    return;
-  }
-  // replace new state and store old
-  it->second.first = std::exchange(it->second.second, state);
 }
 
 void GlfwWindow::OnResizeCallback(GLFWwindow * window, int width, int height)

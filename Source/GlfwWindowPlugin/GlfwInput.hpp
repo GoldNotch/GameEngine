@@ -8,4 +8,5 @@ GameFramework::InputButton ConvertMouseButtonCode(int code);
 GameFramework::InputButton ConvertKeyboardButtonCode(int code);
 int ConvertGamepadButton2Code(GameFramework::InputButton btn);
 int InputDevice2GamepadId(GameFramework::InputDevice dev) noexcept;
+GameFramework::InputDevice GamepadId2InputDevice(int jid) noexcept;
 } // namespace GlfwWindowsPlugin

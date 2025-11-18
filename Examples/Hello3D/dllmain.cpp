@@ -47,12 +47,12 @@ std::vector<InputBinding> Hello3D::GetInputConfiguration() const
 {
   // clang-format off
   std::vector<InputBinding>
-    actions{{"Quit", ActionCode::Quit, PlayerID::ANY, "KeyEscape", ActionType::Event},
-            {"MoveForward", ActionCode::MoveForward, PlayerID::PLAYER0, "KeyW", ActionType::Continous},
-            {"MoveBackward", ActionCode::MoveBackward,  PlayerID::PLAYER0, "KeyS", ActionType::Continous},
-            {"MoveLeft", ActionCode::MoveLeft,PlayerID::PLAYER0, "KeyA",  ActionType::Continous},
-            {"MoveRight", ActionCode::MoveRight,PlayerID::PLAYER0, "KeyD",  ActionType::Continous},
-            {"RotateCamera", ActionCode::RotateCamera, PlayerID::PLAYER0, "MouseCursor", ActionType::Axis}};
+    actions{{"Quit", ActionCode::Quit, "KeyEscape", ActionType::Event},
+            {"MoveForward", ActionCode::MoveForward, "KeyW", ActionType::Continous},
+            {"MoveBackward", ActionCode::MoveBackward, "KeyS", ActionType::Continous},
+            {"MoveLeft", ActionCode::MoveLeft, "KeyA",  ActionType::Continous},
+            {"MoveRight", ActionCode::MoveRight, "KeyD",  ActionType::Continous},
+            {"RotateCamera", ActionCode::RotateCamera, "MouseCursor;GamepadLeftStick", ActionType::Axis}};
   // clang=format on
   return actions;
 }
@@ -79,7 +79,13 @@ void Hello3D::ProcessInput()
                                  [](const AxisAction & axis) {
                                        if (axis.code == ActionCode::RotateCamera)
                                        {
-                                           std::cout << "camera rotated" << std::endl;
+                                           if (axis.device == InputDevice::GAMEPAD_1)
+                                           {
+                                               auto sqr = std::sqrtf(axis.axisValue.x* axis.axisValue.x + axis.axisValue.y * axis.axisValue.y);
+                                               if (sqr > 0.05f)
+                                                std::cout << "camera rotated - " << axis.axisValue.x 
+                                                   << " - " << axis.axisValue.y << std::endl;
+                                           }
                                        }
                                  }},
                *evt);
@@ -91,8 +97,8 @@ void Hello3D::Tick(double deltaTime)
   ProcessInput();
   t += static_cast<float>(deltaTime);
   GenerateSignal(GameSignal::InvalidateRenderCache);
-  GameFramework::Log(GameFramework::LogMessageType::Info, "Tick: ", deltaTime * 1000.0,
-                     " FPS: ", 1.0 / deltaTime);
+  /*GameFramework::Log(GameFramework::LogMessageType::Info, "Tick: ", deltaTime * 1000.0,
+                     " FPS: ", 1.0 / deltaTime);*/
 }
 
 void Hello3D::Render(GameFramework::IDevice & device)

@@ -51,11 +51,11 @@ std::vector<InputBinding> SimpleGame::GetInputConfiguration() const
 {
   // clang-format off
   std::vector<InputBinding> actions{
-    {"Quit", ActionCode::Quit, PlayerID::ANY, "KeyEscape", ActionType::Event},
-    {"MoveForward", ActionCode::MoveForward, PlayerID::ANY, "KeyW", ActionType::Continous},
-    {"MoveBackward", ActionCode::MoveBackward, PlayerID::ANY, "KeyS", ActionType::Continous},
-    {"MoveLeft", ActionCode::MoveLeft, PlayerID::ANY, "KeyA", ActionType::Continous},
-    {"MoveRight", ActionCode::MoveRight, PlayerID::ANY, "KeyD", ActionType::Continous},
+    {"Quit", ActionCode::Quit, "KeyEscape", ActionType::Event},
+    {"MoveForward", ActionCode::MoveForward, "KeyW", ActionType::Continous},
+    {"MoveBackward", ActionCode::MoveBackward, "KeyS", ActionType::Continous},
+    {"MoveLeft", ActionCode::MoveLeft, "KeyA", ActionType::Continous},
+    {"MoveRight", ActionCode::MoveRight, "KeyD", ActionType::Continous},
   };
   // clang-format on
   return actions;
