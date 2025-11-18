@@ -12,20 +12,17 @@ struct GlfwPlugin : public GameFramework::WindowsPlugin
   virtual GameFramework::WindowUPtr NewWindow(int id, const std::string & title, int width,
                                               int height) override;
   virtual void PollEvents() override;
-
-private:
-  GlfwInstance m_instance;
 };
 
 GameFramework::WindowUPtr GlfwPlugin::NewWindow(int id, const std::string & title, int width,
                                                 int height)
 {
-  return GlfwWindowsPlugin::NewWindowImpl(id, title, width, height);
+  return std::make_unique<GlfwWindow>(id, title, width, height);
 }
 
 void GlfwPlugin::PollEvents()
 {
-  m_instance.PollEvents();
+  GetGlfwInstance().PollEvents();
 }
 
 } // namespace GlfwWindowsPlugin

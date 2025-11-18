@@ -1,5 +1,10 @@
 #pragma once
 
+#include <array>
+#include <functional>
+#include <optional>
+#include <string>
+
 #include <Utility/Utility.hpp>
 
 namespace GameFramework
@@ -20,6 +25,8 @@ enum class InputButton : int
   MOUSE_BUTTON_LEFT = MOUSE_BUTTON_1,
   MOUSE_BUTTON_RIGHT = MOUSE_BUTTON_2,
   MOUSE_BUTTON_MIDDLE = MOUSE_BUTTON_3,
+  MOUSE_FIRST_BUTTON = MOUSE_BUTTON_1,
+  MOUSE_LAST_BUTTON = MOUSE_BUTTON_8,
 
   // gamepad buttons
   GAMEPAD_BUTTON_A = 8,
@@ -37,6 +44,8 @@ enum class InputButton : int
   GAMEPAD_BUTTON_DPAD_RIGHT = 20,
   GAMEPAD_BUTTON_DPAD_DOWN = 21,
   GAMEPAD_BUTTON_DPAD_LEFT = 22,
+  GAMEPAD_FIRST_BUTTON = GAMEPAD_BUTTON_A,
+  GAMEPAD_LAST_BUTTON = GAMEPAD_BUTTON_DPAD_LEFT,
 
   // keyboard buttons
   KEY_SPACE = 32,
@@ -161,7 +170,34 @@ enum class InputButton : int
   KEY_RIGHT_ALT = 346,
   KEY_RIGHT_SUPER = 347,
   KEY_MENU = 348,
-  TOTAL = 349
+  KEYBOARD_FIRST_BUTTON = KEY_SPACE,
+  KEYBOARD_LAST_BUTTON = KEY_MENU,
+
+  JOYSTICK_BUTTON_1,
+  JOYSTICK_BUTTON_2,
+  JOYSTICK_BUTTON_3,
+  JOYSTICK_BUTTON_4,
+  JOYSTICK_BUTTON_5,
+  JOYSTICK_BUTTON_6,
+  JOYSTICK_BUTTON_7,
+  JOYSTICK_BUTTON_8,
+  JOYSTICK_BUTTON_9,
+  JOYSTICK_BUTTON_10,
+  JOYSTICK_BUTTON_11,
+  JOYSTICK_BUTTON_12,
+  JOYSTICK_BUTTON_13,
+  JOYSTICK_BUTTON_14,
+  JOYSTICK_BUTTON_15,
+  JOYSTICK_BUTTON_16,
+  JOYSTICK_BUTTON_17,
+  JOYSTICK_BUTTON_18,
+  JOYSTICK_BUTTON_19,
+  JOYSTICK_BUTTON_20,
+  JOYSTICK_BUTTON_21,
+  JOYSTICK_FIRST_BUTTON = JOYSTICK_BUTTON_1,
+  JOYSTICK_LAST_BUTTON = JOYSTICK_BUTTON_21,
+
+  TOTAL
 };
 
 enum class PressState : uint8_t
@@ -180,14 +216,88 @@ enum class PressState : uint8_t
 
 enum class InputAxis : int
 {
-  MOUSE_CURSOR,
-  GAMEPAD_HAT,           // up, left, right, down
-  GAMEPAD_LEFT_AXIS,     // left stick
-  GAMEPAD_RIGHT_AXIS,    // Right stick
-  GAMEPAD_LEFT_TRIGGET,  // L2
+  UNKNOWN = -1,
+  // mouse
+  MOUSE_CURSOR_X,
+  MOUSE_CURSOR_Y,
+  MOUSE_FIRST_AXIS = MOUSE_CURSOR_X,
+  MOUSE_LAST_AXIS = MOUSE_CURSOR_Y,
+
+  // gamepad axes
+  GAMEPAD_LEFT_STICK_X,  // left stick x
+  GAMEPAD_LEFT_STICK_Y,  // left stick y
+  GAMEPAD_RIGHT_STICK_X, // Right stick x
+  GAMEPAD_RIGHT_STICK_Y, // Right stick t
+  GAMEPAD_LEFT_TRIGGER,  // L2
   GAMEPAD_RIGHT_TRIGGER, // R2
+  GAMEPAD_FIRST_AXIS = GAMEPAD_LEFT_STICK_X,
+  GAMEPAD_LAST_AXIS = GAMEPAD_RIGHT_TRIGGER,
+
+  // generic joystick axes
+  JOYSTICK_AXIS_1,
+  JOYSTICK_AXIS_2,
+  JOYSTICK_AXIS_3,
+  JOYSTICK_AXIS_4,
+  JOYSTICK_AXIS_5,
+  JOYSTICK_AXIS_6,
+  JOYSTICK_FIRST_AXIS = JOYSTICK_AXIS_1,
+  JOYSTICK_LAST_AXIS = JOYSTICK_AXIS_6,
 };
 
+using AxisValue = float;
+constexpr AxisValue AxisNoValue = std::numeric_limits<AxisValue>::infinity();
+constexpr size_t AxesSuperpositionLimit = 3;
+using AxesValue = std::array<AxisValue, AxesSuperpositionLimit>;
+
+bool IsAxisValueValid(AxisValue val) noexcept;
+
+enum class InputDevice : uint32_t
+{
+  UNKNOWN = 0,
+  KEYBOARD = Utils::bit<uint32_t>(0),
+  MOUSE = Utils::bit<uint32_t>(1),
+  // joystick is an any input device
+  // gamepad is a standartised joystick (with 6 axes and 15 buttons)
+  JOYSTICK_1 = Utils::bit<uint32_t>(2),
+  JOYSTICK_2 = Utils::bit<uint32_t>(3),
+  JOYSTICK_3 = Utils::bit<uint32_t>(4),
+  JOYSTICK_4 = Utils::bit<uint32_t>(5),
+  JOYSTICK_5 = Utils::bit<uint32_t>(6),
+  JOYSTICK_6 = Utils::bit<uint32_t>(7),
+  JOYSTICK_7 = Utils::bit<uint32_t>(8),
+  JOYSTICK_8 = Utils::bit<uint32_t>(9),
+  JOYSTICK_9 = Utils::bit<uint32_t>(10),
+  JOYSTICK_10 = Utils::bit<uint32_t>(11),
+  JOYSTICK_11 = Utils::bit<uint32_t>(12),
+  JOYSTICK_12 = Utils::bit<uint32_t>(13),
+  JOYSTICK_13 = Utils::bit<uint32_t>(14),
+  JOYSTICK_14 = Utils::bit<uint32_t>(15),
+  JOYSTICK_15 = Utils::bit<uint32_t>(16),
+  JOYSTICK_16 = Utils::bit<uint32_t>(17),
+  ANY_JOYSTICK = JOYSTICK_1 | JOYSTICK_2 | JOYSTICK_3 | JOYSTICK_4 | JOYSTICK_5 | JOYSTICK_6 |
+                 JOYSTICK_7 | JOYSTICK_8 | JOYSTICK_9 | JOYSTICK_10 | JOYSTICK_11 | JOYSTICK_12 |
+                 JOYSTICK_13 | JOYSTICK_14 | JOYSTICK_15 | JOYSTICK_16,
+  ALL = 0xFFFFFFFF
+};
+
+struct InputDeviceDescription
+{
+  std::string name;
+  std::string guid;
+  InputDevice device = InputDevice::UNKNOWN;
+  int buttonsCount = 0;
+  int axesCount = 0;
+  bool isGamepad = false;
+};
+
+using CheckAxisStateFunc = std::function<AxisValue(InputDevice, InputAxis)>;
+using CheckButtonStateFunc = std::function<PressState(InputDevice, InputButton)>;
+
+/// @brief get device by button id
+InputDevice GetDeviceByButton(InputButton button) noexcept;
+
+/// @brief get device by axis id
+InputDevice GetDeviceByAxis(InputAxis axis) noexcept;
 
 constexpr inline PressState operator|(PressState s1, PressState s2)
 {
@@ -197,5 +307,25 @@ constexpr inline PressState operator|(PressState s1, PressState s2)
 constexpr inline int operator&(PressState s1, PressState s2)
 {
   return static_cast<int>(s1) & static_cast<int>(s2);
+}
+
+constexpr inline InputDevice operator|(InputDevice d1, InputDevice d2)
+{
+  return static_cast<InputDevice>(static_cast<uint32_t>(d1) | static_cast<uint32_t>(d2));
+}
+
+constexpr inline InputDevice operator&(InputDevice d1, InputDevice d2)
+{
+  return static_cast<InputDevice>(static_cast<uint32_t>(d1) & static_cast<uint32_t>(d2));
+}
+
+constexpr inline bool operator!(InputDevice d1)
+{
+  return static_cast<uint32_t>(d1) == 0;
+}
+
+constexpr inline InputDevice operator~(InputDevice d1)
+{
+  return static_cast<InputDevice>(~static_cast<uint32_t>(d1));
 }
 } // namespace GameFramework

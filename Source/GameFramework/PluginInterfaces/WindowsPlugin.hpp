@@ -1,6 +1,5 @@
 #pragma once
 
-#pragma once
 #include <functional>
 #include <memory>
 #include <string>
@@ -26,7 +25,7 @@ struct IWindow
   virtual bool IsCursorHidden() const noexcept = 0;
   virtual void Close() = 0;
   virtual bool ShouldClose() const noexcept = 0;
-  virtual GameFramework::InputController & GetInputController() & noexcept = 0;
+  virtual InputBackend & GetInput() & noexcept = 0;
 
   virtual void SetResizeCallback(ResizeCallback && callback) = 0;
 };

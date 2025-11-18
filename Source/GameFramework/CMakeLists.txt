@@ -46,12 +46,17 @@ PRIVATE
 
 	"Input/Input.hpp"
 	"Input/InputDevice.hpp"
-	"Input/InputBinding.hpp" 
-	"Input/InputBinding.cpp" 
+	"Input/InputDevice.cpp"
+	"Input/InputBackend.hpp"
+	"Input/InputProcessor.hpp" 
+	"Input/ButtonProcessor.cpp" 
+	"Input/AxisProcessor.cpp"
 	"Input/InputController.hpp"
 	"Input/InputController.cpp" 
 	"Input/InputQueue.cpp"
 	"Input/InputQueue.hpp"
+	"Input/BindingParser.cpp"
+	"Input/BindingParser.hpp"
 )
 
 if (MSVC)

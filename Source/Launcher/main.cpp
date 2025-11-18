@@ -61,11 +61,15 @@ int main(int argc, const char * argv[])
 
   std::list<GameFramework::WindowUPtr> windows;
   std::list<GameFramework::ScreenDeviceUPtr> drawDevices;
+  std::list<GameFramework::InputControllerUPtr> inputControllers;
   for (auto && wndInfo : gameInstance->GetOutputConfiguration())
   {
+    using namespace GameFramework;
     auto && wnd = windows.emplace_back(
       windowsManager->NewWindow(wndInfo.id, wndInfo.title, wndInfo.width, wndInfo.height));
-    wnd->GetInputController().BindInputQueue(input);
+    auto && controller =
+      inputControllers.emplace_back(GameFramework::CreateInputController(wnd->GetInput()));
+    controller->BindInputQueue(input);
     auto && device = drawDevices.emplace_back(renderManager->CreateScreenDevice(*wnd));
     wnd->SetResizeCallback([dcPtr = device.get()](int w, int h) { dcPtr->OnResize(w, h); });
   }
@@ -80,8 +84,8 @@ int main(int argc, const char * argv[])
   {
     GameFramework::GetTimeManager().Tick();
     windowsManager->PollEvents();
-    for (auto && wnd : windows)
-      wnd->GetInputController().GenerateInputEvents();
+    for (auto && controller : inputControllers)
+      controller->GenerateInputEvents();
 
     renderManager->Tick();
 
@@ -101,8 +105,8 @@ int main(int argc, const char * argv[])
         case GameFramework::GameSignal::UpdateInputConfiguration:
         {
           auto conf = gameInstance->GetInputConfiguration();
-          for (auto && wnd : windows)
-            wnd->GetInputController().SetInputBindings(conf);
+          for (auto && controller : inputControllers)
+            controller->SetInputBindings(conf);
         }
         break;
         case GameFramework::GameSignal::Quit:
