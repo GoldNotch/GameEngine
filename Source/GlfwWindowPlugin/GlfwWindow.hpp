@@ -31,14 +31,16 @@ public: // InputBackend
   virtual void BindController(GameFramework::InputController * controller) override;
   virtual GameFramework::PressState CheckButtonState(
     GameFramework::InputDevice device, GameFramework::InputButton btn) const noexcept override;
-  virtual std::optional<GameFramework::Vec3f> CheckAxisState(
+  virtual GameFramework::AxisValue CheckAxisState(
     GameFramework::InputDevice device, GameFramework::InputAxis axis) const noexcept override;
+  virtual GameFramework::InputDeviceDescription GetInputDeviceDescription(
+    GameFramework::InputDevice device) const noexcept override;
 
 public: // Internal API
   /// @brief called when gamepad has been connected to machine
   /// @param jid - id of gamepad
   /// @param connected - true if connected, false otherwise
-  void OnGamepadConnected(int jid, bool connected);
+  void OnJoystickConnected(int jid, bool connected);
 
 private:
   int m_id;                                                ///< user-defined id of window

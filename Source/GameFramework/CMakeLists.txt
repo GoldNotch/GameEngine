@@ -46,6 +46,8 @@ PRIVATE
 
 	"Input/Input.hpp"
 	"Input/InputDevice.hpp"
+	"Input/InputDevice.cpp"
+	"Input/InputBackend.hpp"
 	"Input/InputProcessor.hpp" 
 	"Input/ButtonProcessor.cpp" 
 	"Input/AxisProcessor.cpp"

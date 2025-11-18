@@ -1,8 +1,10 @@
 #pragma once
 #include <array>
+#include <unordered_map>
 #include <vector>
 
 #include <GLFW/glfw3.h>
+#include <Input/InputDevice.hpp>
 
 namespace GlfwWindowsPlugin
 {
@@ -16,20 +18,43 @@ struct GlfwInstance final
 {
   GlfwInstance();
   ~GlfwInstance();
+  /// @brief poll glfw events and collect states from joysticks
   void PollEvents();
   double GetTimestamp() const;
+
+  /// @brief store pointer on window. Used to say the window that new device is connected
+  /// @param wnd - window
   void TrackWindow(GlfwWindow * wnd);
+
+  /// @brief delete pointer on window
+  /// @param wnd  - window
   void UntrackWindow(GlfwWindow * wnd);
-  const GLFWgamepadstate & GetGamepadState(int jid) const & noexcept;
-  const GLFWgamepadstate & GetOldGamepadState(int jid) const & noexcept;
+
+  GameFramework::PressState CheckJoystickButtonState(
+    int jid, GameFramework::InputButton button) const noexcept;
+
+  GameFramework::AxisValue CheckJoystickAxisState(int jid,
+                                                  GameFramework::InputAxis axis) const noexcept;
+
+  GameFramework::InputDeviceDescription GetDeviceDescription(
+    GameFramework::InputDevice dev) const noexcept;
+
+  std::vector<int> GetConnectedJoysticks() const;
 
 private:
+  struct JoystickState
+  {
+    std::vector<float> axes;
+    std::vector<uint8_t> buttons;
+  };
+
   std::vector<GlfwWindow *> m_trackedWindows;
 
-  size_t m_connectedGamepadsCount = 0;
-  std::array<int, JoystickCountLimit> m_connectedGamepads{ UNKNOWN_JOYSITCK };
-  std::array<GLFWgamepadstate, JoystickCountLimit> m_gamepadStates;
-  std::array<GLFWgamepadstate, JoystickCountLimit> m_oldGamepadStates;
+  std::unordered_map<int, GameFramework::InputDeviceDescription> m_connectedJoysticks;
+
+  // joystick's states
+  std::vector<JoystickState> m_joystickStates;
+  std::vector<JoystickState> m_oldJoystickStates;
 
 private: //Glfw callbacks
   static void OnGlfwError(int code, const char * description);

@@ -7,6 +7,7 @@
 #include <ranges>
 
 #include <GLFW/glfw3.h>
+#include <GlfwInput.hpp>
 #include <GlfwWindow.hpp>
 
 
@@ -14,6 +15,8 @@ namespace GlfwWindowsPlugin
 {
 
 GlfwInstance::GlfwInstance()
+  : m_joystickStates(JoystickCountLimit)
+  , m_oldJoystickStates(JoystickCountLimit)
 {
   glfwInit();
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -23,18 +26,8 @@ GlfwInstance::GlfwInstance()
   // collect info about joysticks
   for (int jid = GLFW_JOYSTICK_1; jid <= GLFW_JOYSTICK_LAST; ++jid)
   {
-    if (!glfwJoystickPresent(jid))
-      continue;
-    const char * name = glfwGetJoystickName(jid);
-    const char * guid = glfwGetJoystickGUID(jid);
-    GameFramework::Log(GameFramework::LogMessageType::Info, "Joystick ", name, " connected");
-
-    if (glfwJoystickIsGamepad(jid))
-    {
-      int res = glfwGetGamepadState(jid, &m_oldGamepadStates[jid]);
-      if (res == GLFW_TRUE)
-        OnJoystickConnected(jid, true);
-    }
+    if (glfwJoystickPresent(jid))
+      OnJoystickConnected(jid, true);
   }
 }
 
@@ -46,22 +39,50 @@ GlfwInstance::~GlfwInstance()
 void GlfwInstance::PollEvents()
 {
   glfwPollEvents();
-  if (m_connectedGamepadsCount > 0)
+  std::swap(m_oldJoystickStates, m_joystickStates);
+  for (auto && [jid, description] : m_connectedJoysticks)
   {
-    std::array<GLFWgamepadstate, JoystickCountLimit> newGamepadStates;
-    for (size_t i = 0; i < m_connectedGamepadsCount; ++i)
+    if (description.isGamepad)
     {
-      int jid = m_connectedGamepads[i];
-      int res = glfwGetGamepadState(jid, &newGamepadStates[jid]);
+      GLFWgamepadstate state;
+      int res = glfwGetGamepadState(jid, &state);
       if (res == GLFW_FALSE)
       {
         GameFramework::Log(GameFramework::LogMessageType::Warning, "Joystick - ", jid,
                            " has been disconnected unexpectedly");
         OnJoystickConnected(jid, false /*connected*/);
+        continue;
+      }
+      m_joystickStates[jid].axes.assign(state.axes, state.axes + 6);
+      m_joystickStates[jid].buttons.assign(state.buttons, state.buttons + 15);
+    }
+    else // generic joystick
+    {
+      int axesCount = 0;
+      int buttonsCount = 0;
+      int hatsCount = 0;
+      const float * axes = glfwGetJoystickAxes(jid, &axesCount);
+      const uint8_t * buttons = glfwGetJoystickButtons(jid, &buttonsCount);
+      const uint8_t * hats = glfwGetJoystickHats(jid, &hatsCount);
+      if (!axes || !buttons || !hats)
+      {
+        GameFramework::Log(GameFramework::LogMessageType::Warning, "Joystick - ", jid,
+                           " has been disconnected unexpectedly");
+        OnJoystickConnected(jid, false /*connected*/);
+        continue;
+      }
+
+      m_joystickStates[jid].axes.assign(axes, axes + axesCount);
+      m_joystickStates[jid].buttons.assign(buttons, buttons + buttonsCount);
+      for (int i = 0; i < hatsCount; ++i)
+      {
+        // the order is important because it's assosiated with GLFW_GAMEPAD_BUTTON_DPAD_*
+        m_joystickStates[jid].buttons.push_back(hats[i] & GLFW_HAT_UP);
+        m_joystickStates[jid].buttons.push_back(hats[i] & GLFW_HAT_RIGHT);
+        m_joystickStates[jid].buttons.push_back(hats[i] & GLFW_HAT_DOWN);
+        m_joystickStates[jid].buttons.push_back(hats[i] & GLFW_HAT_LEFT);
       }
     }
-    std::swap(m_oldGamepadStates, m_gamepadStates);
-    std::swap(m_gamepadStates, newGamepadStates);
   }
 }
 
@@ -77,57 +98,100 @@ void GlfwInstance::TrackWindow(GlfwWindow * wnd)
 
 void GlfwInstance::UntrackWindow(GlfwWindow * wnd)
 {
-  auto it = std::ranges::find(m_trackedWindows, wnd);
-  if (it != m_trackedWindows.end())
+  auto range = std::ranges::remove(m_trackedWindows, wnd);
+  m_trackedWindows.erase(range.begin(), range.end());
+}
+
+GameFramework::PressState GlfwInstance::CheckJoystickButtonState(
+  int jid, GameFramework::InputButton button) const noexcept
+{
+  auto && state = m_joystickStates[jid];
+  auto && oldState = m_oldJoystickStates[jid];
+
+  int code = ConvertJoystickButton2Code(button);
+  // if it was pressed later, then it's long pressing state,
+  // if it's first press then it's JUST_PRESSED
+  // if release, then RELEASED
+  if (oldState.buttons[code] == GLFW_PRESS)
   {
-    std::swap(*it, m_trackedWindows.back());
-    m_trackedWindows.pop_back();
+    return state.buttons[code] == GLFW_PRESS ? GameFramework::PressState::PRESSING
+                                             : GameFramework::PressState::RELEASED;
+  }
+  else // GLFW_RELEASE
+  {
+    return state.buttons[code] == GLFW_PRESS ? GameFramework::PressState::JUST_PRESSED
+                                             : GameFramework::PressState::RELEASED;
   }
 }
 
-const GLFWgamepadstate & GlfwInstance::GetGamepadState(int jid) const & noexcept
+GameFramework::AxisValue GlfwInstance::CheckJoystickAxisState(
+  int jid, GameFramework::InputAxis axis) const noexcept
 {
-  return m_gamepadStates[jid];
+  using namespace GameFramework;
+  auto && state = m_joystickStates[jid];
+  int idx = ConvertJoystickAxis2Code(axis);
+  if (idx >= 0 && idx < state.axes.size())
+  {
+    return state.axes[idx];
+  }
+  else
+  {
+    return AxisNoValue;
+  }
 }
 
-const GLFWgamepadstate & GlfwInstance::GetOldGamepadState(int jid) const & noexcept
+GameFramework::InputDeviceDescription GlfwInstance::GetDeviceDescription(
+  GameFramework::InputDevice dev) const noexcept
 {
-  return m_oldGamepadStates[jid];
+  int jid = InputDevice2JoystickId(dev);
+  auto it = m_connectedJoysticks.find(jid);
+  if (it != m_connectedJoysticks.end())
+    return it->second;
+}
+
+std::vector<int> GlfwInstance::GetConnectedJoysticks() const
+{
+  std::vector<int> result;
+  result.reserve(m_connectedJoysticks.size());
+  for (auto && [jid, _] : m_connectedJoysticks)
+  {
+    result.push_back(jid);
+  }
+  return result;
 }
 
 void GlfwInstance::OnJoystickConnected(int jid, bool connected)
 {
   if (connected)
   {
-    if (m_connectedGamepadsCount < JoystickCountLimit)
-    {
-      const size_t i = m_connectedGamepadsCount++;
-      m_connectedGamepads[i] = jid;
-    }
-    else
-    {
-      assert(false);
-    }
+    auto [it, inserted] =
+      m_connectedJoysticks.insert({jid, GameFramework::InputDeviceDescription()});
+    assert(inserted);
+
+    GameFramework::InputDeviceDescription & description = it->second;
+    description.name = glfwGetJoystickName(jid);
+    description.guid = glfwGetJoystickGUID(jid);
+    description.device = JoystickId2InputDevice(jid);
+    description.isGamepad = glfwJoystickIsGamepad(jid);
+    const float * axes = glfwGetJoystickAxes(jid, &description.axesCount);
+    int buttonsCount;
+    int hatsCount;
+    const uint8_t * buttons = glfwGetJoystickButtons(jid, &buttonsCount);
+    const uint8_t * hats = glfwGetJoystickHats(jid, &hatsCount);
+    description.buttonsCount = buttonsCount + hatsCount * 4; // one hat it's a 4 buttons
+    GameFramework::Log(GameFramework::LogMessageType::Info, "Joystick ", description.name,
+                       " connected");
   }
   else
   {
-    if (m_connectedGamepadsCount >= 1)
-    {
-      const size_t last = m_connectedGamepadsCount - 1;
-      std::swap(m_connectedGamepads[jid], m_connectedGamepads[last]);
-      m_connectedGamepadsCount--;
-    }
-    else
-    {
-      assert(false);
-    }
+    m_connectedJoysticks.erase(jid);
   }
 
   // TODO: remove
   for (auto * wndPtr : m_trackedWindows)
   {
     assert(wndPtr);
-    wndPtr->OnGamepadConnected(jid, connected);
+    wndPtr->OnJoystickConnected(jid, connected);
   }
 }
 

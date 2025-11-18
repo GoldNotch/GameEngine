@@ -4,7 +4,6 @@
 #include <string>
 #include <variant>
 
-#include <Game/Math.hpp>
 #include <Input/InputDevice.hpp>
 
 namespace GameFramework
@@ -17,8 +16,8 @@ enum class ActionType : uint8_t
   Axis       ///< fires all the time with some variadic value
 };
 
-/// fires once when you press some key
-/// might have difficult condition
+/// @brief fires once when you press some key
+///         might have difficult condition
 struct EventAction final
 {
   int code = 0; ///< code ID of the action, use enum to define it
@@ -44,8 +43,8 @@ struct AxisAction final
 {
   int code = 0; ///< code ID of the action, use enum to define it
   InputDevice device = InputDevice::UNKNOWN;
-  Vec3f axisValue;
-  Vec3f deltaValue;
+  AxesValue axisValue;
+  AxesValue deltaValue;
 };
 
 using GameInputEvent = std::variant<EventAction, ContinousAction, AxisAction>;

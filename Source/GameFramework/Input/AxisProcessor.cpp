@@ -11,23 +11,6 @@
 namespace GameFramework::details
 {
 
-int GetDimensionOfAxis(InputAxis axis) noexcept
-{
-  switch (axis)
-  {
-    case InputAxis::GAMEPAD_LEFT_TRIGGER:
-    case InputAxis::GAMEPAD_RIGHT_TRIGGER:
-      return 1;
-    case InputAxis::MOUSE_CURSOR:
-    case InputAxis::GAMEPAD_LEFT_STICK:
-    case InputAxis::GAMEPAD_RIGHT_STICK:
-      return 2;
-    case InputAxis::UNKNOWN:
-    default:
-      return 0;
-  }
-}
-
 struct AxisProcessor final : public InputProcessor
 {
   explicit AxisProcessor(ActionType actionType, int actionCode, InputDevice device,
@@ -45,8 +28,8 @@ private:
   int m_actionCode;
   InputDevice m_device;
   AxesCondition m_condition;
-  std::optional<Vec3f> m_oldAxisValue;
-  std::optional<Vec3f> m_curAxisValue;
+  AxesValue m_oldAxisValue{AxisNoValue, AxisNoValue, AxisNoValue};
+  AxesValue m_curAxisValue{AxisNoValue, AxisNoValue, AxisNoValue};
   CheckAxisStateFunc m_checkStateFunc;
 };
 
@@ -63,27 +46,40 @@ AxisProcessor::AxisProcessor(ActionType actionType, int actionCode, InputDevice 
 
 void AxisProcessor::TickAction(double currentTime)
 {
-  for (auto axis : m_condition)
+  for (auto superposition : m_condition)
   {
-    auto state = m_checkStateFunc(m_device, axis);
-    m_oldAxisValue = std::exchange(m_curAxisValue, state);
+    constexpr size_t s = superposition.size();
+    for (size_t i = 0; i < s; ++i)
+    {
+      if (superposition[i] == InputAxis::UNKNOWN)
+        break;
+      float value = AxisNoValue;
+      value = m_checkStateFunc(m_device, superposition[i]);
+      m_oldAxisValue[i] = std::exchange(m_curAxisValue[i], value);
+    }
   }
 }
 
 std::optional<GameInputEvent> AxisProcessor::GetAction() const noexcept
 {
-  if (!m_curAxisValue.has_value())
+  auto arrayHasValues = [](auto && arr)
+  {
+    return !std::ranges::all_of(arr, IsAxisValueValid);
+  };
+
+  if (!arrayHasValues(m_curAxisValue))
   {
     return std::nullopt;
   }
 
-  Vec3f delta = {0.0f, 0.0f, 0.0f};
-  if (m_oldAxisValue.has_value())
+  AxesValue value = m_curAxisValue;
+  AxesValue delta = {0.0f};
+  if (arrayHasValues(m_oldAxisValue))
   {
-    delta = {m_curAxisValue->x - m_oldAxisValue->x, m_curAxisValue->y - m_oldAxisValue->y,
-             m_curAxisValue->z - m_oldAxisValue->z};
+    for (size_t i = 0; i < AxesSuperpositionLimit; ++i)
+      delta[i] = m_curAxisValue[i] - m_oldAxisValue[i];
   }
-  return AxisAction{m_actionCode, m_device, *m_curAxisValue, delta};
+  return AxisAction{m_actionCode, m_device, value, delta};
 }
 
 InputProcessorUPtr CreateAxisProcessor(ActionType actionType, int actionCode, InputDevice device,

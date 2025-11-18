@@ -1,6 +1,7 @@
 #include "BindingParser.hpp"
 
 #include <algorithm>
+#include <cassert>
 #include <ranges>
 #include <stdexcept>
 
@@ -23,9 +24,12 @@ InputAxis ParseAxisName(std::string_view str) noexcept
   using AxisMap = std::unordered_map<std::string_view, InputAxis>;
   static const AxisMap s_axisMap = {
     // Mouse buttons
-    {"MouseCursor", InputAxis::MOUSE_CURSOR},
-    {"GamepadLeftStick", InputAxis::GAMEPAD_LEFT_STICK},
-    {"GamepadRightStick", InputAxis::GAMEPAD_RIGHT_STICK},
+    {"MouseCursorX", InputAxis::MOUSE_CURSOR_X},
+    {"MouseCursorY", InputAxis::MOUSE_CURSOR_Y},
+    {"GamepadLeftStickX", InputAxis::GAMEPAD_LEFT_STICK_X},
+    {"GamepadLeftStickY", InputAxis::GAMEPAD_LEFT_STICK_Y},
+    {"GamepadRightStickX", InputAxis::GAMEPAD_RIGHT_STICK_X},
+    {"GamepadRightStickY", InputAxis::GAMEPAD_RIGHT_STICK_Y},
     {"GamepadL2", InputAxis::GAMEPAD_LEFT_TRIGGER},
     {"GamepadR2", InputAxis::GAMEPAD_RIGHT_TRIGGER},
   };
@@ -34,21 +38,7 @@ InputAxis ParseAxisName(std::string_view str) noexcept
   return it == s_axisMap.end() ? InputAxis::UNKNOWN : it->second;
 }
 
-InputDevice GetDeviceByAxis(InputAxis axis) noexcept
-{
-  switch (axis)
-  {
-    case InputAxis::MOUSE_CURSOR:
-      return InputDevice::KEYBOARD_MOUSE;
-    case InputAxis::GAMEPAD_LEFT_STICK:
-    case InputAxis::GAMEPAD_RIGHT_STICK:
-    case InputAxis::GAMEPAD_LEFT_TRIGGER:
-    case InputAxis::GAMEPAD_RIGHT_TRIGGER:
-      return InputDevice::ANY_GAMEPAD;
-  }
-}
-
-std::pair<InputDevice, InputAxis> ParseAxisBinding(std::string_view str) noexcept
+std::pair<InputDevice, InputAxis> ParseSingleAxis(std::string_view str) noexcept
 {
   if (str.empty())
   {
@@ -58,6 +48,31 @@ std::pair<InputDevice, InputAxis> ParseAxisBinding(std::string_view str) noexcep
   auto axis = ParseAxisName(str);
   auto foundDevice = GetDeviceByAxis(axis);
   return {foundDevice, axis};
+}
+
+std::pair<InputDevice, AxesSuperposition> ParseAxisBinding(std::string_view str) noexcept
+{
+  if (str.empty())
+  {
+    GameFramework::Log(GameFramework::LogMessageType::Error, "Expected axis's superposition");
+    return {InputDevice::UNKNOWN, {InputAxis::UNKNOWN}};
+  }
+  InputDevice foundDevice = InputDevice::UNKNOWN;
+  AxesSuperposition superposition{InputAxis::UNKNOWN, InputAxis::UNKNOWN, InputAxis::UNKNOWN};
+  auto singleAxes = Utils::Split(str, s_addButton);
+  size_t i = 0;
+  for (auto && axisStr : singleAxes)
+  {
+    auto [parsedDevice, axis] = ParseSingleAxis(axisStr);
+    if (parsedDevice != InputDevice::UNKNOWN && axis != InputAxis::UNKNOWN)
+    {
+      if (foundDevice == InputDevice::UNKNOWN)
+        foundDevice = parsedDevice;
+      assert(foundDevice == parsedDevice); // all axes should come from one device
+      superposition[i++] = axis;
+    }
+  }
+  return {foundDevice, superposition};
 }
 } // namespace
 
@@ -205,21 +220,6 @@ InputButton ParseButtonName(std::string_view str) noexcept
   return it == s_buttonsMap.end() ? InputButton::UNKNOWN : it->second;
 }
 
-InputDevice GetDeviceByButton(InputButton button) noexcept
-{
-  if (button >= InputButton::MOUSE_BUTTON_1 && button <= InputButton::MOUSE_BUTTON_8)
-    return InputDevice::KEYBOARD_MOUSE;
-
-  if (button >= InputButton::GAMEPAD_BUTTON_A && button <= InputButton::GAMEPAD_BUTTON_DPAD_LEFT)
-    return InputDevice::ANY_GAMEPAD;
-  if (button >= InputButton::KEY_SPACE && button <= InputButton::KEY_MENU)
-    return InputDevice::KEYBOARD_MOUSE;
-
-  GameFramework::Log(LogMessageType::Error, "Unknown device for button - ",
-                     static_cast<uint32_t>(button));
-  return InputDevice::UNKNOWN;
-}
-
 PressState ParseButtonModifier(std::string_view mod) noexcept
 {
   static const std::unordered_map<std::string_view, PressState>
@@ -311,10 +311,10 @@ BindingParser::BindingParser(std::string_view str)
 
   for (auto && conditionStr : singleConditions)
   {
-    auto [parsedAxisDevice, parsedAxis] = ParseAxisBinding(conditionStr);
-    if (parsedAxisDevice != InputDevice::UNKNOWN && parsedAxis != InputAxis::UNKNOWN)
+    auto [parsedAxisDevice, parsedAxisSuper] = ParseAxisBinding(conditionStr);
+    if (parsedAxisDevice != InputDevice::UNKNOWN)
     {
-      m_parsedBinding[parsedAxisDevice].first.push_back(parsedAxis);
+      m_parsedBinding[parsedAxisDevice].first.push_back(parsedAxisSuper);
       continue;
     }
 

@@ -31,6 +31,11 @@ struct GAME_FRAMEWORK_API Mat4d { double m[16] = {  1.0, 0.0, 0.0, 0.0,
                                                     0.0, 0.0, 0.0, 1.0}; };
 // clang-format on
 
+inline Vec3f operator-(const Vec3f & v) noexcept
+{
+  return {-v.x, -v.y, -v.z};
+}
+
 } // namespace GameFramework
 
 

@@ -4,23 +4,12 @@
 #include <memory>
 
 #include <Input/Input.hpp>
+#include <Input/InputBackend.hpp>
 #include <Input/InputDevice.hpp>
 #include <Input/InputQueue.hpp>
 
 namespace GameFramework
 {
-
-struct InputController;
-
-/// @brief provides low-level input events
-struct InputBackend
-{
-  virtual ~InputBackend() = default;
-  virtual void BindController(InputController * controller) = 0;
-  virtual PressState CheckButtonState(InputDevice device, InputButton btn) const noexcept = 0;
-  virtual std::optional<Vec3f> CheckAxisState(InputDevice device,
-                                              InputAxis axis) const noexcept = 0;
-};
 
 /// @brief it's the core of input system. Links window's low-level input system and game
 struct InputController : public InputProducer

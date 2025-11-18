@@ -101,11 +101,11 @@ InputBackend & GlfwWindow::GetInput() & noexcept
   return *this;
 }
 
-void GlfwWindow::OnGamepadConnected(int jid, bool connected)
+void GlfwWindow::OnJoystickConnected(int jid, bool connected)
 {
   if (m_controller)
   {
-    m_controller->OnNewInputDeviceConnected(GamepadId2InputDevice(jid), connected);
+    m_controller->OnNewInputDeviceConnected(JoystickId2InputDevice(jid), connected);
   }
 }
 
@@ -114,72 +114,47 @@ void GlfwWindow::BindController(GameFramework::InputController * controller)
   m_controller = controller;
   if (m_controller)
   {
-    m_controller->OnNewInputDeviceConnected(InputDevice::KEYBOARD_MOUSE, true);
+    m_controller->OnNewInputDeviceConnected(InputDevice::KEYBOARD, true);
+    m_controller->OnNewInputDeviceConnected(InputDevice::MOUSE, true);
+    auto && connectedJoysticks = GetGlfwInstance().GetConnectedJoysticks();
+    for (int jid : connectedJoysticks)
+      m_controller->OnNewInputDeviceConnected(JoystickId2InputDevice(jid), true);
   }
 }
 
 PressState GlfwWindow::CheckButtonState(InputDevice device, InputButton btn) const noexcept
 {
-  if (device == InputDevice::KEYBOARD_MOUSE)
+  if (device == InputDevice::KEYBOARD || device == InputDevice::MOUSE)
   {
     return m_pressedButtons[static_cast<size_t>(btn)];
   }
-  else /*if (device == InputDevice::GAMEPAD_i)*/
+  else if (!!(device & InputDevice::ANY_JOYSTICK))
   {
     // Get state of Gamepad button
-    int jid = InputDevice2GamepadId(device);
-    auto && state = GetGlfwInstance().GetGamepadState(jid);
-    auto&& oldState = GetGlfwInstance().GetOldGamepadState(jid);
-
-    int code = ConvertGamepadButton2Code(btn);
-    // if it was pressed later, then it's long pressing state,
-    // if it's first press then it's JUST_PRESSED
-    // if release, then RELEASED
-    if (oldState.buttons[code] == GLFW_PRESS)
-    {
-      return state.buttons[code] == GLFW_PRESS ? GameFramework::PressState::PRESSING
-                                               : GameFramework::PressState::RELEASED;
-    }
-    else // GLFW_RELEASE
-    {
-      return state.buttons[code] == GLFW_PRESS ? GameFramework::PressState::JUST_PRESSED
-                                               : GameFramework::PressState::RELEASED;
-    }
+    int jid = InputDevice2JoystickId(device);
+    return GetGlfwInstance().CheckJoystickButtonState(jid, btn);
   }
+
+  return PressState::RELEASED;
 }
 
-std::optional<Vec3f> GlfwWindow::CheckAxisState(InputDevice device, InputAxis axis) const noexcept
+AxisValue GlfwWindow::CheckAxisState(InputDevice device, InputAxis axis) const noexcept
 {
-  if (device == InputDevice::KEYBOARD_MOUSE && axis == InputAxis::MOUSE_CURSOR)
+  if (device == InputDevice::MOUSE && m_curCursorPos)
   {
-    return m_curCursorPos;
+    return axis == InputAxis::MOUSE_CURSOR_X ? m_curCursorPos->x : m_curCursorPos->y;
   }
-  else /*if (device == InputDevice::ANY_GAMEPAD)*/
+  else if (!!(device & InputDevice::ANY_JOYSTICK))
   {
-    int jid = InputDevice2GamepadId(device);
-    auto && state = GetGlfwInstance().GetGamepadState(jid);
+    int jid = InputDevice2JoystickId(device);
+    return GetGlfwInstance().CheckJoystickAxisState(jid, axis);
+  }
+  return AxisNoValue;
+}
 
-    constexpr int lx = GLFW_GAMEPAD_AXIS_LEFT_X;
-    constexpr int ly = GLFW_GAMEPAD_AXIS_LEFT_Y;
-    constexpr int rx = GLFW_GAMEPAD_AXIS_RIGHT_X;
-    constexpr int ry = GLFW_GAMEPAD_AXIS_RIGHT_Y;
-    constexpr int l2 = GLFW_GAMEPAD_AXIS_LEFT_TRIGGER;
-    constexpr int r2 = GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER;
-    switch (axis)
-    {
-      case InputAxis::GAMEPAD_LEFT_STICK:
-        return Vec3f{state.axes[lx], state.axes[ly], 0.0f};
-      case InputAxis::GAMEPAD_RIGHT_STICK:
-        return Vec3f{state.axes[rx], state.axes[ry], 0.0f};
-      case InputAxis::GAMEPAD_LEFT_TRIGGER:
-        return Vec3f{state.axes[l2], 0.0f, 0.0f};
-      case InputAxis::GAMEPAD_RIGHT_TRIGGER:
-        return Vec3f{state.axes[r2], 0.0f, 0.0f};
-      default:
-        return std::nullopt;
-    }
-  }
-  return std::nullopt;
+InputDeviceDescription GlfwWindow::GetInputDeviceDescription(InputDevice device) const noexcept
+{
+  return GetGlfwInstance().GetDeviceDescription(device);
 }
 
 void GlfwWindow::OnResizeCallback(GLFWwindow * window, int width, int height)

@@ -8,9 +8,13 @@
 
 namespace GameFramework::details
 {
+/// @brief a set of axes unites into one action event
+///         There is only 3 axes can be superposited
+using AxesSuperposition = std::array<InputAxis, AxesSuperpositionLimit>;
+
 /// @brief condition for axis action. can be activated with multiple axes
 ///        For example rotate camera you can with mouse cursor or gamepad's stick
-using AxesCondition = std::vector<InputAxis>;
+using AxesCondition = std::vector<AxesSuperposition>;
 
 /// @brief condition for pressing a button.
 /// Contains the button and state the button should be in to activate the action

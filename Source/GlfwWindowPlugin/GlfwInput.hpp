@@ -6,7 +6,8 @@ namespace GlfwWindowsPlugin
 GameFramework::PressState ConvertPressState(int action, int mods);
 GameFramework::InputButton ConvertMouseButtonCode(int code);
 GameFramework::InputButton ConvertKeyboardButtonCode(int code);
-int ConvertGamepadButton2Code(GameFramework::InputButton btn);
-int InputDevice2GamepadId(GameFramework::InputDevice dev) noexcept;
-GameFramework::InputDevice GamepadId2InputDevice(int jid) noexcept;
+int ConvertJoystickButton2Code(GameFramework::InputButton btn);
+int ConvertJoystickAxis2Code(GameFramework::InputAxis axis);
+int InputDevice2JoystickId(GameFramework::InputDevice dev) noexcept;
+GameFramework::InputDevice JoystickId2InputDevice(int jid) noexcept;
 } // namespace GlfwWindowsPlugin

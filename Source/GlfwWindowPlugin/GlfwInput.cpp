@@ -33,27 +33,46 @@ GameFramework::InputButton ConvertKeyboardButtonCode(int code)
   return static_cast<GameFramework::InputButton>(code);
 }
 
-int ConvertGamepadButton2Code(GameFramework::InputButton btn)
+int ConvertJoystickButton2Code(GameFramework::InputButton btn)
 {
-  if (btn < GameFramework::InputButton::GAMEPAD_BUTTON_A ||
-      btn > GameFramework::InputButton::GAMEPAD_BUTTON_DPAD_LEFT)
-    return GLFW_KEY_UNKNOWN;
+  if (btn >= GameFramework::InputButton::GAMEPAD_FIRST_BUTTON &&
+      btn <= GameFramework::InputButton::GAMEPAD_LAST_BUTTON)
+    return static_cast<int>(btn) -
+           static_cast<int>(GameFramework::InputButton::GAMEPAD_FIRST_BUTTON);
 
-  return static_cast<int>(btn) - static_cast<int>(GameFramework::InputButton::GAMEPAD_BUTTON_A);
+  if (btn >= GameFramework::InputButton::JOYSTICK_FIRST_BUTTON &&
+      btn <= GameFramework::InputButton::JOYSTICK_LAST_BUTTON)
+    return static_cast<int>(btn) -
+           static_cast<int>(GameFramework::InputButton::JOYSTICK_FIRST_BUTTON);
+
+  return GLFW_KEY_UNKNOWN;
 }
 
-int InputDevice2GamepadId(GameFramework::InputDevice dev) noexcept
+int ConvertJoystickAxis2Code(GameFramework::InputAxis axis)
+{
+  if (axis >= GameFramework::InputAxis::GAMEPAD_FIRST_AXIS &&
+      axis <= GameFramework::InputAxis::GAMEPAD_LAST_AXIS)
+    return static_cast<int>(axis) - static_cast<int>(GameFramework::InputAxis::GAMEPAD_FIRST_AXIS);
+
+  if (axis >= GameFramework::InputAxis::JOYSTICK_FIRST_AXIS &&
+      axis <= GameFramework::InputAxis::JOYSTICK_LAST_AXIS)
+    return static_cast<int>(axis) - static_cast<int>(GameFramework::InputAxis::JOYSTICK_FIRST_AXIS);
+
+  return GLFW_KEY_UNKNOWN;
+}
+
+int InputDevice2JoystickId(GameFramework::InputDevice dev) noexcept
 {
   using namespace GameFramework;
-  if (dev == InputDevice::KEYBOARD_MOUSE)
+  if (dev == InputDevice::KEYBOARD || dev == InputDevice::MOUSE)
     return -1;
   else
-    return (static_cast<int>(dev) >> 1) - 1;
+    return (static_cast<int>(dev) >> 2) - 2;
 }
 
-GameFramework::InputDevice GamepadId2InputDevice(int jid) noexcept
+GameFramework::InputDevice JoystickId2InputDevice(int jid) noexcept
 {
-  return static_cast<GameFramework::InputDevice>((jid + 1) << 1);
+  return static_cast<GameFramework::InputDevice>((jid + 2) << 2);
 }
 
 } // namespace GlfwWindowsPlugin
