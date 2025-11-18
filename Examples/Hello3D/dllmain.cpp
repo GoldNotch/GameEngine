@@ -90,7 +90,10 @@ void Hello3D::ProcessInput()
                                  [this](const AxisAction & axis) {
                                        if (axis.code == ActionCode::RotateCamera)
                                        {
-                                           m_camera.RotateCamera({ -axis.deltaValue[0], -axis.deltaValue[1] });
+                                           if (axis.device == InputDevice::MOUSE)
+                                               m_camera.RotateCamera({ -axis.deltaValue[0], -axis.deltaValue[1] });
+                                           if (!!(axis.device & InputDevice::ANY_JOYSTICK))
+                                               m_camera.RotateCamera({ -axis.axisValue[0], -axis.axisValue[1] });
                                        }
                                  }},
                *evt);
