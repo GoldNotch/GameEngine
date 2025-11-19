@@ -5,14 +5,14 @@
 
 namespace RenderPlugin
 {
-class BackgroundRenderer : public RHI::OwnedBy<RHI::IContext>,
-                           public RHI::OwnedBy<RHI::IFramebuffer>
+struct Scene2D_GPU;
+
+class BackgroundRenderer : public RHI::OwnedBy<Scene2D_GPU>
 {
 public:
-  explicit BackgroundRenderer(RHI::IContext & ctx, RHI::IFramebuffer & framebuffer);
+  explicit BackgroundRenderer(Scene2D_GPU & scene);
   ~BackgroundRenderer();
-  MAKE_ALIAS_FOR_GET_OWNER(RHI::IContext, GetContext);
-  MAKE_ALIAS_FOR_GET_OWNER(RHI::IFramebuffer, GetFramebuffer);
+  MAKE_ALIAS_FOR_GET_OWNER(Scene2D_GPU, GetScene);
 
 public:
   void SetBackground(const GameFramework::Color3f & color);

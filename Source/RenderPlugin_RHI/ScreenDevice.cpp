@@ -6,11 +6,11 @@
 namespace RenderPlugin
 {
 ScreenDevice::ScreenDevice(RHI::IContext & ctx, GameFramework::IWindow & window)
-  : m_context(ctx)
+  : InternalDevice(ctx)
   , m_window(window)
   , m_framebuffer(ctx.CreateFramebuffer())
-  , m_scene2D(ctx, *m_framebuffer)
-  , m_scene3D(ctx, *m_framebuffer)
+  , m_scene2D(*this)
+  , m_scene3D(*this)
 {
   auto [hwnd, hInstance] = window.GetSurface();
   RHI::SurfaceConfig config{hwnd, hInstance};
@@ -83,6 +83,18 @@ void ScreenDevice::OnResize(int newWidth, int newHeight)
 const GameFramework::IWindow & ScreenDevice::GetWindow() const & noexcept
 {
   return m_window;
+}
+
+void ScreenDevice::ConfigurePipeline(RHI::ISubpassConfiguration & config) const
+{
+  config.BindAttachment(0, RHI::ShaderAttachmentSlot::Color);
+  config.BindAttachment(1, RHI::ShaderAttachmentSlot::DepthStencil);
+  config.BindResolver(2, 0);
+}
+
+RHI::IFramebuffer & ScreenDevice::GetFramebuffer() & noexcept
+{
+  return *m_framebuffer;
 }
 
 } // namespace RenderPlugin
