@@ -11,6 +11,7 @@ PUBLIC
 PRIVATE
 	"GameFramework_def.h"
 	"GameFramework.cpp"
+	"PluginInterfaces/GamePlugin.cpp"
 
 	"Utility/Formatter.hpp"
 	"Utility/Storage.hpp"

@@ -40,7 +40,7 @@ public:
   virtual std::vector<ProtoWindow> GetOutputConfiguration() const override;
 
 private:
-  void ProcessInput();
+  virtual void OnAction(const EventAction & action) override;
 
 private:
   std::vector<InputQueue *> m_listenedInput;
@@ -68,28 +68,14 @@ std::vector<ProtoWindow> SimpleGame::GetOutputConfiguration() const
   return windows;
 }
 
-void SimpleGame::ProcessInput()
+void SimpleGame::OnAction(const EventAction & evt)
 {
-  auto evt = ConsumeInputEvent();
-  if (evt.has_value())
-  {
-    std::visit(Utils::overloaded{[this](const EventAction & evt)
-                                 {
-                                   if (evt.code == ActionCode::Quit)
-                                     GenerateSignal(GameSignal::Quit);
-                                 },
-                                 [](const ContinousAction & action) {
-
-                                 },
-                                 [](const AxisAction & action) {
-                                 }},
-               *evt);
-  }
+  if (evt.code == ActionCode::Quit)
+    GenerateSignal(GameSignal::Quit);
 }
 
 void SimpleGame::Tick(double deltaTime)
 {
-  ProcessInput();
   t += static_cast<float>(deltaTime);
   GenerateSignal(GameSignal::InvalidateRenderCache);
   GameFramework::Log(GameFramework::LogMessageType::Info, "Tick: ", deltaTime * 1000.0,

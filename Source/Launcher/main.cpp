@@ -86,6 +86,7 @@ int main(int argc, const char * argv[])
     windowsManager->PollEvents();
     for (auto && controller : inputControllers)
       controller->GenerateInputEvents();
+    gameInstance->ProcessInput();
 
     renderManager->Tick();
 
