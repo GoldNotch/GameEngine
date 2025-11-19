@@ -18,7 +18,7 @@ CubeRenderer::CubeRenderer(Scene3D_GPU & scene)
   m_matricesCpuBuffer.reserve(128);
   // должно заполняться ScreenDevice
   auto && subpassConfig = m_renderPass->GetConfiguration();
-
+  scene.GetDevice().ConfigurePipeline(subpassConfig);
   subpassConfig.EnableDepthTest(true);
   subpassConfig.SetMeshTopology(RHI::MeshTopology::Triangle);
   subpassConfig.AddInputBinding(0, sizeof(GameFramework::Mat4f),

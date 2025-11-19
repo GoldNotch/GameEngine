@@ -15,9 +15,7 @@ BackgroundRenderer::BackgroundRenderer(Scene2D_GPU & scene)
                                                              true))
 {
   auto && subpassConfig = m_renderPass->GetConfiguration();
-  subpassConfig.BindAttachment(0, RHI::ShaderAttachmentSlot::Color);
-  subpassConfig.BindAttachment(1, RHI::ShaderAttachmentSlot::DepthStencil);
-  subpassConfig.BindResolver(2, 0);
+  scene.GetDevice().ConfigurePipeline(subpassConfig);
   subpassConfig.EnableDepthTest(true);
   subpassConfig.SetMeshTopology(RHI::MeshTopology::TriangleFan);
   m_colorDescriptor = subpassConfig.DeclareUniform({0, 0}, RHI::ShaderType::Fragment);
