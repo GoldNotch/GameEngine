@@ -121,7 +121,7 @@ void Hello3D::Render(GameFramework::IDevice & device)
     Camera cam;
     cam.SetPlacement(m_camera.GetPosition(), m_camera.GetFrontVector());
     cam.SetPerspectiveSettings(
-      PerspectiveSettings{45.0f, device.GetAspectRatio(), {0.1f, 1000.0f}});
+      PerspectiveSettings{45.0f, device.GetAspectRatio(), {0.1f, 100.0f}});
     scene->SetCamera(cam);
     scene->AddCube(Cube());
     scene->AddCube(Cube(Vec3f{3, -3.0, 0.0f}));
