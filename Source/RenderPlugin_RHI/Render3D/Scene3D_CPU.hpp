@@ -1,5 +1,6 @@
 #pragma once
 #include <GameFramework.hpp>
+#include <Render3D/RenderData.hpp>
 
 namespace RenderPlugin
 {
@@ -15,8 +16,7 @@ struct Scene3D_CPU final : public GameFramework::IRenderableScene3D
 
 private:
   Scene3D_GPU * m_boundScene = nullptr;
-  std::vector<GameFramework::Cube> m_cubesToDraw;
-  size_t m_cubesHash = 0;
+  RenderableBatches<GameFramework::Cube> m_cubeBatches;
   GameFramework::Camera m_camera;
 };
 } // namespace RenderPlugin

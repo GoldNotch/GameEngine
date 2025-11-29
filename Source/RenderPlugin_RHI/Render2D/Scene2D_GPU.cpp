@@ -1,8 +1,8 @@
 #include "Scene2D_GPU.hpp"
 
-#include <Constants.hpp>
 #include <Files/FileManager.hpp>
-#include <ShaderFile.hpp>
+#include <Utility/Constants.hpp>
+#include <Utility/ShaderFile.hpp>
 
 namespace RenderPlugin
 {

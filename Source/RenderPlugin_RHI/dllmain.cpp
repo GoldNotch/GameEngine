@@ -1,6 +1,6 @@
-#include <Constants.hpp>
 #include <GameFramework.hpp>
 #include <ScreenDevice.hpp>
+#include <Utility/Constants.hpp>
 
 namespace RenderPlugin
 {

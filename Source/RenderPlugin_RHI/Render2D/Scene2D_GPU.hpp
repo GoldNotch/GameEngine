@@ -1,7 +1,7 @@
 #pragma once
 
 #include <GameFramework.hpp>
-#include <InternalDeviceInterface.hpp>
+#include <Utility/InternalDeviceInterface.hpp>
 #include <Render2D/Renderer/BackgroundRenderer.hpp>
 #include <Render2D/Renderer/Rect2dRenderer.hpp>
 

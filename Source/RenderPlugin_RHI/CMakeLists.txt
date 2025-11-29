@@ -5,12 +5,15 @@ add_library(${this_target} SHARED)
 target_sources(${this_target}
 PRIVATE
 	"dllmain.cpp"
-	"Constants.hpp"
-	"InternalDeviceInterface.hpp"
 	"ScreenDevice.cpp"
 	"ScreenDevice.hpp"
-	"ShaderFile.hpp"
-	"ShaderFile.cpp"
+
+	"Utility/Constants.hpp"
+	"Utility/InternalDeviceInterface.hpp"
+	"Utility/ShaderFile.hpp"
+	"Utility/ShaderFile.cpp"
+	"Utility/MaterialResolver.hpp"
+	"Utility/MaterialResolver.cpp"
 
 	"Render2D/Scene2D_GPU.cpp" 
 	"Render2D/Scene2D_GPU.hpp" 
@@ -27,6 +30,7 @@ PRIVATE
 	"Render3D/Scene3D_GPU.hpp"
 	"Render3D/Renderer/CubeRenderer.cpp"
 	"Render3D/Renderer/CubeRenderer.hpp"
+	
 )
 
 target_include_directories(${this_target} 

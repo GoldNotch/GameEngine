@@ -2,10 +2,10 @@
 #include <list>
 
 #include <GameFramework.hpp>
-#include <InternalDeviceInterface.hpp>
 #include <Render2D/Scene2D_GPU.hpp>
 #include <Render3D/Scene3D_GPU.hpp>
 #include <RHI.hpp>
+#include <Utility/InternalDeviceInterface.hpp>
 
 namespace RenderPlugin
 {
@@ -31,7 +31,7 @@ public: //IScreenDevice interface
 
 public: // internal device
   virtual void ConfigurePipeline(RHI::ISubpassConfiguration & config) const override;
-  virtual RHI::IFramebuffer& GetFramebuffer() & noexcept override;
+  virtual RHI::IFramebuffer & GetFramebuffer() & noexcept override;
 
 private:
   GameFramework::IWindow & m_window;

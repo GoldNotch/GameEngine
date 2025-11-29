@@ -1,9 +1,9 @@
 #include "BackgroundRenderer.hpp"
 
-#include <Constants.hpp>
 #include <GameFramework.hpp>
 #include <Render2D/Scene2D_GPU.hpp>
-#include <ShaderFile.hpp>
+#include <Utility/Constants.hpp>
+#include <Utility/ShaderFile.hpp>
 
 namespace RenderPlugin
 {

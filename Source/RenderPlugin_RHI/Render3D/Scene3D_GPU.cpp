@@ -6,7 +6,6 @@ Scene3D_GPU::Scene3D_GPU(InternalDevice & device)
   : OwnedBy<InternalDevice>(device)
   , m_viewProjBuffer(
       device.GetContext().AllocBuffer(sizeof(ViewProjection), RHI::UniformBuffer, true))
-  , m_cubesRenderer(*this)
 {
 }
 
@@ -15,9 +14,15 @@ Scene3D_GPU::~Scene3D_GPU()
   //TODO: delete m_viewProjBuffer
 }
 
-void Scene3D_GPU::TrySetCubes(size_t newHash, std::span<const GameFramework::Cube> cubes)
+void Scene3D_GPU::TrySetCubes(RenderableBatches<GameFramework::Cube> && batches)
 {
-  m_cubesRenderer.TrySetCubes(newHash, cubes);
+  for (auto && [shaderPath, batch] : batches)
+  {
+    auto [it, inserted] = m_cubeRenderers.insert({shaderPath, nullptr});
+    if (inserted)
+      it->second = std::make_unique<CubeRenderer>(*this, shaderPath);
+    it->second->TrySetCubes(batch.first, batch.second);
+  }
 }
 
 void Scene3D_GPU::SetCamera(const GameFramework::Camera & camera)
@@ -38,7 +43,8 @@ void Scene3D_GPU::Invalidate()
 
 void Scene3D_GPU::Draw()
 {
-  m_cubesRenderer.Submit();
+  for (auto && [matClass, renderer] : m_cubeRenderers)
+    renderer->Submit();
 }
 
 bool Scene3D_GPU::ShouldBeInvalidated() const noexcept

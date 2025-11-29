@@ -11,7 +11,8 @@ Cube::Cube()
 {
 }
 
-Cube::Cube(const Vec3f & pos)
+Cube::Cube(const Vec3f & pos, const Material * mat)
+  : m_material(mat)
 {
   glm::mat4 m = glm::identity<glm::mat4>();
   m = glm::translate(m, CastToGLM(pos));
@@ -21,6 +22,11 @@ Cube::Cube(const Vec3f & pos)
 const Mat4f & Cube::GetTransform() const & noexcept
 {
   return m_transform;
+}
+
+const Material * Cube::GetMaterial() const noexcept
+{
+  return m_material;
 }
 
 size_t Cube::Hash() const noexcept

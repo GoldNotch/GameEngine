@@ -17,6 +17,9 @@ PRIVATE
 	"Utility/Storage.hpp"
 	"Utility/TypeMapping.hpp"
 	"Utility/StringUtils.hpp"
+	"Utility/Utility.hpp"
+	"Utility/Uuid.cpp"
+	"Utility/Uuid.hpp"
 
 	"Plugin/Plugin.cpp"
 	"Plugin/Plugin.hpp"
@@ -34,6 +37,11 @@ PRIVATE
 	"Files/StandardFileStream.cpp"
 	"Files/DirectoryMountPoint.cpp"
 
+	"Assets/Asset.hpp"
+	"Assets/Asset.cpp"
+	"Assets/AssetsRegistry.cpp"
+	"Assets/AssetsRegistry.hpp" 
+
 	"Render/Primitive2d/Rect2d.cpp"
 	"Render/Primitive2d/Rect2d.hpp"
 	"Render/Primitive3d/Cube.hpp"
@@ -44,6 +52,8 @@ PRIVATE
 	"Render/RenderPrimitive.hpp"
 	"Render/Scene2d.hpp"
 	"Render/Scene3d.hpp"
+	"Render/Primitive3d/SolidMaterial.cpp" 
+	"Render/Primitive3d/SolidMaterial.hpp" 
 
 	"Input/Input.hpp"
 	"Input/InputDevice.hpp"

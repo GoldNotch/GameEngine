@@ -4,6 +4,7 @@
 #include <vector>
 
 #include <GameFramework.hpp>
+#include <Render/Primitive3d/SolidMaterial.hpp>
 
 #include "FPSCamera.hpp"
 
@@ -23,9 +24,10 @@ class Hello3D : public GameFramework::GamePlugin
 {
   float t = 0.0;
   FPSCamera m_camera{Vec3f{0.0, -1.0, 0.0}};
+  AssetUUID cubeMaterial;
 
 public:
-  Hello3D() { m_camera.SetPosition({0, 0, -10}); }
+  Hello3D();
   virtual ~Hello3D() override = default;
 
   virtual std::string GetGameName() const override { return "Hello3D"; }
@@ -48,6 +50,18 @@ private:
   std::vector<InputQueue *> m_listenedInput;
   std::vector<SignalsQueue *> m_boundSignalsQueue;
 };
+
+Hello3D::Hello3D()
+{
+  m_camera.SetPosition({0, 0, -10.0f});
+  // moust assets directory to filesystem
+  // get all files from the directory and upload them as assets (add to some database)
+  GetAssetsRegistry().LoadDatabase("Data/Assets.db");
+  auto newMaterial =
+    std::make_unique<SolidMaterial>("Data/Shaders/solid_frag.spv", "Data/Textures/Cube.jpg");
+  // set newMaterial
+  cubeMaterial = GetAssetsRegistry().RegisterAsset(std::move(newMaterial));
+}
 
 std::vector<InputBinding> Hello3D::GetInputConfiguration() const
 {
@@ -119,7 +133,8 @@ void Hello3D::Render(GameFramework::IDevice & device)
     cam.SetPerspectiveSettings(PerspectiveSettings{45.0f, device.GetAspectRatio(), {0.1f, 100.0f}});
     scene->SetCamera(cam);
     scene->AddCube(Cube());
-    scene->AddCube(Cube(Vec3f{3, -3.0, 0.0f}));
+    auto mat = GetAssetsRegistry().GetAsset<Material>(cubeMaterial);
+    scene->AddCube(Cube(Vec3f{3, -3.0, 0.0f}, mat));
   }
 }
 

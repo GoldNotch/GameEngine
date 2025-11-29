@@ -1,18 +1,19 @@
 #pragma once
 
+#include <unordered_map>
+
 #include <GameFramework.hpp>
-#include <InternalDeviceInterface.hpp>
+#include <Render3D/RenderData.hpp>
 #include <Render3D/Renderer/CubeRenderer.hpp>
 #include <RHI.hpp>
+#include <Utility/InternalDeviceInterface.hpp>
 
 namespace RenderPlugin
 {
 
-struct ViewProjection final
-{
-  GameFramework::Mat4f view;
-  GameFramework::Mat4f projection;
-};
+template<typename RendererT>
+using Renderers =
+  std::unordered_map<std::filesystem::path /*shaderPath*/, std::unique_ptr<RendererT>>;
 
 struct Scene3D_GPU final : public RHI::OwnedBy<InternalDevice>
 {
@@ -20,7 +21,7 @@ struct Scene3D_GPU final : public RHI::OwnedBy<InternalDevice>
   virtual ~Scene3D_GPU() override;
   MAKE_ALIAS_FOR_GET_OWNER(InternalDevice, GetDevice);
 
-  void TrySetCubes(size_t newHash, std::span<const GameFramework::Cube> cubes);
+  void TrySetCubes(RenderableBatches<GameFramework::Cube> && batches);
   void SetCamera(const GameFramework::Camera & camera);
 
 public:
@@ -33,7 +34,7 @@ public:
 
 private:
   RHI::IBufferGPU * m_viewProjBuffer = nullptr;
-  CubeRenderer m_cubesRenderer; // one for each material
+  Renderers<CubeRenderer> m_cubeRenderers;
 };
 
 } // namespace RenderPlugin
@@ -43,5 +44,10 @@ private:
 При присвоении кубиков должны распределить все кубики по рендерерам в зависимости от материала
 палитра материалов храниться здесь в Scene3D_GPU
 материал настривает пайплайн - загружает и привязывает фрагментный шейдер, выделяет буфер сэмплеров
+кто владеет текстурами? - контекст
+должен быть асинхронный загрузчик текстур, чтобы сама загрузка производилась только в пределах потока, где выполняется TransferPass
+Если текстура уже загружена, то не загружаем второй раз
+может произойти переполнение размера под текстуры, тогда загрузчик должен выгружать неиспользуемые текстуры
+
 
 */
