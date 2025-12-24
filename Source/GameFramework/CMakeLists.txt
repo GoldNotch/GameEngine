@@ -33,6 +33,10 @@ PRIVATE
 	"Files/FileManager.cpp"
 	"Files/StandardFileStream.cpp"
 	"Files/DirectoryMountPoint.cpp"
+	"Assets/Asset.cpp"
+	"Assets/Asset.hpp"
+	"Assets/AssetsRegistry.cpp"
+	"Assets/AssetsRegistry.hpp"
 
 	"Render/Primitive2d/Rect2d.cpp"
 	"Render/Primitive2d/Rect2d.hpp"
@@ -75,9 +79,12 @@ target_include_directories(${this_target}
 )
 add_subdirectory(Tests)
 
+find_package(stduuid REQUIRED)
+
 target_link_libraries(${this_target}
 PRIVATE
 	dylib
 	concurrentqueue
 	glm
+	stduuid::stduuid
 )
