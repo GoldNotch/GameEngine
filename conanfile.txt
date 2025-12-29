@@ -1,5 +1,4 @@
 [requires]
-stduuid/1.2.3
 
 [generators]
 # For CMake projects, use CMakeDeps and CMakeToolchain for Conan 2.x
