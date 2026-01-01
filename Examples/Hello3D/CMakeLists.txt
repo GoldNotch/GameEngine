@@ -20,4 +20,4 @@ TARGET_COPY_ASSETS(
 	ASSETS
 	"assets.csv"
 	"Shaders/Cube.frag"
-)
+  )
