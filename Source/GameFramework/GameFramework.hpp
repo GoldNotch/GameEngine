@@ -7,6 +7,7 @@
 #include <stdexcept>
 #include <string>
 
+#include <Assets/AssetsRegistry.hpp>
 #include <Files/FileManager.hpp>
 #include <Input/InputController.hpp>
 #include <PluginInterfaces/GamePlugin.hpp>

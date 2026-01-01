@@ -30,7 +30,7 @@ namespace GameFramework
 class FileManagerImpl : public IFileManager
 {
 public:
-  FileManagerImpl() = default;
+  FileManagerImpl();
 
 public:
   virtual void Mount(std::filesystem::path shortPath, MountPointUPtr && mountPoint) override;
@@ -48,6 +48,11 @@ private:
   std::map<std::filesystem::path, MountOverrides> m_mountedPoints;
 };
 
+
+FileManagerImpl::FileManagerImpl()
+{
+  Mount("/", CreateDirectoryMountPoint(std::filesystem::current_path()));
+}
 
 void FileManagerImpl::Mount(std::filesystem::path shortPath, MountPointUPtr && mountPoint)
 {
@@ -84,7 +89,8 @@ ResultT FileManagerImpl::OpenImpl(const std::filesystem::path & path) const
 
   if (!overrideWithLongestPrefix)
   {
-    return nullptr;
+    auto it = m_mountedPoints.find("/");
+    overrideWithLongestPrefix = &it->second;
   }
 
   std::filesystem::path miniPath;

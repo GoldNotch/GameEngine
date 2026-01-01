@@ -11,3 +11,11 @@ PUBLIC
 	GameFramework
 	glm
 )
+
+TARGET_COPY_ASSETS(
+	TARGET ${this_target}
+	ASSETS_DIRECTORY "Data"
+	ASSETS
+	"assets.csv"
+	"Shaders/Cube.frag"
+)

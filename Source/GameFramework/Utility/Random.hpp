@@ -32,7 +32,7 @@ struct Random final
       std::uniform_int_distribution<T> dist(min, max);
       return dist(m_engine);
     }
-    else if (constexpr(std::is_floating_point_v<T>))
+    else if constexpr (std::is_floating_point_v<T>)
     {
       std::uniform_real_distribution<T> dist(min, max);
       return dist(m_engine);

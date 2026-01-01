@@ -25,7 +25,7 @@ class Hello3D : public GameFramework::GamePlugin
   FPSCamera m_camera{Vec3f{0.0, -1.0, 0.0}};
 
 public:
-  Hello3D() { m_camera.SetPosition({0, 0, -10}); }
+  Hello3D();
   virtual ~Hello3D() override = default;
 
   virtual std::string GetGameName() const override { return "Hello3D"; }
@@ -48,6 +48,12 @@ private:
   std::vector<InputQueue *> m_listenedInput;
   std::vector<SignalsQueue *> m_boundSignalsQueue;
 };
+
+Hello3D::Hello3D()
+{
+  m_camera.SetPosition(Vec3f{0, 0, -10});
+  GetAssetsRegistry().LoadDatabase("Data/assets.csv");
+}
 
 std::vector<InputBinding> Hello3D::GetInputConfiguration() const
 {

@@ -13,56 +13,61 @@ namespace GameFramework
 
 Uuid::Uuid()
 {
-  new (x) uuids::uuid();
+  new (m_bytes) uuids::uuid();
 }
 
-Uuid::Uuid(const std::string & str)
+Uuid::Uuid(std::span<const char, 16> bytes16)
 {
-  auto id = uuids::uuid::from_string(str);
-  if (!id.has_value())
-    throw std::runtime_error("Incorrect UUID format");
-  new (x) uuids::uuid(*id);
+  for (size_t i = 0; i < 16; ++i)
+    m_bytes[i] = static_cast<std::byte>(bytes16[i]);
 }
 
-Uuid::Uuid(const std::span<char, 16> & bytes16)
+Uuid::Uuid(std::span<const std::byte, 16> bytes16)
 {
-  new (x) uuids::uuid(bytes16.begin(), bytes16.end());
+  for (size_t i = 0; i < 16; ++i)
+    m_bytes[i] = bytes16[i];
 }
 
-Uuid::Uuid(const std::span<uint8_t, 16> & bytes16)
-{
-  new (x) uuids::uuid(bytes16.begin(), bytes16.end());
-}
-
-Uuid::~Uuid()
-{
-  delete reinterpret_cast<uuids::uuid *>(x);
-}
+Uuid::~Uuid() = default;
 
 bool Uuid::operator==(const Uuid & rhs) const noexcept
 {
-  const uuids::uuid * l = reinterpret_cast<const uuids::uuid *>(x);
-  const uuids::uuid * r = reinterpret_cast<const uuids::uuid *>(rhs.x);
+  const uuids::uuid * l = reinterpret_cast<const uuids::uuid *>(m_bytes);
+  const uuids::uuid * r = reinterpret_cast<const uuids::uuid *>(rhs.m_bytes);
   return *l == *r;
 }
 
 bool Uuid::operator!=(const Uuid & rhs) const noexcept
 {
-  const uuids::uuid * l = reinterpret_cast<const uuids::uuid *>(x);
-  const uuids::uuid * r = reinterpret_cast<const uuids::uuid *>(rhs.x);
+  const uuids::uuid * l = reinterpret_cast<const uuids::uuid *>(m_bytes);
+  const uuids::uuid * r = reinterpret_cast<const uuids::uuid *>(rhs.m_bytes);
   return *l != *r;
 }
 
 bool Uuid::operator<(const Uuid & rhs) const noexcept
 {
-  const uuids::uuid * l = reinterpret_cast<const uuids::uuid *>(x);
-  const uuids::uuid * r = reinterpret_cast<const uuids::uuid *>(rhs.x);
+  const uuids::uuid * l = reinterpret_cast<const uuids::uuid *>(m_bytes);
+  const uuids::uuid * r = reinterpret_cast<const uuids::uuid *>(rhs.m_bytes);
   return *l < *r;
+}
+
+size_t Uuid::Hash() const noexcept
+{
+  return std::hash<uuids::uuid>{}(*reinterpret_cast<const uuids::uuid *>(m_bytes));
 }
 
 std::string Uuid::ToString() const noexcept
 {
-  return uuids::to_string(*reinterpret_cast<const uuids::uuid *>(x));
+  return uuids::to_string(*reinterpret_cast<const uuids::uuid *>(m_bytes));
+}
+
+std::optional<Uuid> Uuid::MakeFromString(const std::string_view & str)
+{
+  auto id = uuids::uuid::from_string(str);
+  if (!id.has_value())
+    return std::nullopt;
+  auto span = id->as_bytes();
+  return Uuid(span);
 }
 
 Uuid Uuid::MakeRandomUuid()
@@ -70,7 +75,7 @@ Uuid Uuid::MakeRandomUuid()
   static Random random;
   auto id = uuids::uuid_random_generator{random.GetEngine()}();
   auto span = id.as_bytes();
-  return Uuid({span.begin(), span.end()});
+  return Uuid(span);
 }
 
 } // namespace GameFramework
