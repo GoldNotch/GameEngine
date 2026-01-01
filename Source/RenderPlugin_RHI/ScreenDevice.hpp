@@ -2,14 +2,16 @@
 #include <list>
 
 #include <GameFramework.hpp>
-#include <RHI.hpp>
+#include <InternalDeviceInterface.hpp>
 #include <Render2D/Scene2D_GPU.hpp>
 #include <Render3D/Scene3D_GPU.hpp>
+#include <RHI.hpp>
 
 namespace RenderPlugin
 {
 
-struct ScreenDevice : public GameFramework::IScreenDevice
+struct ScreenDevice : public GameFramework::IScreenDevice,
+                      public InternalDevice
 {
   explicit ScreenDevice(RHI::IContext & ctx, GameFramework::IWindow & window);
   virtual ~ScreenDevice() override;
@@ -27,8 +29,11 @@ public: //IScreenDevice interface
   virtual void OnResize(int newWidth, int newHeight) override;
   virtual const GameFramework::IWindow & GetWindow() const & noexcept override;
 
+public: // internal device
+  virtual void ConfigurePipeline(RHI::ISubpassConfiguration & config) const override;
+  virtual RHI::IFramebuffer& GetFramebuffer() & noexcept override;
+
 private:
-  RHI::IContext & m_context;
   GameFramework::IWindow & m_window;
   RHI::IFramebuffer * m_framebuffer = nullptr;
   RHI::IRenderTarget * m_renderTarget = nullptr;

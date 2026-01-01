@@ -6,6 +6,7 @@
 #include <vector>
 
 #include <Game/Signal.hpp>
+#include <Input/Input.hpp>
 #include <Input/InputQueue.hpp>
 #include <Plugin/Plugin.hpp>
 #include <PluginInterfaces/RenderPlugin.hpp>
@@ -32,6 +33,12 @@ struct GAME_FRAMEWORK_API GamePlugin : public IPluginInstance,
 
   virtual void Tick(double deltaTime) = 0;
   virtual void Render(GameFramework::IDevice & device) = 0;
+  void ProcessInput();
+
+protected:
+  virtual void OnAction(const EventAction & action) {};
+  virtual void OnAction(const ContinousAction & action) {};
+  virtual void OnAction(const AxisAction & action) {};
 };
 
 } // namespace GameFramework

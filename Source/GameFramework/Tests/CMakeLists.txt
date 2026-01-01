@@ -8,6 +8,8 @@ PUBLIC
 	"Test_Files.cpp"
 )
 
+find_package(Catch2 REQUIRED)
+
 target_link_libraries(${test_target}  PRIVATE
 	Catch2::Catch2WithMain
 	GameFramework

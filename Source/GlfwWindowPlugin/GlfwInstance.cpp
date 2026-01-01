@@ -147,6 +147,7 @@ GameFramework::InputDeviceDescription GlfwInstance::GetDeviceDescription(
   auto it = m_connectedJoysticks.find(jid);
   if (it != m_connectedJoysticks.end())
     return it->second;
+  return GameFramework::InputDeviceDescription{};
 }
 
 std::vector<int> GlfwInstance::GetConnectedJoysticks() const

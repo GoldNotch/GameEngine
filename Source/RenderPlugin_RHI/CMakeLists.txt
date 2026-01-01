@@ -6,6 +6,7 @@ target_sources(${this_target}
 PRIVATE
 	"dllmain.cpp"
 	"Constants.hpp"
+	"InternalDeviceInterface.hpp"
 	"ScreenDevice.cpp"
 	"ScreenDevice.hpp"
 	"ShaderFile.hpp"

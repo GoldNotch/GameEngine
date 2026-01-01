@@ -2,20 +2,20 @@
 
 #include <Constants.hpp>
 #include <GameFramework.hpp>
+#include <Render2D/Scene2D_GPU.hpp>
 #include <ShaderFile.hpp>
 
 namespace RenderPlugin
 {
-BackgroundRenderer::BackgroundRenderer(RHI::IContext & ctx, RHI::IFramebuffer & framebuffer)
-  : OwnedBy<RHI::IContext>(ctx)
-  , OwnedBy<RHI::IFramebuffer>(framebuffer)
-  , m_renderPass(framebuffer.CreateSubpass())
-  , m_colorBuffer(ctx.AllocBuffer(3 * sizeof(float), RHI::BufferGPUUsage::UniformBuffer, true))
+BackgroundRenderer::BackgroundRenderer(Scene2D_GPU & scene)
+  : OwnedBy<Scene2D_GPU>(scene)
+  , m_renderPass(scene.GetDevice().GetFramebuffer().CreateSubpass())
+  , m_colorBuffer(scene.GetDevice().GetContext().AllocBuffer(3 * sizeof(float),
+                                                             RHI::BufferGPUUsage::UniformBuffer,
+                                                             true))
 {
   auto && subpassConfig = m_renderPass->GetConfiguration();
-  subpassConfig.BindAttachment(0, RHI::ShaderAttachmentSlot::Color);
-  subpassConfig.BindAttachment(1, RHI::ShaderAttachmentSlot::DepthStencil);
-  subpassConfig.BindResolver(2, 0);
+  scene.GetDevice().ConfigurePipeline(subpassConfig);
   subpassConfig.EnableDepthTest(true);
   subpassConfig.SetMeshTopology(RHI::MeshTopology::TriangleFan);
   m_colorDescriptor = subpassConfig.DeclareUniform({0, 0}, RHI::ShaderType::Fragment);
@@ -51,7 +51,7 @@ void BackgroundRenderer::Submit()
 {
   if (m_renderPass && m_renderPass->ShouldBeInvalidated())
   {
-    auto extent = GetFramebuffer().GetExtent();
+    auto extent = GetScene().GetDevice().GetFramebuffer().GetExtent();
     m_renderPass->BeginPass();
     m_renderPass->SetScissor(0, 0, extent[0], extent[1]);
     m_renderPass->SetViewport(static_cast<float>(extent[0]), static_cast<float>(extent[1]));

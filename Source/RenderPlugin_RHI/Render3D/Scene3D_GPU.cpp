@@ -2,10 +2,10 @@
 
 namespace RenderPlugin
 {
-Scene3D_GPU::Scene3D_GPU(RHI::IContext & ctx, RHI::IFramebuffer & framebuffer)
-  : OwnedBy<RHI::IContext>(ctx)
-  , OwnedBy<RHI::IFramebuffer>(framebuffer)
-  , m_viewProjBuffer(ctx.AllocBuffer(sizeof(ViewProjection), RHI::UniformBuffer, true))
+Scene3D_GPU::Scene3D_GPU(InternalDevice & device)
+  : OwnedBy<InternalDevice>(device)
+  , m_viewProjBuffer(
+      device.GetContext().AllocBuffer(sizeof(ViewProjection), RHI::UniformBuffer, true))
   , m_cubesRenderer(*this)
 {
 }
@@ -21,7 +21,7 @@ void Scene3D_GPU::TrySetCubes(size_t newHash, std::span<const GameFramework::Cub
 }
 
 void Scene3D_GPU::SetCamera(const GameFramework::Camera & camera)
-{ 
+{
   ViewProjection vp{camera.GetViewMatrix(), camera.GetProjectionMatrix()};
   m_viewProjBuffer->UploadSync(&vp, sizeof(vp));
 }

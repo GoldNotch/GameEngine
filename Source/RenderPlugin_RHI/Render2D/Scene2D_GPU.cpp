@@ -7,9 +7,10 @@
 namespace RenderPlugin
 {
 
-Scene2D_GPU::Scene2D_GPU(RHI::IContext & ctx, RHI::IFramebuffer & framebuffer)
-  : m_backgroundRenderer(ctx, framebuffer)
-  , m_rectsRenderer(ctx, framebuffer)
+Scene2D_GPU::Scene2D_GPU(InternalDevice & device)
+  : OwnedBy<InternalDevice>(device)
+  , m_backgroundRenderer(*this)
+  , m_rectsRenderer(*this)
 {
 }
 

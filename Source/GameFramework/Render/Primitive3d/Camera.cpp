@@ -27,7 +27,7 @@ void Camera::SetPlacement(const Vec3f & pos, const Vec3f & direction, const Vec3
 
 void Camera::SetPerspectiveSettings(const PerspectiveSettings & settings)
 {
-  glm::mat4 proj = glm::perspectiveRH_ZO(glm::radians(settings.fov), settings.aspectRatio,
+  glm::mat4 proj = glm::perspective(glm::radians(settings.fov), settings.aspectRatio,
                                       settings.zRange.x, settings.zRange.y);
   m_projMatrix = CastFromGLM(proj);
   m_isPerspective = true;

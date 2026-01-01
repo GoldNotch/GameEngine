@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <memory>
 #include <span>
+#include <string>
 #include <type_traits>
 
 namespace GameFramework
@@ -33,6 +34,29 @@ struct IFileReader : public IFileStream
   virtual size_t Read(std::span<std::byte> buffer) = 0;
   /// get size of file
   virtual size_t Size() const = 0;
+
+  template<typename CharT>
+  size_t ReadLine(std::basic_string<CharT> & result)
+  {
+    CharT ch = '\0';
+    size_t readSymbols = 0;
+    size_t readBytes = 0;
+    do
+    {
+      readBytes = ReadValue(ch);
+      if (readBytes > 0)
+      {
+        result.push_back(ch);
+        readSymbols++;
+      }
+    } while (readBytes > 0 && ch != '\n' && ch != '\0');
+
+    //remove \r\n from end of line
+    while (!result.empty() && (result.back() == '\n' || result.back() == '\r'))
+      result.pop_back();
+
+    return readSymbols;
+  }
 
   template<typename T>
   size_t ReadValue(T & val);

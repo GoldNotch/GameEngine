@@ -5,14 +5,14 @@
 
 namespace RenderPlugin
 {
-class Rect2DRenderer : public RHI::OwnedBy<RHI::IContext>,
-                       public RHI::OwnedBy<RHI::IFramebuffer>
+struct Scene2D_GPU;
+
+class Rect2DRenderer : public RHI::OwnedBy<Scene2D_GPU>
 {
 public:
-  explicit Rect2DRenderer(RHI::IContext & ctx, RHI::IFramebuffer & framebuffer);
+  explicit Rect2DRenderer(Scene2D_GPU & scene);
   ~Rect2DRenderer();
-  MAKE_ALIAS_FOR_GET_OWNER(RHI::IContext, GetContext);
-  MAKE_ALIAS_FOR_GET_OWNER(RHI::IFramebuffer, GetFramebuffer);
+  MAKE_ALIAS_FOR_GET_OWNER(Scene2D_GPU, GetScene);
 
 public:
   void TrySetRects(size_t newHash, std::span<const GameFramework::Rect2d> rects);

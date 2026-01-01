@@ -1,8 +1,3 @@
-add_subdirectory(GLFW)
-add_subdirectory(dylib)
-add_subdirectory(concurrentqueue)
-add_subdirectory(glm)
-add_subdirectory(Catch2)
 set(RHI_BUILD_EXAMPLES OFF)
 set(RHI_BUILD_SHARED OFF)
 add_subdirectory(RHI)

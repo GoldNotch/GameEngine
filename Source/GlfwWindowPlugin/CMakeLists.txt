@@ -17,6 +17,8 @@ PUBLIC
 	"${SOURCE_DIR}/GlfwWindowPlugin"
 )
 
+find_package(glfw3 REQUIRED)
+
 target_link_libraries(${this_target}
 PRIVATE
 	GameFramework
