@@ -88,10 +88,15 @@ target_include_directories(${this_target}
 )
 add_subdirectory(Tests)
 
+find_package(dylib REQUIRED)
+find_package(concurrentqueue REQUIRED)
+find_package(glm REQUIRED)
+find_package(stduuid REQUIRED)
+
 target_link_libraries(${this_target}
 PRIVATE
-	dylib
-	concurrentqueue
-	glm
-	stduuid
+	dylib::dylib
+	concurrentqueue::concurrentqueue
+	glm::glm
+	stduuid::stduuid
 )

@@ -6,10 +6,12 @@ add_library(${this_target} SHARED
 	"FPSCamera.hpp"
 )
 
+find_package(glm REQUIRED)
+
 target_link_libraries(${this_target}
 PUBLIC
 	GameFramework
-	glm
+	glm::glm
 )
 
 TARGET_COPY_ASSETS(
