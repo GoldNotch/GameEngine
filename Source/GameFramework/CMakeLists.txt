@@ -44,6 +44,8 @@ PRIVATE
 	"Assets/AssetsRegistry.hpp"
 	"Assets/Utils.cpp"
 	"Assets/Utils.hpp"
+	"Assets/AssetSlot.cpp"
+	"Assets/AssetSlot.hpp"
 
 	"Render/Primitive2d/Rect2d.cpp"
 	"Render/Primitive2d/Rect2d.hpp"

@@ -6,6 +6,8 @@
 #include <span>
 #include <string>
 
+#include <Files/FileStream.hpp>
+
 namespace GameFramework
 {
 
@@ -25,6 +27,10 @@ struct GAME_FRAMEWORK_API Uuid final
 
   static std::optional<Uuid> MakeFromString(const std::string_view & str);
   static Uuid MakeRandomUuid();
+
+public:
+  static size_t ReadBinary(IFileReader & stream, Uuid & uuid);
+  static void WriteBinary(IFileWriter & stream, const Uuid & uuid);
 
 private:
   std::byte m_bytes[16];

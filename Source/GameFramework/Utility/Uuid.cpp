@@ -6,6 +6,8 @@
 #include <Utility/Random.hpp>
 #include <uuid.h> //stduuid
 
+#include "Uuid.hpp"
+
 static_assert(sizeof(GameFramework::Uuid) == sizeof(uuids::uuid));
 
 namespace GameFramework
@@ -76,6 +78,22 @@ Uuid Uuid::MakeRandomUuid()
   auto id = uuids::uuid_random_generator{random.GetEngine()}();
   auto span = id.as_bytes();
   return Uuid(span);
+}
+
+size_t Uuid::ReadBinary(IFileReader & stream, Uuid & uuid)
+{
+  std::array<std::byte, 16> src;
+  size_t read = stream.Read(src);
+  assert(read == 16);
+  std::span<std::byte> dst(uuid.m_bytes, 16);
+  std::copy(dst.begin(), dst.end(), src.begin());
+  return read;
+}
+
+void Uuid::WriteBinary(IFileWriter & stream, const Uuid & uuid)
+{
+  std::span<const std::byte> buf(uuid.m_bytes, 16);
+  stream.Write(buf);
 }
 
 } // namespace GameFramework
